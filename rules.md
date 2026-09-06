@@ -1,50 +1,91 @@
-# 📜 Coding Standards & Guidelines (rules.md)
-**Project Name:** TaniSync
-**Tech Stack:** React Native, Node.js, MySQL, Prisma ORM[cite: 2]
+# 📜 TaniSync Repository & Codebase Rules
 
-Semua anggota tim (Frontend & Backend) WAJIB mematuhi aturan ini agar kode tetap bersih, mudah dibaca, dan meminimalisir bug selama fase development.
+Dokumen ini berisi standar pengerjaan *codebase* TaniSync untuk kompetisi MAGE 12. Semua anggota tim **WAJIB** mematuhi aturan ini demi menjaga kualitas, keamanan, dan keterbacaan kode, baik di sisi Backend (Express) maupun Frontend (React Native Expo).
 
 ---
 
-## 1. 🌿 Git & Workflow Rules (GitHub)
-Jangan pernah nge-push langsung ke *branch* `main`! 
-*   **Branching:** 
-    *   `main`: Hanya untuk kode yang sudah 100% jalan dan siap dinilai juri/produksi.
-    *   `dev`: Branch utama untuk development dan penggabungan fitur.
-    *   `feature/...`: Branch untuk bikin fitur baru (contoh: `feature/auth-login`, `feature/ui-beranda`).
-*   **Commit Messages:** Gunakan standar *Conventional Commits*:
-    *   `feat: [nama fitur]` -> Untuk menambah fitur baru (contoh: `feat: add community feed UI`).
-    *   `fix: [nama bug]` -> Untuk memperbaiki bug (contoh: `fix: benerin radius geolokasi`).
-    *   `chore: [tugas]` -> Untuk update package/config (contoh: `chore: install expo-camera`).
-    *   `docs: [dokumen]` -> Untuk update README, PRD, dll.
+## 1. 🌿 Git Workflow & Branching
+Kita menggunakan alur kerja *feature-branch*. Dilarang keras melakukan *commit* atau *push* langsung ke *branch* `main`.
+
+*   **main**: HANYA berisi kode *production-ready* yang siap di- *deploy*.
+*   **dev**: *Branch* utama untuk integrasi proses *development*.
+*   **Fitur/Bugfix**: Buat *branch* baru dari `dev` dengan format:
+    *   `feature/nama-fitur` (contoh: `feature/weather-cron`)
+    *   `bugfix/nama-bug` (contoh: `bugfix/jwt-expiry`)
+*   **Aturan Sinkronisasi**: Selalu jalankan `git pull origin dev` sebelum membuat *branch* baru dan sebelum membuat *Pull Request*.
+*   **Pembersihan**: *Branch feature* WAJIB dihapus setelah berhasil di- *merge* ke `dev`.
 
 ---
 
-## 2. ⚙️ Backend Rules (Node.js & Express)
-*   **Arsitektur MVC:** Pisahkan logika menjadi `routes` (untuk endpoint URL) dan `controllers` (untuk logika bisnis/fungsi)[cite: 2]. Jangan taruh logika panjang di dalam `routes`.
-*   **Standard API Response:** Semua balasan dari server (API) WAJIB menggunakan format JSON yang seragam agar Frontend mudah melakukan *parsing*.
-    ```javascript
-    // Format Sukses
-    res.status(200).json({ status: "success", message: "Data berhasil diambil", data: {...} });
-    
-    // Format Error
-    res.status(400).json({ status: "error", message: "Gagal memvalidasi radius" });
+## 2. 📝 Conventional Commits & Pull Requests (PR)
+Riwayat *commit* akan dibaca oleh juri. Gunakan bahasa Inggris, huruf kecil (lowercase), kalimat imperatif, dan tanpa titik di akhir.
+
+**Format:** `type: deskripsi singkat`
+*   `feat:` — Menambah fitur baru (contoh: `feat: add community feed endpoint`)
+*   `fix:` — Memperbaiki *bug* (contoh: `fix: correct radius geolocation filter`)
+*   `refactor:` — Mengubah struktur kode tanpa mengubah logika/hasil (contoh: `refactor: move AI logic to service layer`)
+*   `style:` — Perbaikan *formatting* atau UI *tweak* tanpa ubah logika (contoh: `style: update button neobrutalism shadow`)
+*   `test:` — Menambah atau memperbaiki *testing*.
+
+**Aturan Pull Request (PR):**
+Semua *merge* ke `dev` WAJIB melalui *Pull Request*. Minimal harus ada 1 *approval* dari anggota tim lain. Pastikan aplikasi berjalan normal di *environment* lokal dan tidak ada *merge conflict* sebelum melakukan *merge*.
+
+---
+
+## 3. ⚙️ Backend Rules (Express.js + Prisma)
+
+**A. Naming Convention:**
+*   **Controllers, Middlewares, & Utils**: Gunakan *camelCase* dengan satu file per domain (contoh: `authController.js`, `errorHandler.js`).
+*   **Endpoint URL**: Gunakan *kebab-case* dan *plural* (kata jamak) (contoh: `/api/plants`, `/api/community-posts`).
+
+**B. Error Handling (Global):**
+*   **DILARANG** menggunakan `try...catch` manual di dalam *Controller*.
+*   Gunakan pelemparan *error* langsung: `throw new AppError('Pesan error', statusCode)`.
+*   Semua *error* akan ditangkap dan diformat secara otomatis oleh *Global Error Handler*. *Stack trace* tidak boleh bocor ke *client* saat berada di mode *production*.
+
+**C. Standard API Response:**
+Tujuannya agar tim *Frontend* konsisten saat melakukan *parsing* data pakai Axios.
+*   **Sukses (Tanpa Data):**
+    ```json
+    { "status": "success", "message": "Tanaman berhasil disiram" }
     ```
-*   **Error Handling:** Wajib menggunakan blok `try...catch` di setiap *controller* yang berinteraksi dengan database (Prisma) atau API eksternal (OpenWeatherMap/Cloudinary)[cite: 2].
-*   **Keamanan (.env):** File `.env` yang berisi *password database* dan *API Keys* **DILARANG KERAS** di-push ke GitHub. Pastikan `.env` sudah masuk di dalam `.gitignore`.
+*   **Sukses (Dengan Data):**
+    ```json
+    { "status": "success", "message": "Data profil ditemukan", "data": { "nama": "Arya", "poin": 150 } }
+    ```
+*   **Sukses (List/Pagination):**
+    ```json
+    { "status": "success", "data": [...], "meta": { "page": 1, "limit": 10, "total": 45 } }
+    ```
+
+**D. Database Governance:**
+Dilarang mengubah skema Prisma (`schema.prisma`) tanpa kesepakatan tim. Jika ada perubahan, WAJIB mengabari tim *Frontend* karena akan merubah struktur JSON *response*.
 
 ---
 
-## 3. 📱 Frontend Rules (React Native & Expo)
-*   **Komponen:** Gunakan *Functional Components* dan *React Hooks* (`useState`, `useEffect`). Jangan menggunakan *Class Components*.
-*   **Penamaan File & Folder:**
-    *   Gunakan **PascalCase** untuk komponen UI dan Halaman (contoh: `PlantCard.js`, `HomeScreen.js`).
-    *   Gunakan **camelCase** untuk *utilities*, fungsi, atau *hooks* (contoh: `formatDate.js`, `useWeather.js`).
-*   **Styling (CSS):** Hindari penggunaan *inline styles* jika terlalu panjang. Selalu gunakan `StyleSheet.create` di bagian bawah file untuk performa render yang lebih baik.
-*   **Konsistensi Warna:** Patuhi kode HEX warna aplikasi yang ada di `prd.md` (Fresh Green `#3FA86B`, Forest Green `#1F5C3D`)[cite: 2]. Jangan pakai kode warna hijau lain.
+## 4. 🎨 Frontend Rules (React Native / Expo)
+
+**A. Naming Convention:**
+*   **Komponen UI**: Gunakan *PascalCase* (contoh: `PlantCard.jsx`, `PrimaryButton.jsx`).
+*   **Fungsi & Hooks**: Gunakan *camelCase* (contoh: `useWeatherSync.js`, `handleLogin`).
+
+**B. Design System (TaniSync Neoclay):**
+**DILARANG** melakukan *hardcode* nilai HEX warna di dalam komponen. Semua warna wajib dipanggil dari satu file sumber (misal: `constants/colors.js`).
+
+*Palet Wajib:*
+*   **Primary (Fresh Green)**: `#3FA86B`
+*   **Secondary (Forest Green)**: `#1F5C3D`
+*   **Background (Cream)**: `#FBF8F0`
+*   **Text Utama (Neutral)**: `#1A1A1A`
+*   **Text Muted (Gray)**: `#5C5A4F`
+*   **Error/Alert**: `#E5484D`
+
+Komponen interaktif (tombol, *input*) wajib menerapkan standar batas Neobrutalism (border tegas, *hard offset-shadow*), sedangkan ilustrasi/maskot dibiarkan *soft* (tanpa *border*).
 
 ---
 
-## 4. 🗄️ Database & Prisma Rules
-*   **Prisma Client:** Semua interaksi dengan database MySQL wajib melalui Prisma Client[cite: 2], dilarang melakukan raw SQL query (`SELECT * FROM...`) kecuali sangat mendesak.
-*   **Perubahan Skema:** Jika ada yang ingin mengubah/menambah tabel di `schema.prisma`, **wajib lapor ke Lead Backend (Arya)** terlebih dahulu agar database tidak berantakan saat sinkronisasi (*migration*).
+## 5. 🔐 Security & Secrets
+*   File `.env` **HARAM** di- *commit* ke GitHub.
+*   Konfigurasi rahasia (*API Keys Gemini*, *OpenWeatherMap*, *Cloudinary*, dan *Database URL*) **HANYA** boleh diakses melalui `process.env`. 
+*   **DILARANG KERAS** melakukan *hardcode API Key* di file apapun, baik di sisi Backend maupun Frontend.
+*   *Token JWT* dilarang di- *log* ke dalam *console* dengan alasan apapun.

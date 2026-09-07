@@ -1,4 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
@@ -139,7 +140,19 @@ export default function DashboardScreen() {
             <Text style={styles.subtitle}>Yuk cek tanamanmu hari ini</Text>
           </View>
         </View>
-        {/* Phantom UI (notifButton) removed */}
+        {/* Logout Button (Untuk testing Onboarding) */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={async () => {
+            // Hapus semua token dan flag onboarding untuk keperluan testing
+            await SecureStore.deleteItemAsync("userToken");
+            await SecureStore.deleteItemAsync("userData");
+            await AsyncStorage.removeItem("hasSeenOnboarding"); // Reset onboarding
+            router.replace("/"); // Kembali ke root yang akan mengarahkan ke onboarding
+          }}
+        >
+          <MaterialIcons name="logout" size={24} color="#FF6B5C" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -374,6 +387,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#5C5A4F",
     fontWeight: "500",
+  },
+  logoutButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#123924",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#123924",
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   heroCard: {
     backgroundColor: "#1F5C3D",

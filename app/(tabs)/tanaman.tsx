@@ -1,18 +1,20 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
+
 const JENIS_TANAMAN_ENUM = [
   "Padi",
   "Jagung",
@@ -35,6 +37,7 @@ const JENIS_TANAMAN_ENUM = [
   "Kentang",
   "Pisang",
 ];
+
 export default function TanamanScreen() {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const filters = ["Semua", "Perlu Disiram"];
@@ -44,6 +47,7 @@ export default function TanamanScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const fetchTanaman = async () => {
     if (tanamanList.length === 0) setIsLoading(true);
     else setIsRefreshing(true);
@@ -63,13 +67,14 @@ export default function TanamanScreen() {
       setIsRefreshing(false);
     }
   };
+
   useEffect(() => {
     fetchTanaman();
   }, []);
+
   const handleTambahTanaman = async () => {
     setIsSubmitting(true);
     try {
-      // CONTRACT: body (JSON): { jenisTanaman: string }
       const response = await api.post("/tanaman", {
         jenisTanaman: selectedTanaman,
       });
@@ -91,9 +96,9 @@ export default function TanamanScreen() {
       setIsSubmitting(false);
     }
   };
+
   const handleSiram = async (tanamanId: number) => {
     try {
-      // CONTRACT: POST /logs { tanamanId, tipeValidasi: "button_only" }
       const response = await api.post("/logs", {
         tanamanId,
         tipeValidasi: "button_only",
@@ -114,11 +119,13 @@ export default function TanamanScreen() {
       );
     }
   };
+
   const filteredList = tanamanList.filter((tanaman) => {
     if (activeFilter === "Perlu Disiram")
       return tanaman.statusPenyiraman === "PERLU_SIRAM";
     return true;
   });
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -136,8 +143,8 @@ export default function TanamanScreen() {
           {/* HEADER */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Tanaman Kamu</Text>
-            {/* Phantom UI removed */}
           </View>
+
           {/* FILTERS */}
           <View style={styles.filterSection}>
             <ScrollView
@@ -147,13 +154,14 @@ export default function TanamanScreen() {
               contentContainerStyle={styles.filterScrollContent}
             >
               {filters.map((filter) => (
-                <TouchableOpacity
+                <Pressable
                   key={filter}
-                  style={[
+                  style={({ pressed }) => [
                     styles.filterChip,
                     activeFilter === filter
                       ? styles.filterChipActive
                       : styles.filterChipInactive,
+                    pressed && { opacity: 0.8 },
                   ]}
                   onPress={() => setActiveFilter(filter)}
                 >
@@ -167,11 +175,11 @@ export default function TanamanScreen() {
                   >
                     {filter}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
-            {/* Phantom UI (grid toggle) removed */}
           </View>
+
           {/* PLANT GRID */}
           {isLoading ? (
             <ActivityIndicator
@@ -197,7 +205,14 @@ export default function TanamanScreen() {
                   ) + 1;
                 const isPerluSiram = tanaman.statusPenyiraman === "PERLU_SIRAM";
                 return (
-                  <View key={tanaman.id} style={styles.card}>
+                  <Pressable
+                    key={tanaman.id}
+                    style={({ pressed }) => [
+                      styles.card,
+                      pressed && styles.pressedShadow4,
+                    ]}
+                    onPress={() => router.push("/detail-tanaman")}
+                  >
                     <View
                       style={[
                         styles.imageContainer,
@@ -233,33 +248,43 @@ export default function TanamanScreen() {
                           </Text>
                         </View>
                         {isPerluSiram && (
-                          <TouchableOpacity
-                            style={styles.waterButton}
-                            onPress={() => handleSiram(tanaman.id)}
+                          <Pressable
+                            style={({ pressed }) => [
+                              styles.waterButton,
+                              pressed && { transform: [{ scale: 0.9 }] },
+                            ]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              handleSiram(tanaman.id);
+                            }}
                           >
                             <MaterialIcons
                               name="water-drop"
                               size={20}
                               color="#FFFFFF"
                             />
-                          </TouchableOpacity>
+                          </Pressable>
                         )}
                       </View>
                     </View>
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
           )}
         </ScrollView>
-        {/* FAB (Floating Action Button) */}
-        <TouchableOpacity
-          style={styles.fab}
-          activeOpacity={0.9}
+
+        {/* FAB */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.fab,
+            pressed && styles.pressedShadow4,
+          ]}
           onPress={() => setModalVisible(true)}
         >
           <MaterialIcons name="add" size={32} color="#FFFFFF" />
-        </TouchableOpacity>
+        </Pressable>
+
         {/* MODAL TAMBAH TANAMAN */}
         <Modal
           animationType="slide"
@@ -271,18 +296,19 @@ export default function TanamanScreen() {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Tanam Baru</Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Pressable onPress={() => setModalVisible(false)}>
                   <MaterialIcons name="close" size={24} color="#123924" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
               <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
               <ScrollView style={styles.pickerContainer}>
                 {JENIS_TANAMAN_ENUM.map((jenis) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={jenis}
-                    style={[
+                    style={({ pressed }) => [
                       styles.pickerItem,
                       selectedTanaman === jenis && styles.pickerItemActive,
+                      pressed && { opacity: 0.75 },
                     ]}
                     onPress={() => setSelectedTanaman(jenis)}
                   >
@@ -302,11 +328,14 @@ export default function TanamanScreen() {
                         color="#FFFFFF"
                       />
                     )}
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </ScrollView>
-              <TouchableOpacity
-                style={styles.submitButton}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.submitButton,
+                  pressed && !isSubmitting && styles.pressedShadow4,
+                ]}
                 onPress={handleTambahTanaman}
                 disabled={isSubmitting}
               >
@@ -315,7 +344,7 @@ export default function TanamanScreen() {
                 ) : (
                   <Text style={styles.submitButtonText}>Tanam Sekarang!</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </Modal>
@@ -323,6 +352,7 @@ export default function TanamanScreen() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -335,8 +365,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 100, // Memberi ruang biar kartu bawah nggak ketutup FAB
+    paddingBottom: 100,
   },
+
+  // State tertekan Neobrutalism
+  pressedShadow4: {
+    boxShadow: "0px 0px 0px #123924",
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+    transform: [{ translateX: 4 }, { translateY: 4 }],
+  },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -387,7 +426,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12, // Gap didukung di React Native versi baru (Expo)
+    gap: 12,
   },
   card: {
     width: "48%",
@@ -398,6 +437,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 8,
     boxShadow: "4px 4px 0px #123924",
+    shadowColor: "#123924",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   imageContainer: {
     width: "100%",
@@ -414,7 +458,8 @@ const styles = StyleSheet.create({
     color: "#123924",
     marginBottom: 4,
   },
-  cardSubtitle: { fontFamily: "Nunito_500Medium", 
+  cardSubtitle: {
+    fontFamily: "Nunito_500Medium",
     fontSize: 11,
     color: "#5C5A4F",
     marginBottom: 12,
@@ -459,6 +504,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     boxShadow: "4px 4px 0px #123924",
+    shadowColor: "#123924",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
     zIndex: 50,
   },
   emptyState: {
@@ -473,7 +523,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 4,
   },
-  emptySubText: { fontFamily: "Nunito_500Medium", 
+  emptySubText: {
+    fontFamily: "Nunito_500Medium",
     fontSize: 14,
     color: "#5C5A4F",
   },
@@ -545,6 +596,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#123924",
     boxShadow: "4px 4px 0px #123924",
+    shadowColor: "#123924",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   submitButtonText: {
     color: "#FFFFFF",

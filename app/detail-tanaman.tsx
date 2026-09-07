@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 2,
     backgroundColor: '#123924',
-    my: 8,
+    marginVertical: 8,
   },
   bigPhotoButton: {
     marginHorizontal: 20,

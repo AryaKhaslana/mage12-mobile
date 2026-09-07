@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function ProfilScreen() {
   return (
@@ -9,9 +10,14 @@ export default function ProfilScreen() {
         
         {/* HEADER SECTION */}
         <View style={styles.headerBackground}>
-          <TouchableOpacity style={styles.settingsButton}>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.settingsButton,
+              pressed && styles.pressedShadow2,
+            ]}
+          >
             <MaterialIcons name="settings" size={20} color="#3FA86B" />
-          </TouchableOpacity>
+          </Pressable>
           
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarContainer}>
@@ -31,37 +37,79 @@ export default function ProfilScreen() {
 
         {/* STATS GRID (Overlapping Header) */}
         <View style={styles.statsContainer}>
-          <View style={[styles.statBox, { backgroundColor: '#FFB627' }]}>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.statBox, 
+              { backgroundColor: '#FFB627' },
+              pressed && styles.pressedShadow3,
+            ]}
+          >
             <Text style={styles.statValue}>12</Text>
             <Text style={styles.statLabel}>Streak{'\n'}hari</Text>
-          </View>
-          <View style={[styles.statBox, { backgroundColor: '#3FA86B' }]}>
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.statBox, 
+              { backgroundColor: '#3FA86B' },
+              pressed && styles.pressedShadow3,
+            ]}
+          >
             <Text style={[styles.statValue, { color: '#FFFFFF' }]}>8</Text>
             <Text style={[styles.statLabel, { color: '#FFFFFF' }]}>Tanaman{'\n'}dirawat</Text>
-          </View>
-          <View style={[styles.statBox, { backgroundColor: '#FF6B5C' }]}>
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.statBox, 
+              { backgroundColor: '#FF6B5C' },
+              pressed && styles.pressedShadow3,
+            ]}
+          >
             <Text style={[styles.statValue, { color: '#FFFFFF' }]}>3</Text>
             <Text style={[styles.statLabel, { color: '#FFFFFF' }]}>Panen{'\n'}selesai</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* PENCAPAIAN */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Pencapaian</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            <View style={[styles.achievementIcon, { backgroundColor: '#FFB627' }]}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.achievementIcon, 
+                { backgroundColor: '#FFB627' },
+                pressed && styles.pressedShadow2,
+              ]}
+            >
               <MaterialIcons name="star" size={24} color="#1c1c17" />
-            </View>
-            <View style={[styles.achievementIcon, { backgroundColor: '#3FA86B' }]}>
+            </Pressable>
+
+            <Pressable 
+              style={({ pressed }) => [
+                styles.achievementIcon, 
+                { backgroundColor: '#3FA86B' },
+                pressed && styles.pressedShadow2,
+              ]}
+            >
               <MaterialIcons name="eco" size={24} color="#ffffff" />
-            </View>
-            <View style={[styles.achievementIcon, { backgroundColor: '#FF6B5C' }]}>
+            </Pressable>
+
+            <Pressable 
+              style={({ pressed }) => [
+                styles.achievementIcon, 
+                { backgroundColor: '#FF6B5C' },
+                pressed && styles.pressedShadow2,
+              ]}
+            >
               <MaterialIcons name="local-fire-department" size={24} color="#ffffff" />
-            </View>
-            <View style={[styles.achievementIconLocked]}>
+            </Pressable>
+
+            <View style={styles.achievementIconLocked}>
               <MaterialIcons name="lock" size={24} color="#5C5A4F" />
             </View>
-            <View style={[styles.achievementIconLocked]}>
+
+            <View style={styles.achievementIconLocked}>
               <MaterialIcons name="lock" size={24} color="#5C5A4F" />
             </View>
           </ScrollView>
@@ -71,75 +119,133 @@ export default function ProfilScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Tanaman kamu</Text>
-            <TouchableOpacity>
+            <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
               <Text style={styles.seeAllText}>Lihat semua</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            <TouchableOpacity style={styles.plantCard}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.plantCard,
+                pressed && styles.pressedShadow2,
+              ]}
+              onPress={() => router.push('/detail-tanaman')}
+            >
               <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAeBxTiUwwoTMgudjdj9PgQFtJidP2AK_vUsPxq8JxhUJEvxl1WgL7kLgk3B2bdwFyiZZBkuKQX_gYrP0z8weq2eU3nrEYxeJQ8WfmHIoTPDB2vmgkolUodiL6sroD_MeeZ6eqhzyEPnBAvNWJY7K99COxjwejErEXbTnUDbSipCdkZL6Pd_gwVaxHX4Eu-ekt3GktqcnPmtKrsMldGUirnLdVFlmcNAWPGz08B0CyexMI-X8OBU5pqog' }} style={styles.plantImage} />
               <View style={styles.plantNameContainer}>
                 <Text style={styles.plantName} numberOfLines={1}>Sukulen</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
             
-            <TouchableOpacity style={styles.plantCard}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.plantCard,
+                pressed && styles.pressedShadow2,
+              ]}
+              onPress={() => router.push('/detail-tanaman')}
+            >
               <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBnD8FioRmbr32_6GQPHPLUq4X97BPqsICXIY6WWF_uiONFKNAAgw5FlRWutAxqhGTM32ZiJ-YEYAH81STF8kODn5oe3HGFFfrbqedghhVzVo-6OI5FyLM8y5E5DughXujTJVaD_DJBmGx6xrRtTr_vNI92KTzYsF6nGpjL5SwiMIWFeM7u35ObrPEs2YZ9xsfbgwTnh9oExxBY6vPmb94YXOZ3xURilwA3eEjb-2pB9ui_r8qC-MgzKg' }} style={styles.plantImage} />
               <View style={styles.plantNameContainer}>
                 <Text style={styles.plantName} numberOfLines={1}>Kemangi</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.plantCard}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.plantCard,
+                pressed && styles.pressedShadow2,
+              ]}
+              onPress={() => router.push('/detail-tanaman')}
+            >
               <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8Jf2gXXX6KbW3vgROOwPkba2eZWB01adI92JMLc5umMr27ILRKijHEIUjnWwhONyGePL-8AvzUQZsPRCcAr_vVwZTdcBYQEutpIY7t45QLoqs37Q7MiAStHOwPIBvAHCEYwdifuNzcs3oDdFBVKaNMceNU_7U0mwH3pSs6IxmQw8ZogNWNow-FFX5T5l5aP-eaz9uvBQFvPJGL29A-obPSSG56MjhmyTz9WzWu5yCC3Vtq9YtFnpNIQ' }} style={styles.plantImage} />
               <View style={styles.plantNameContainer}>
                 <Text style={styles.plantName} numberOfLines={1}>Tomat</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.plantAddCard}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.plantAddCard,
+                pressed && styles.pressedShadow2,
+              ]}
+            >
               <View style={styles.plantAddIcon}>
                 <MaterialIcons name="add" size={24} color="#123924" />
               </View>
               <Text style={styles.plantAddText}>Tambah</Text>
-            </TouchableOpacity>
+            </Pressable>
           </ScrollView>
         </View>
 
         {/* MENU LIST */}
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={styles.menuItem}>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem,
+              pressed && styles.menuItemPressed,
+            ]}
+          >
             <MaterialIcons name="person" size={24} color="#123924" />
             <Text style={styles.menuText}>Edit Profil</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem,
+              pressed && styles.menuItemPressed,
+            ]}
+          >
             <MaterialIcons name="notifications" size={24} color="#123924" />
             <Text style={styles.menuText}>Pengaturan Notifikasi</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem,
+              pressed && styles.menuItemPressed,
+            ]}
+          >
             <MaterialIcons name="help" size={24} color="#123924" />
             <Text style={styles.menuText}>Bantuan & Dukungan</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem,
+              pressed && styles.menuItemPressed,
+            ]}
+          >
             <MaterialIcons name="info" size={24} color="#123924" />
             <Text style={styles.menuText}>Informasi Akun</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]}>
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem, 
+              { borderBottomWidth: 0 },
+              pressed && styles.menuItemPressed,
+            ]}
+          >
             <MaterialIcons name="privacy-tip" size={24} color="#123924" />
             <Text style={styles.menuText}>Kebijakan Privasi</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* LOGOUT BUTTON */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <Pressable 
+          style={({ pressed }) => [
+            styles.logoutButton,
+            pressed && styles.pressedShadow3,
+          ]}
+        >
           <MaterialIcons name="logout" size={24} color="#FF6B5C" />
           <Text style={styles.logoutText}>Keluar</Text>
-        </TouchableOpacity>
+        </Pressable>
 
       </ScrollView>
     </SafeAreaView>
@@ -154,6 +260,24 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
+
+  // State tertekan Neobrutalism
+  pressedShadow2: {
+    boxShadow: '0px 0px 0px #123924',
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+    transform: [{ translateX: 2 }, { translateY: 2 }],
+  },
+  pressedShadow3: {
+    boxShadow: '0px 0px 0px #123924',
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+    transform: [{ translateX: 3 }, { translateY: 3 }],
+  },
+  menuItemPressed: {
+    backgroundColor: '#f1eee6',
+  },
+
   headerBackground: {
     backgroundColor: '#1F5C3D',
     borderBottomLeftRadius: 28,
@@ -176,6 +300,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '2px 2px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 1,
@@ -213,6 +338,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '2px 2px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 1,
@@ -233,7 +359,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginTop: -40, // Menarik container ke atas header
+    marginTop: -40,
     zIndex: 10,
     gap: 12,
   },
@@ -245,6 +371,7 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '3px 3px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 3, height: 3 },
     shadowOpacity: 1,
@@ -297,6 +424,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '2px 2px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 1,
@@ -312,7 +440,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.7,
-    marginTop: 6, // Biar center secara vertikal dengan icon yang lebih besar
+    marginTop: 6,
   },
   plantCard: {
     width: 90,
@@ -322,6 +450,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     overflow: 'hidden',
+    boxShadow: '2px 2px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 1,
@@ -354,6 +483,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 8,
+    boxShadow: '2px 2px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 1,
@@ -384,6 +514,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     borderRadius: 20,
     overflow: 'hidden',
+    boxShadow: '3px 3px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 3, height: 3 },
     shadowOpacity: 1,
@@ -415,6 +546,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    boxShadow: '3px 3px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 3, height: 3 },
     shadowOpacity: 1,

@@ -1,185 +1,336 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-
+import { MaterialIcons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    Modal,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import api from "../../services/api";
+const JENIS_TANAMAN_ENUM = [
+  "Padi",
+  "Jagung",
+  "Singkong",
+  "Ubi Jalar",
+  "Kedelai",
+  "Kacang Tanah",
+  "Tomat",
+  "Cabai Merah",
+  "Cabai Rawit",
+  "Bawang Merah",
+  "Bawang Putih",
+  "Kubis",
+  "Kangkung",
+  "Bayam",
+  "Terong",
+  "Timun",
+  "Labu Siam",
+  "Wortel",
+  "Kentang",
+  "Pisang",
+];
 export default function TanamanScreen() {
-  const [activeFilter, setActiveFilter] = useState('Semua');
-  const filters = ['Semua', 'Sayuran Daun', 'Sayuran Buah', 'Herbal'];
-  const router = useRouter();
-
+  const [activeFilter, setActiveFilter] = useState("Semua");
+  const filters = ["Semua", "Perlu Disiram"];
+  const [tanamanList, setTanamanList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fetchTanaman = async () => {
+    if (tanamanList.length === 0) setIsLoading(true);
+    else setIsRefreshing(true);
+    try {
+      const response = await api.get("/tanaman");
+      if (response.data?.status === "success") {
+        setTanamanList(response.data.data);
+      }
+    } catch (error: any) {
+      console.error("Error get tanaman:", error);
+      Alert.alert(
+        "Gagal",
+        error.response?.data?.message || "Tidak dapat memuat daftar tanaman",
+      );
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+  useEffect(() => {
+    fetchTanaman();
+  }, []);
+  const handleTambahTanaman = async () => {
+    setIsSubmitting(true);
+    try {
+      // CONTRACT: body (JSON): { jenisTanaman: string }
+      const response = await api.post("/tanaman", {
+        jenisTanaman: selectedTanaman,
+      });
+      if (response.data?.status === "success") {
+        Alert.alert(
+          "Sukses",
+          response.data.message || "Tanaman berhasil ditambahkan!",
+        );
+        setModalVisible(false);
+        fetchTanaman();
+      }
+    } catch (error: any) {
+      console.error("Error tambah tanaman:", error);
+      Alert.alert(
+        "Gagal",
+        error.response?.data?.message || "Terjadi kesalahan.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  const handleSiram = async (tanamanId: number) => {
+    try {
+      // CONTRACT: POST /logs { tanamanId, tipeValidasi: "button_only" }
+      const response = await api.post("/logs", {
+        tanamanId,
+        tipeValidasi: "button_only",
+      });
+      if (response.data?.status === "success") {
+        const { skorSaatIni, streak } = response.data.data;
+        Alert.alert(
+          "Sukses Menyiram!",
+          `+${skorSaatIni} poin! Streak: ${streak} hari 🔥`,
+        );
+        fetchTanaman();
+      }
+    } catch (error: any) {
+      console.error("Error nyiram:", error);
+      Alert.alert(
+        "Gagal Menyiram",
+        error.response?.data?.message || "Terjadi kesalahan.",
+      );
+    }
+  };
+  const filteredList = tanamanList.filter((tanaman) => {
+    if (activeFilter === "Perlu Disiram")
+      return tanaman.statusPenyiraman === "PERLU_SIRAM";
+    return true;
+  });
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              colors={["#3FA86B"]}
+              refreshing={isRefreshing}
+              onRefresh={fetchTanaman}
+            />
+          }
+        >
           {/* HEADER */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Tanaman Kamu</Text>
-            <TouchableOpacity style={styles.searchButton}>
-              <MaterialIcons name="search" size={24} color="#123924" />
-            </TouchableOpacity>
+            {/* Phantom UI removed */}
           </View>
-
           {/* FILTERS */}
           <View style={styles.filterSection}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterScrollContent}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterScroll}
+              contentContainerStyle={styles.filterScrollContent}
+            >
               {filters.map((filter) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={filter}
                   style={[
-                    styles.filterChip, 
-                    activeFilter === filter ? styles.filterChipActive : styles.filterChipInactive
+                    styles.filterChip,
+                    activeFilter === filter
+                      ? styles.filterChipActive
+                      : styles.filterChipInactive,
                   ]}
                   onPress={() => setActiveFilter(filter)}
                 >
-                  <Text style={[
-                    styles.filterChipText,
-                    activeFilter === filter ? styles.filterChipTextActive : styles.filterChipTextInactive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      activeFilter === filter
+                        ? styles.filterChipTextActive
+                        : styles.filterChipTextInactive,
+                    ]}
+                  >
                     {filter}
                   </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <TouchableOpacity style={styles.gridToggleButton}>
-              <MaterialIcons name="grid-view" size={24} color="#123924" />
-            </TouchableOpacity>
+            {/* Phantom UI (grid toggle) removed */}
           </View>
-
           {/* PLANT GRID */}
-          <View style={styles.gridContainer}>
-            
-            {/* Card 1 */}
-            <TouchableOpacity style={styles.card} activeOpacity={0.9}>
-              <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBtM7FlFlJScHO9oCJe2itzfrwNhmdWYV1r4xw6CmgQoXGemEfGr3Gvc0HanP20Y7UHtTsE520T9Wb0U112C1lSjfX83UkKEsZqtcGWWvFeg5KDyI_3ZiiAmeXcAw9Cktik-ce-yYaw9ttr-WoBkmFbEBc6_ZmS3TWgAGiMoI04QJQWQFNDByLBiloH34k7XxvkHZ0kDBv41Q0oKfG0aaBjDUWmZJ5ax9KDKddHlUIvNaySMO_oxRK1aA' }} 
-                  style={styles.cardImage} 
-                />
-                <View style={[styles.statusDot, { backgroundColor: '#3FA86B' }]} />
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>Pakcoy Super</Text>
-                <Text style={styles.cardSubtitle}>Hari ke-14</Text>
-                <View style={[styles.badge, { backgroundColor: '#3FA86B' }]}>
-                  <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Sehat</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Card 2 */}
-            <TouchableOpacity style={styles.card} activeOpacity={0.9}>
-              <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCvE7Ekw_pmEeEE0ZubnU4B86Ql7_5bp83l7dZXR9VthK4kBpVFkFWbQUUWedIveMMfrHn6mqO6RdgS-UZWcGIrA2xODMYMjMnLZgaFPPcYQh4W1JOHodRWxYcQdS82ovHKMfF_qWJQK3GxhMMZiPtiYW1ZoiMnuaKK-yRIC7iUChUBU0pe6eVRQTaZuZRYcSJhJE0ZlAHxA4TevSEmwZzcRrUduOTivP1uaECIEnZ7oFy82kZ_29zQoA' }} 
-                  style={styles.cardImage} 
-                />
-                <View style={[styles.statusDot, { backgroundColor: '#FF6B5C' }]} />
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>Tomat Ceri</Text>
-                <Text style={styles.cardSubtitle}>Hari ke-21</Text>
-                <View style={[styles.badge, { backgroundColor: '#FF6B5C' }]}>
-                  <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Perlu air</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Card 3 */}
-            <TouchableOpacity style={styles.card} activeOpacity={0.9}>
-              <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYk0JcyoWT0aAObyPxwi9crqP6tqs9lcrHTidI7il0PIDbVDPpuyV5WvZ76jCdYJK1uizLRqnyCFlBMGU83nJaV0Z5GWSlQE8TFoBb5gkiCZnvKEwys2kVV8NCHcbAhp2xRcKV7z0VgfRtCmdb3ouWOV5pAR0rvbXPzypUjjhtyua61vWCzXz1ci4hdg3LcrjC9At0U7aYZGBNCWJBy-7Z7Wcgp6bHZBqxw_QmsX7xf0J7GfNpOs8EHA' }} 
-                  style={styles.cardImage} 
-                />
-                <View style={[styles.statusDot, { backgroundColor: '#3FA86B' }]} />
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>Kale Nero</Text>
-                <Text style={styles.cardSubtitle}>Hari ke-30</Text>
-                <View style={[styles.badge, { backgroundColor: '#3FA86B' }]}>
-                  <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Sehat</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Card 4 */}
-            <TouchableOpacity style={styles.card} activeOpacity={0.9}>
-              <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDAn7f4DcrZCVYQAkfLObUQylIkLZEQmvGcDRv6K36Bw1JiqYHEIftPUnGAe7236KQyFWbNZGCGL7c8CXsdeVsWMB_fGybW_4_wzvWous1GstPFDAsvf8a8HyokIxetHc4b6dmsX--IOfZLmgDkqXrKhnCiC8Kv91xCpq-w1yl2-4B-wkZqux20VQAHItYRkpuV0xIWBiTK8_RAZv2guOoHu1zmRvGjfxczQF6P2GEfzp33fXQJFYhG3w' }} 
-                  style={styles.cardImage} 
-                />
-                <View style={[styles.statusDot, { backgroundColor: '#FF6B5C' }]} />
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>Basil Manis</Text>
-                <Text style={styles.cardSubtitle}>Hari ke-18</Text>
-                <View style={[styles.badge, { backgroundColor: '#FF6B5C' }]}>
-                  <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Perlu air</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Card 5 (Harvested / Opacity 80) */}
-            <TouchableOpacity style={[styles.card, { opacity: 0.8 }]} activeOpacity={0.9}>
-              <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBbZZfiEKpT8ERGZUkLN_wICDP4eUNNPYmlQrR8eBOG-1Q9J7nELuh8e1ELkKEqFjSY_w5DDnaAgo2B1wrYAi6cT35smSCdCqKtIA10uw3Ow-a_X3glzxLLJoqZCyu-QF4IKzhObv3c1d3LqXp0hoq3AVr9dKIOLA_EIUD8iuOKBGKYXOaZceqoukDLRn8eepg8p1MGePukTMn2e_MhryrBAGYgC69a6W9q1WlOgn4roT8slfYa7Ea4dw' }} 
-                  style={styles.cardImage} 
-                />
-                <View style={[styles.statusDot, { backgroundColor: '#bdcabd' }]} />
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>Selada Air</Text>
-                <Text style={styles.cardSubtitle}>Panen Hari 45</Text>
-                <View style={[styles.badge, { backgroundColor: '#bdcabd' }]}>
-                  <Text style={[styles.badgeText, { color: '#1c1c17' }]}>Dipanen</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Card 6 */}
-            <TouchableOpacity style={styles.card} activeOpacity={0.9}>
-              <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCjbVOHCu5rlT-rKqgknffT4V03AFBFgnfMYpjyQMVSnVgijs8GLVtWqG7kZETJw5Bx8d2NVfnHS5ZS9WCgCPX5MmWURcIe5FI9lqLvGJ3oBB-22ObxvDfSKwN0Zpr8TDB55_WBaZR0iUJYSk1SmjWq7yjLHxLNR8JRW-mvduwEvWdwHsL3SHNPbzKQOOc2eBey59eDEJx2fwfG_Ay7u62BdddLjj0yiCLYbD-1F7A_vF6SZxn1nNuwiQ' }} 
-                  style={styles.cardImage} 
-                />
-                <View style={[styles.statusDot, { backgroundColor: '#3FA86B' }]} />
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>Cabai Rawit</Text>
-                <Text style={styles.cardSubtitle}>Hari ke-10</Text>
-                <View style={[styles.badge, { backgroundColor: '#3FA86B' }]}>
-                  <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Sehat</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-          </View>
+          {isLoading ? (
+            <ActivityIndicator
+              size="large"
+              color="#3FA86B"
+              style={{ marginTop: 50 }}
+            />
+          ) : filteredList.length === 0 ? (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="eco" size={64} color="#bdcabd" />
+              <Text style={styles.emptyText}>Belum ada tanaman.</Text>
+              <Text style={styles.emptySubText}>
+                Tekan + untuk menanam sekarang!
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.gridContainer}>
+              {filteredList.map((tanaman) => {
+                const hariKe =
+                  Math.floor(
+                    (Date.now() - new Date(tanaman.tanggalTanam).getTime()) /
+                      86400000,
+                  ) + 1;
+                const isPerluSiram = tanaman.statusPenyiraman === "PERLU_SIRAM";
+                return (
+                  <View key={tanaman.id} style={styles.card}>
+                    <View
+                      style={[
+                        styles.imageContainer,
+                        { alignItems: "center", justifyContent: "center" },
+                      ]}
+                    >
+                      <MaterialIcons
+                        name="local-florist"
+                        size={40}
+                        color="#123924"
+                      />
+                    </View>
+                    <View style={styles.cardBody}>
+                      <Text style={styles.cardTitle} numberOfLines={1}>
+                        {tanaman.jenisTanaman}
+                      </Text>
+                      <Text style={styles.cardSubtitle}>Hari ke-{hariKe}</Text>
+                      <View style={styles.cardFooter}>
+                        <View
+                          style={[
+                            styles.badge,
+                            {
+                              backgroundColor: isPerluSiram
+                                ? "#FF6B5C"
+                                : "#3FA86B",
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[styles.badgeText, { color: "#FFFFFF" }]}
+                          >
+                            {isPerluSiram ? "Perlu Disiram" : "Aman"}
+                          </Text>
+                        </View>
+                        {isPerluSiram && (
+                          <TouchableOpacity
+                            style={styles.waterButton}
+                            onPress={() => handleSiram(tanaman.id)}
+                          >
+                            <MaterialIcons
+                              name="water-drop"
+                              size={20}
+                              color="#FFFFFF"
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
-
         {/* FAB (Floating Action Button) */}
-        <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
+        <TouchableOpacity
+          style={styles.fab}
+          activeOpacity={0.9}
+          onPress={() => setModalVisible(true)}
+        >
           <MaterialIcons name="add" size={32} color="#FFFFFF" />
         </TouchableOpacity>
-
+        {/* MODAL TAMBAH TANAMAN */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Tanam Baru</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <MaterialIcons name="close" size={24} color="#123924" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
+              <ScrollView style={styles.pickerContainer}>
+                {JENIS_TANAMAN_ENUM.map((jenis) => (
+                  <TouchableOpacity
+                    key={jenis}
+                    style={[
+                      styles.pickerItem,
+                      selectedTanaman === jenis && styles.pickerItemActive,
+                    ]}
+                    onPress={() => setSelectedTanaman(jenis)}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerItemText,
+                        selectedTanaman === jenis &&
+                          styles.pickerItemTextActive,
+                      ]}
+                    >
+                      {jenis}
+                    </Text>
+                    {selectedTanaman === jenis && (
+                      <MaterialIcons
+                        name="check-circle"
+                        size={20}
+                        color="#FFFFFF"
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleTambahTanaman}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Tanam Sekarang!</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
+    backgroundColor: "#FBF8F0",
   },
   container: {
     flex: 1,
-    position: 'relative',
+    position: "relative",
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -187,39 +338,23 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Memberi ruang biar kartu bawah nggak ketutup FAB
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 24,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '800',
-    color: '#1F5C3D',
-  },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#123924',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#1F5C3D",
   },
   filterSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
   },
   filterScroll: {
     flex: 1,
-    marginRight: 12,
   },
   filterScrollContent: {
     gap: 8,
@@ -228,75 +363,46 @@ const styles = StyleSheet.create({
   filterChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#123924',
+    borderColor: "#123924",
   },
   filterChipActive: {
-    backgroundColor: '#3FA86B',
+    backgroundColor: "#3FA86B",
   },
   filterChipInactive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   filterChipText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: "Nunito_700Bold",
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   filterChipTextInactive: {
-    color: '#3e4a40',
-  },
-  gridToggleButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#FBF8F0',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
+    color: "#3e4a40",
   },
   gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: 12, // Gap didukung di React Native versi baru (Expo)
   },
   card: {
-    width: '48%', // Mengambil hampir setengah layar, sisa untuk gap
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    width: "48%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#123924',
-    overflow: 'hidden',
+    borderColor: "#123924",
+    overflow: "hidden",
     marginBottom: 8,
-    shadowColor: '#123924',
-    shadowOffset: { width: 5, height: 5 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
+    boxShadow: "4px 4px 0px #123924",
   },
   imageContainer: {
-    width: '100%',
+    width: "100%",
     aspectRatio: 1,
-    backgroundColor: '#b1f1c8',
-    position: 'relative',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  statusDot: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#123924',
+    backgroundColor: "#b1f1c8",
   },
   cardBody: {
     padding: 12,
@@ -304,45 +410,145 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#123924',
+    fontFamily: "Nunito_700Bold",
+    color: "#123924",
     marginBottom: 4,
   },
-  cardSubtitle: {
+  cardSubtitle: { fontFamily: "Nunito_500Medium", 
     fontSize: 11,
-    color: '#5C5A4F',
+    color: "#5C5A4F",
     marginBottom: 12,
   },
+  cardFooter: {
+    marginTop: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: '#123924',
-    marginTop: 'auto', // Mendorong badge ke bawah
+    borderColor: "#123924",
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 9,
+    fontFamily: "Nunito_700Bold",
+  },
+  waterButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#FF6B5C",
+    borderWidth: 1,
+    borderColor: "#123924",
+    alignItems: "center",
+    justifyContent: "center",
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20,
     right: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#3FA86B',
+    backgroundColor: "#3FA86B",
     borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#123924',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6,
+    borderColor: "#123924",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "4px 4px 0px #123924",
     zIndex: 50,
-  }
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: "Nunito_700Bold",
+    color: "#123924",
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  emptySubText: { fontFamily: "Nunito_500Medium", 
+    fontSize: 14,
+    color: "#5C5A4F",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(18, 57, 36, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FBF8F0",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 2,
+    borderColor: "#123924",
+    borderBottomWidth: 0,
+    padding: 24,
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#123924",
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontFamily: "Nunito_700Bold",
+    color: "#5C5A4F",
+    marginBottom: 12,
+  },
+  pickerContainer: {
+    maxHeight: 250,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: "#123924",
+    borderRadius: 30,
+    backgroundColor: "#FFFFFF",
+    padding: 8,
+  },
+  pickerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  pickerItemActive: {
+    backgroundColor: "#3FA86B",
+  },
+  pickerItemText: {
+    fontSize: 14,
+    fontFamily: "Nunito_700Bold",
+    color: "#123924",
+  },
+  pickerItemTextActive: {
+    color: "#FFFFFF",
+  },
+  submitButton: {
+    backgroundColor: "#1F5C3D",
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#123924",
+    boxShadow: "4px 4px 0px #123924",
+  },
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Nunito_700Bold",
+  },
 });

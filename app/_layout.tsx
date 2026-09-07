@@ -5,11 +5,17 @@ export default function RootLayout() {
   return (
     <>
       <Stack>
-        {/* Mengarahkan routing utama ke folder (tabs) tanpa double header */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Tambahkan baris ini untuk mendaftarkan Pop-Up Modal */}
+        <Stack.Screen 
+          name="detail-tanaman" 
+          options={{ 
+            presentation: 'modal', // Ini yang bikin animasinya muncul dari bawah (pop-up)
+            headerShown: false 
+          }} 
+        />
       </Stack>
       
-      {/* Kunci status bar HP ke mode gelap karena background aplikasi kita terang */}
       <StatusBar style="dark" />
     </>
   );

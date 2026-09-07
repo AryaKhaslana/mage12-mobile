@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function TanamanScreen() {
   const [activeFilter, setActiveFilter] = useState('Semua');
   const filters = ['Semua', 'Sayuran Daun', 'Sayuran Buah', 'Herbal'];
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safeArea}>

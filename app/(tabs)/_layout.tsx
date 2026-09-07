@@ -1,33 +1,62 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
+        headerShown: false, // Hilangkan header atas bawaan
+        tabBarActiveTintColor: '#3FA86B', // Warna Primary aktif
+        tabBarInactiveTintColor: '#5C5A4F', // Warna Muted tidak aktif
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 2,
+          borderTopColor: '#123924', // Garis tegas Neobrutalism
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontFamily: 'System', // Nanti bisa diganti Plus Jakarta Sans kalau font udah di-load
+          fontSize: 10,
+          fontWeight: 'bold',
+        }
       }}>
+      
+      {/* 1. Menu Home */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="home" color={color} />,
         }}
       />
+      
+      {/* 2. Menu Tanaman */}
       <Tabs.Screen
-        name="explore"
+        name="tanaman"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Tanaman',
+          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="yard" color={color} />,
+        }}
+      />
+
+      {/* 3. Menu Komunitas */}
+      <Tabs.Screen
+        name="komunitas"
+        options={{
+          title: 'Komunitas',
+          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="forum" color={color} />,
+        }}
+      />
+
+      {/* 4. Menu Profil */}
+      <Tabs.Screen
+        name="profil"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="person" color={color} />,
         }}
       />
     </Tabs>

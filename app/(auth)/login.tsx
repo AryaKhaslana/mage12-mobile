@@ -1,26 +1,47 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
-
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withTiming,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
-
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  // Animasi Mascot
+  const scale = useSharedValue(1);
+  React.useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 1500 }),
+        withTiming(1, { duration: 1500 }),
+      ),
+      -1,
+      true,
+    );
+  }, []);
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
   const handleLogin = async () => {
     if (!email || !password) return;
     setIsLoading(true);
@@ -44,20 +65,21 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Mascot */}
         <View style={styles.mascotContainer}>
-          <View style={styles.mascot} />
+          <Animated.Image
+            source={require("../../assets/images/icontampilanawal/seedling-halo.png")}
+            style={[styles.mascot, animatedStyle]}
+            resizeMode="contain"
+          />
           <Text style={styles.mascotText}>TaniSync</Text>
         </View>
-
         {/* Header */}
         <Text style={styles.title}>Selamat datang balik!</Text>
         <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu</Text>
-
         {/* Inputs */}
         <View style={styles.inputContainer}>
           <TextInput
@@ -70,7 +92,6 @@ export default function LoginScreen() {
             autoCapitalize="none"
           />
         </View>
-
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -91,7 +112,6 @@ export default function LoginScreen() {
             />
           </TouchableOpacity>
         </View>
-
         {/* Submit Button */}
         <TouchableOpacity
           style={styles.primaryButton}
@@ -104,7 +124,6 @@ export default function LoginScreen() {
             <Text style={styles.primaryButtonText}>Masuk</Text>
           )}
         </TouchableOpacity>
-
         {/* Footer */}
         <TouchableOpacity
           style={styles.footerLink}
@@ -119,56 +138,64 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FBF8F0" },
   container: { flex: 1, padding: 24, paddingTop: 48 },
   mascotContainer: { alignItems: "center", marginBottom: 32 },
   mascot: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#3FA86B",
+    width: 100,
+    height: 100,
     marginBottom: 8,
   },
-  mascotText: { fontSize: 16, fontWeight: "700", color: "#123924" },
-  title: { fontSize: 28, fontWeight: "800", color: "#123924", marginBottom: 8 },
-  subtitle: { fontSize: 14, color: "#5C5A4F", marginBottom: 32 },
+  mascotText: { fontSize: 16, fontFamily: "Nunito_700Bold", color: "#123924" },
+  title: {
+    fontSize: 28,
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#123924",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontFamily: "Nunito_500Medium",
+    color: "#5C5A4F",
+    marginBottom: 32,
+  },
   inputContainer: { marginBottom: 16, position: "relative" },
   input: {
     height: 56,
     borderWidth: 2,
     borderColor: "#123924",
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    borderRadius: 30,
+    paddingHorizontal: 20,
     backgroundColor: "#FFFFFF",
     fontSize: 16,
+    fontFamily: "Nunito_500Medium",
     color: "#123924",
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
+    boxShadow: "4px 4px 0px #123924",
   },
   eyeIcon: { position: "absolute", right: 16, top: 16 },
   primaryButton: {
     backgroundColor: "#3FA86B",
     height: 56,
-    borderRadius: 16,
+    borderRadius: 30,
     borderWidth: 2,
     borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 32,
     marginTop: 16,
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
+    boxShadow: "4px 4px 0px #123924",
   },
-  primaryButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Nunito_700Bold",
+  },
   footerLink: { alignItems: "center" },
-  footerText: { color: "#5C5A4F", fontSize: 14 },
-  footerTextBold: { color: "#123924", fontWeight: "700" },
+  footerText: {
+    color: "#5C5A4F",
+    fontSize: 14,
+    fontFamily: "Nunito_500Medium",
+  },
+  footerTextBold: { color: "#123924", fontFamily: "Nunito_700Bold" },
 });

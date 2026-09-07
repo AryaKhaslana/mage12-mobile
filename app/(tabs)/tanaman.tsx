@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
-
 const JENIS_TANAMAN_ENUM = [
   "Padi",
   "Jagung",
@@ -36,23 +35,18 @@ const JENIS_TANAMAN_ENUM = [
   "Kentang",
   "Pisang",
 ];
-
 export default function TanamanScreen() {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const filters = ["Semua", "Perlu Disiram"];
-
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const fetchTanaman = async () => {
     if (tanamanList.length === 0) setIsLoading(true);
     else setIsRefreshing(true);
-
     try {
       const response = await api.get("/tanaman");
       if (response.data?.status === "success") {
@@ -69,11 +63,9 @@ export default function TanamanScreen() {
       setIsRefreshing(false);
     }
   };
-
   useEffect(() => {
     fetchTanaman();
   }, []);
-
   const handleTambahTanaman = async () => {
     setIsSubmitting(true);
     try {
@@ -99,7 +91,6 @@ export default function TanamanScreen() {
       setIsSubmitting(false);
     }
   };
-
   const handleSiram = async (tanamanId: number) => {
     try {
       // CONTRACT: POST /logs { tanamanId, tipeValidasi: "button_only" }
@@ -123,13 +114,11 @@ export default function TanamanScreen() {
       );
     }
   };
-
   const filteredList = tanamanList.filter((tanaman) => {
     if (activeFilter === "Perlu Disiram")
       return tanaman.statusPenyiraman === "PERLU_SIRAM";
     return true;
   });
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -149,7 +138,6 @@ export default function TanamanScreen() {
             <Text style={styles.headerTitle}>Tanaman Kamu</Text>
             {/* Phantom UI removed */}
           </View>
-
           {/* FILTERS */}
           <View style={styles.filterSection}>
             <ScrollView
@@ -184,7 +172,6 @@ export default function TanamanScreen() {
             </ScrollView>
             {/* Phantom UI (grid toggle) removed */}
           </View>
-
           {/* PLANT GRID */}
           {isLoading ? (
             <ActivityIndicator
@@ -209,7 +196,6 @@ export default function TanamanScreen() {
                       86400000,
                   ) + 1;
                 const isPerluSiram = tanaman.statusPenyiraman === "PERLU_SIRAM";
-
                 return (
                   <View key={tanaman.id} style={styles.card}>
                     <View
@@ -229,7 +215,6 @@ export default function TanamanScreen() {
                         {tanaman.jenisTanaman}
                       </Text>
                       <Text style={styles.cardSubtitle}>Hari ke-{hariKe}</Text>
-
                       <View style={styles.cardFooter}>
                         <View
                           style={[
@@ -247,7 +232,6 @@ export default function TanamanScreen() {
                             {isPerluSiram ? "Perlu Disiram" : "Aman"}
                           </Text>
                         </View>
-
                         {isPerluSiram && (
                           <TouchableOpacity
                             style={styles.waterButton}
@@ -268,7 +252,6 @@ export default function TanamanScreen() {
             </View>
           )}
         </ScrollView>
-
         {/* FAB (Floating Action Button) */}
         <TouchableOpacity
           style={styles.fab}
@@ -277,7 +260,6 @@ export default function TanamanScreen() {
         >
           <MaterialIcons name="add" size={32} color="#FFFFFF" />
         </TouchableOpacity>
-
         {/* MODAL TAMBAH TANAMAN */}
         <Modal
           animationType="slide"
@@ -293,7 +275,6 @@ export default function TanamanScreen() {
                   <MaterialIcons name="close" size={24} color="#123924" />
                 </TouchableOpacity>
               </View>
-
               <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
               <ScrollView style={styles.pickerContainer}>
                 {JENIS_TANAMAN_ENUM.map((jenis) => (
@@ -324,7 +305,6 @@ export default function TanamanScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-
               <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleTambahTanaman}
@@ -343,7 +323,6 @@ export default function TanamanScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -366,7 +345,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: "Nunito_800ExtraBold",
     color: "#1F5C3D",
   },
   filterSection: {
@@ -384,7 +363,7 @@ const styles = StyleSheet.create({
   filterChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 2,
     borderColor: "#123924",
   },
@@ -396,7 +375,7 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
   },
   filterChipTextActive: {
     color: "#FFFFFF",
@@ -413,16 +392,12 @@ const styles = StyleSheet.create({
   card: {
     width: "48%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 2,
     borderColor: "#123924",
     overflow: "hidden",
     marginBottom: 8,
-    shadowColor: "#123924",
-    shadowOffset: { width: 5, height: 5 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
+    boxShadow: "4px 4px 0px #123924",
   },
   imageContainer: {
     width: "100%",
@@ -435,11 +410,11 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#123924",
     marginBottom: 4,
   },
-  cardSubtitle: {
+  cardSubtitle: { fontFamily: "Nunito_500Medium", 
     fontSize: 11,
     color: "#5C5A4F",
     marginBottom: 12,
@@ -459,7 +434,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
   },
   waterButton: {
     width: 28,
@@ -483,11 +458,7 @@ const styles = StyleSheet.create({
     borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#123924",
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6,
+    boxShadow: "4px 4px 0px #123924",
     zIndex: 50,
   },
   emptyState: {
@@ -497,12 +468,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#123924",
     marginTop: 16,
     marginBottom: 4,
   },
-  emptySubText: {
+  emptySubText: { fontFamily: "Nunito_500Medium", 
     fontSize: 14,
     color: "#5C5A4F",
   },
@@ -529,12 +500,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
   },
   modalLabel: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#5C5A4F",
     marginBottom: 12,
   },
@@ -543,7 +514,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderWidth: 2,
     borderColor: "#123924",
-    borderRadius: 16,
+    borderRadius: 30,
     backgroundColor: "#FFFFFF",
     padding: 8,
   },
@@ -560,7 +531,7 @@ const styles = StyleSheet.create({
   },
   pickerItemText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "Nunito_700Bold",
     color: "#123924",
   },
   pickerItemTextActive: {
@@ -568,20 +539,16 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: "#1F5C3D",
-    borderRadius: 16,
+    borderRadius: 30,
     paddingVertical: 16,
     alignItems: "center",
     borderWidth: 2,
     borderColor: "#123924",
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
+    boxShadow: "4px 4px 0px #123924",
   },
   submitButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
   },
 });

@@ -15,13 +15,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
-
 export default function DashboardScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   useEffect(() => {
     const checkAuthAndFetch = async () => {
       const token = await SecureStore.getItemAsync("userToken");
@@ -33,7 +31,6 @@ export default function DashboardScreen() {
     };
     checkAuthAndFetch();
   }, []);
-
   const fetchDashboardData = async () => {
     if (tanamanList.length === 0 && !userData) {
       setIsLoading(true);
@@ -51,7 +48,6 @@ export default function DashboardScreen() {
           return null;
         }),
       ]);
-
       if (meRes?.data?.data) {
         setUserData(meRes.data.data);
       }
@@ -70,7 +66,6 @@ export default function DashboardScreen() {
       setIsRefreshing(false);
     }
   };
-
   const handleLogAktivitas = async (tanamanId: number) => {
     try {
       // payload disesuaikan dengan CONTRACT.md (tipeValidasi: "button_only")
@@ -78,7 +73,6 @@ export default function DashboardScreen() {
         tanamanId,
         tipeValidasi: "button_only",
       });
-
       if (response.data?.status === "success") {
         Alert.alert(
           "Mantap!",
@@ -94,7 +88,6 @@ export default function DashboardScreen() {
       );
     }
   };
-
   if (isLoading) {
     return (
       <SafeAreaView
@@ -107,7 +100,6 @@ export default function DashboardScreen() {
       </SafeAreaView>
     );
   }
-
   // Filter Reminder: PERLU_SIRAM atau sisa hari panen terdekat (misal <= 7 hari)
   const reminders = [...tanamanList]
     .filter((t) => t.statusPenyiraman === "PERLU_SIRAM" || t.sisaHariPanen <= 7)
@@ -124,7 +116,6 @@ export default function DashboardScreen() {
         return 1;
       return a.sisaHariPanen - b.sisaHariPanen;
     });
-
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* HEADER */}
@@ -154,7 +145,6 @@ export default function DashboardScreen() {
           <MaterialIcons name="logout" size={24} color="#FF6B5C" />
         </TouchableOpacity>
       </View>
-
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -190,11 +180,9 @@ export default function DashboardScreen() {
             color="rgba(255,255,255,0.8)"
           />
         </View>
-
         {/* REMINDER LIST (Neobrutalist Framed) */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hari ini</Text>
-
           {reminders.length === 0 ? (
             <Text style={{ color: "#5C5A4F" }}>
               Mantap! Tidak ada pengingat mendesak hari ini.
@@ -266,14 +254,12 @@ export default function DashboardScreen() {
             ))
           )}
         </View>
-
         {/* YOUR PLANTS SECTION (Horizontal Scroll) */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Tanaman kamu</Text>
             {/* Phantom UI ("Lihat semua") removed */}
           </View>
-
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -341,7 +327,6 @@ export default function DashboardScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -369,9 +354,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
     borderColor: "#123924",
@@ -380,28 +365,24 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: "Nunito_800ExtraBold",
     color: "#00522c",
   },
   subtitle: {
     fontSize: 12,
     color: "#5C5A4F",
-    fontWeight: "500",
+    fontFamily: "Nunito_500Medium",
   },
   logoutButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
     borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#123924",
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
+    boxShadow: "4px 4px 0px #123924",
   },
   heroCard: {
     backgroundColor: "#1F5C3D",
@@ -410,11 +391,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 32,
-    shadowColor: "#123924",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    elevation: 6,
+    boxShadow: "4px 4px 0px #123924",
   },
   fireIconContainer: {
     width: 48,
@@ -430,11 +407,11 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "Nunito_800ExtraBold",
     color: "#FFFFFF",
     marginBottom: 4,
   },
-  heroSubtitle: {
+  heroSubtitle: { fontFamily: "Nunito_500Medium", 
     fontSize: 12,
     color: "rgba(255,255,255,0.75)",
   },
@@ -443,7 +420,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#00522c",
     marginBottom: 16,
   },
@@ -457,21 +434,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
     borderColor: "#123924",
-    borderRadius: 20,
-    padding: 8,
+    borderRadius: 24,
+    padding: 12,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
-    shadowColor: "#123924",
-    shadowOffset: { width: 5, height: 5 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
+    boxShadow: "4px 4px 0px #123924",
   },
   taskIconBox: {
     width: 48,
     height: 48,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: "#123924",
     alignItems: "center",
@@ -483,11 +456,11 @@ const styles = StyleSheet.create({
   },
   taskName: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#123924",
     marginBottom: 4,
   },
-  taskStatus: {
+  taskStatus: { fontFamily: "Nunito_500Medium", 
     fontSize: 11,
     color: "#5C5A4F",
   },
@@ -517,14 +490,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
     borderColor: "#123924",
-    borderRadius: 20,
+    borderRadius: 24,
     overflow: "hidden",
     marginRight: 16,
-    shadowColor: "#123924",
-    shadowOffset: { width: 5, height: 5 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
+    boxShadow: "4px 4px 0px #123924",
   },
   plantImagePlaceholder: {
     width: "100%",
@@ -536,7 +505,7 @@ const styles = StyleSheet.create({
   },
   plantName: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
     color: "#123924",
     marginBottom: 8,
   },
@@ -550,6 +519,6 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: "Nunito_700Bold",
   },
 });

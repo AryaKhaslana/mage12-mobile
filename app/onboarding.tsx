@@ -23,9 +23,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 const { width } = Dimensions.get("window");
-
 const slides = [
   {
     id: "1",
@@ -56,16 +54,13 @@ const slides = [
     image: require("../assets/images/icontampilanawal/seedling-diam.png"),
   },
 ];
-
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<Animated.FlatList<any>>(null);
-
   // Breathing Maskot Animation
   const breathingScale = useSharedValue(1);
   const floatingTranslateY = useSharedValue(0);
   const floatingTranslateYAlt = useSharedValue(0);
-
   useEffect(() => {
     breathingScale.value = withRepeat(
       withSequence(
@@ -75,7 +70,6 @@ export default function OnboardingScreen() {
       -1,
       true,
     );
-
     floatingTranslateY.value = withRepeat(
       withSequence(
         withTiming(-15, { duration: 2000 }),
@@ -84,7 +78,6 @@ export default function OnboardingScreen() {
       -1,
       true,
     );
-
     floatingTranslateYAlt.value = withRepeat(
       withSequence(
         withTiming(15, { duration: 1800 }),
@@ -94,31 +87,26 @@ export default function OnboardingScreen() {
       true,
     );
   }, []);
-
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: breathingScale.value }],
     };
   });
-
   const animatedFloatingStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: floatingTranslateY.value }],
     };
   });
-
   const animatedFloatingStyleAlt = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: floatingTranslateYAlt.value }],
     };
   });
-
   // Scroll Animation for Pagination
   const scrollX = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollX.value = event.contentOffset.x;
   });
-
   const viewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems[0]) {
@@ -126,14 +114,11 @@ export default function OnboardingScreen() {
       }
     },
   ).current;
-
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
   const handleComplete = async () => {
     await AsyncStorage.setItem("hasSeenOnboarding", "true");
     router.replace("/(auth)/login");
   };
-
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
@@ -141,7 +126,6 @@ export default function OnboardingScreen() {
       handleComplete();
     }
   };
-
   const renderItem = ({ item }: { item: (typeof slides)[0] }) => {
     return (
       <View style={styles.slide}>
@@ -153,7 +137,6 @@ export default function OnboardingScreen() {
               resizeMode="contain"
             />
           )}
-
           <Animated.Image
             source={item.image}
             style={[styles.image, item.id !== "4" && animatedImageStyle]}
@@ -191,7 +174,6 @@ export default function OnboardingScreen() {
       </View>
     );
   };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -199,7 +181,6 @@ export default function OnboardingScreen() {
           <Text style={styles.skipText}>Lewati</Text>
         </TouchableOpacity>
       </View>
-
       <Animated.FlatList
         ref={flatListRef as any}
         data={slides}
@@ -214,7 +195,6 @@ export default function OnboardingScreen() {
         viewabilityConfig={viewConfig}
         renderItem={renderItem}
       />
-
       <View style={styles.footer}>
         {/* Pagination Dots */}
         <View style={styles.pagination}>
@@ -226,19 +206,16 @@ export default function OnboardingScreen() {
                 [8, 24, 8],
                 Extrapolation.CLAMP,
               );
-
               const colorVal = interpolateColor(
                 scrollX.value,
                 [(index - 1) * width, index * width, (index + 1) * width],
                 ["#D9D9D9", "#3FA86B", "#D9D9D9"],
               );
-
               return {
                 width: widthVal,
                 backgroundColor: colorVal,
               };
             });
-
             return (
               <Animated.View
                 key={index.toString()}
@@ -247,7 +224,6 @@ export default function OnboardingScreen() {
             );
           })}
         </View>
-
         {/* Buttons */}
         {currentIndex === slides.length - 1 ? (
           <TouchableOpacity
@@ -270,7 +246,6 @@ export default function OnboardingScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -285,8 +260,8 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 14,
-    fontWeight: "800",
-    color: "#3FA86B", // Based on Neobrutalism typical accent, though user only said "Teks 'Lewati' di pojok kanan atas"
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#3FA86B",
   },
   slide: {
     width,
@@ -308,7 +283,7 @@ const styles = StyleSheet.create({
     bottom: -5,
     alignSelf: "center",
     width: width * 1.55,
-    height: width * 0.70,
+    height: width * 0.7,
     zIndex: -1,
   },
   floatingPot: {
@@ -323,16 +298,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: -40,
     top: "5%",
-    width: 120,
-    height: 120,
+    width: 130,
+    height: 130,
     zIndex: 10,
   },
   floatingPiala: {
     position: "absolute",
     right: -50,
     top: "25%",
-    width: 120,
-    height: 120,
+    width: 140,
+    height: 140,
     zIndex: 10,
   },
   textContainer: {
@@ -341,7 +316,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "800",
+    fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
     marginBottom: 16,
     textAlign: "center",
@@ -351,7 +326,7 @@ const styles = StyleSheet.create({
     color: "#123924",
     textAlign: "center",
     lineHeight: 22,
-    fontWeight: "500",
+    fontFamily: "Nunito_500Medium",
   },
   footer: {
     flexDirection: "row",
@@ -373,38 +348,30 @@ const styles = StyleSheet.create({
     borderColor: "#123924", // Neobrutalism border
   },
   nextButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: "#3FA86B",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#123924",
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6,
+    boxShadow: "4px 4px 0px #123924",
   },
   startButton: {
-    height: 56,
-    paddingHorizontal: 24,
-    borderRadius: 28,
-    backgroundColor: "#123924", // User specified background #123924
+    height: 60,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    backgroundColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#123924",
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6,
+    boxShadow: "4px 4px 0px #123924",
   },
   startButtonText: {
-    color: "#FFFFFF", // User specified text putih
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "Nunito_800ExtraBold",
   },
 });

@@ -1,4 +1,4 @@
-import { MaterialIcons } from "@expo/vector-icons";
+import { Image,  MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
@@ -124,6 +124,37 @@ export default function LoginScreen() {
             <Text style={styles.primaryButtonText}>Masuk</Text>
           )}
         </TouchableOpacity>
+        
+        {/* Google Sign In Button */}
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={async () => {
+            try {
+              setIsLoading(true);
+              const { googleSignIn } = await import("../../services/api");
+              await googleSignIn();
+            } catch (error) {
+              console.error("Google sign in error", error);
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#123924" />
+          ) : (
+            <>
+              <Image 
+                source={require("../../assets/images/google-logo.png")} 
+                style={styles.googleLogo} 
+                resizeMode="contain" 
+              />
+              <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
         {/* Footer */}
         <TouchableOpacity
           style={styles.footerLink}
@@ -198,4 +229,27 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_500Medium",
   },
   footerTextBold: { color: "#123924", fontFamily: "Nunito_700Bold" },
+
+  googleButton: {
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    height: 56,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: "#123924",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+    boxShadow: "4px 4px 0px #123924",
+  },
+  googleLogo: {
+    width: 24,
+    height: 24,
+    marginRight: 12,
+  },
+  googleButtonText: {
+    color: "#123924",
+    fontSize: 16,
+    fontFamily: "Nunito_700Bold",
+  },
 });

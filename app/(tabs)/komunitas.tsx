@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function KomunitasScreen() {
   const [activeTab, setActiveTab] = useState('Terbaru');
@@ -14,33 +15,44 @@ export default function KomunitasScreen() {
           {/* HEADER */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Komunitas</Text>
-            <TouchableOpacity style={styles.searchButton}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.searchButton,
+                pressed && styles.pressedShadow3,
+              ]}
+            >
               <MaterialIcons name="search" size={24} color="#123924" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* TABS TOGGLE */}
           <View style={styles.tabContainer}>
-            <TouchableOpacity 
+            <Pressable 
               style={[styles.tabButton, activeTab === 'Terbaru' ? styles.tabActive : styles.tabInactive]}
               onPress={() => setActiveTab('Terbaru')}
             >
               <Text style={[styles.tabText, activeTab === 'Terbaru' ? styles.tabTextActive : styles.tabTextInactive]}>Terbaru</Text>
-            </TouchableOpacity>
+            </Pressable>
             
-            <TouchableOpacity 
+            <Pressable 
               style={[styles.tabButton, activeTab === 'Terdekat' ? styles.tabActive : styles.tabInactive]}
               onPress={() => setActiveTab('Terdekat')}
             >
               <Text style={[styles.tabText, activeTab === 'Terdekat' ? styles.tabTextActive : styles.tabTextInactive]}>Terdekat</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* FEED LIST */}
           <View style={styles.feedContainer}>
             
             {/* POST 1 (Fatih) */}
-            <View style={styles.postCard}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.postCard,
+                pressed && styles.pressedShadow3,
+              ]}
+              onPress={() => router.push('/post-detail')}
+            >
               {/* Post Header */}
               <View style={styles.postHeader}>
                 <View style={styles.avatarContainer}>
@@ -74,17 +86,34 @@ export default function KomunitasScreen() {
 
               {/* Post Actions */}
               <View style={styles.actionRow}>
-                <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#FF6B5C' }]}>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.actionButton, 
+                    { backgroundColor: '#FF6B5C' },
+                    pressed && { transform: [{ scale: 0.92 }] }
+                  ]}
+                >
                   <MaterialIcons name="favorite" size={16} color="#FFFFFF" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
+                </Pressable>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    pressed && { transform: [{ scale: 0.92 }] }
+                  ]}
+                >
                   <MaterialIcons name="chat-bubble" size={16} color="#123924" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
-            </View>
+            </Pressable>
 
             {/* POST 2 (Budi) */}
-            <View style={styles.postCard}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.postCard,
+                pressed && styles.pressedShadow3,
+              ]}
+              onPress={() => router.push('/post-detail')}
+            >
               {/* Post Header */}
               <View style={styles.postHeader}>
                 <View style={styles.avatarContainer}>
@@ -118,30 +147,50 @@ export default function KomunitasScreen() {
 
               {/* Post Actions */}
               <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.actionButton}>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    pressed && { transform: [{ scale: 0.92 }] }
+                  ]}
+                >
                   <MaterialIcons name="favorite-border" size={16} color="#123924" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
+                </Pressable>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    pressed && { transform: [{ scale: 0.92 }] }
+                  ]}
+                >
                   <MaterialIcons name="chat-bubble-outline" size={16} color="#123924" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
-            </View>
+            </Pressable>
 
           </View>
         </ScrollView>
 
         {/* LEFT FAB (Mascot / Assistant) */}
-        <TouchableOpacity style={styles.leftFab} activeOpacity={0.9}>
+        <Pressable 
+          style={({ pressed }) => [
+            styles.leftFab,
+            pressed && styles.pressedShadow4,
+          ]}
+        >
           <View style={styles.mascotContainer}>
             <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCTjpOOMGzAtXXTR7E78hS9yI72ZAtQLhgRDnMHEqp4UgwUbZIhFbvpbfav6sQkBELuAo1TXgv3kF-QZzF-zu10Cts5xWZANv_wWvv8jLBgSfsNeVHo0rmA_O_3mYQF6gGBxy27YMN61UgAI_KC2RSdflCFRqzkpVvNZVA3IeEK5M6xzG7GD3qFx0wHdjkb6Cwg-EQgEfkHbqZq6p-rA_E0rzZJDjxWVJblyVlYv4nXSijUmezM-ecGQA' }} style={styles.mascotImage} />
           </View>
           <View style={styles.mascotDot} />
-        </TouchableOpacity>
+        </Pressable>
 
         {/* RIGHT FAB (Camera) */}
-        <TouchableOpacity style={styles.rightFab} activeOpacity={0.9}>
+        <Pressable 
+          style={({ pressed }) => [
+            styles.rightFab,
+            pressed && styles.pressedShadow3,
+          ]}
+        >
           <MaterialIcons name="photo-camera" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
+        </Pressable>
 
       </View>
     </SafeAreaView>
@@ -160,8 +209,23 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 120, // Ruang ekstra buat 2 tombol FAB di bawah
+    paddingBottom: 120,
   },
+
+  // State tertekan neobrutalism
+  pressedShadow3: {
+    boxShadow: '0px 0px 0px #123924',
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+    transform: [{ translateX: 3 }, { translateY: 3 }],
+  },
+  pressedShadow4: {
+    boxShadow: '0px 0px 0px #123924',
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+    transform: [{ translateX: 4 }, { translateY: 4 }],
+  },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -182,6 +246,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '3px 3px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 3, height: 3 },
     shadowOpacity: 1,
@@ -231,6 +296,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#123924',
     padding: 16,
+    boxShadow: '3px 3px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 3, height: 3 },
     shadowOpacity: 1,
@@ -350,6 +416,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '4px 4px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 1,
@@ -394,6 +461,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '3px 3px 0px #123924',
     shadowColor: '#123924',
     shadowOffset: { width: 3, height: 3 },
     shadowOpacity: 1,

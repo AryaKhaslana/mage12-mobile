@@ -1,30 +1,33 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // Hilangkan header atas bawaan
-        tabBarActiveTintColor: '#3FA86B', // Warna Primary aktif
-        tabBarInactiveTintColor: '#5C5A4F', // Warna Muted tidak aktif
+        headerShown: false, 
+        tabBarActiveTintColor: '#3FA86B', 
+        tabBarInactiveTintColor: '#5C5A4F', 
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 2,
-          borderTopColor: '#123924', // Garis tegas Neobrutalism
-          height: 64,
-          paddingBottom: 8,
+          borderTopColor: '#123924',
+          // Tinggi dasar 64 ditambah dengan tinggi tombol navigasi bawaan HP
+          height: 64 + insets.bottom, 
+          // Padding bawah didorong minimal 8px atau seukuran tombol navigasi HP
+          paddingBottom: Math.max(insets.bottom, 8), 
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontFamily: 'System', // Nanti bisa diganti Plus Jakarta Sans kalau font udah di-load
+          fontFamily: 'Nunito_700Bold', // Memakai font Nunito dari root layout
           fontSize: 10,
-          fontWeight: 'bold',
         }
       }}>
       
-      {/* 1. Menu Home */}
       <Tabs.Screen
         name="index"
         options={{
@@ -33,7 +36,6 @@ export default function TabLayout() {
         }}
       />
       
-      {/* 2. Menu Tanaman */}
       <Tabs.Screen
         name="tanaman"
         options={{
@@ -42,7 +44,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 3. Menu Komunitas */}
       <Tabs.Screen
         name="komunitas"
         options={{
@@ -51,7 +52,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 4. Menu Profil */}
       <Tabs.Screen
         name="profil"
         options={{

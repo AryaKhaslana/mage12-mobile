@@ -6,20 +6,22 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
+
 export default function DashboardScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
   useEffect(() => {
     const checkAuthAndFetch = async () => {
       const token = await SecureStore.getItemAsync("userToken");
@@ -31,6 +33,7 @@ export default function DashboardScreen() {
     };
     checkAuthAndFetch();
   }, []);
+
   const fetchDashboardData = async () => {
     if (tanamanList.length === 0 && !userData) {
       setIsLoading(true);
@@ -66,9 +69,9 @@ export default function DashboardScreen() {
       setIsRefreshing(false);
     }
   };
+
   const handleLogAktivitas = async (tanamanId: number) => {
     try {
-      // payload disesuaikan dengan CONTRACT.md (tipeValidasi: "button_only")
       const response = await api.post("/logs", {
         tanamanId,
         tipeValidasi: "button_only",
@@ -78,7 +81,7 @@ export default function DashboardScreen() {
           "Mantap!",
           `+${response.data.data.skorSaatIni} poin! Streak: ${response.data.data.streak} hari 🔥`,
         );
-        fetchDashboardData(); // Re-fetch to update streak and status
+        fetchDashboardData();
       }
     } catch (error: any) {
       console.error("Error logging activity:", error);
@@ -88,6 +91,7 @@ export default function DashboardScreen() {
       );
     }
   };
+
   if (isLoading) {
     return (
       <SafeAreaView
@@ -100,7 +104,7 @@ export default function DashboardScreen() {
       </SafeAreaView>
     );
   }
-  // Filter Reminder: PERLU_SIRAM atau sisa hari panen terdekat (misal <= 7 hari)
+
   const reminders = [...tanamanList]
     .filter((t) => t.statusPenyiraman === "PERLU_SIRAM" || t.sisaHariPanen <= 7)
     .sort((a, b) => {
@@ -116,6 +120,7 @@ export default function DashboardScreen() {
         return 1;
       return a.sisaHariPanen - b.sisaHariPanen;
     });
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* HEADER */}
@@ -131,20 +136,24 @@ export default function DashboardScreen() {
             <Text style={styles.subtitle}>Yuk cek tanamanmu hari ini</Text>
           </View>
         </View>
-        {/* Logout Button (Untuk testing Onboarding) */}
-        <TouchableOpacity
-          style={styles.logoutButton}
+
+        {/* Logout Button dengan efek tekan */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.logoutButton,
+            pressed && styles.pressedShadow4,
+          ]}
           onPress={async () => {
-            // Hapus semua token dan flag onboarding untuk keperluan testing
             await SecureStore.deleteItemAsync("userToken");
             await SecureStore.deleteItemAsync("userData");
-            await AsyncStorage.removeItem("hasSeenOnboarding"); // Reset onboarding
-            router.replace("/"); // Kembali ke root yang akan mengarahkan ke onboarding
+            await AsyncStorage.removeItem("hasSeenOnboarding");
+            router.replace("/");
           }}
         >
           <MaterialIcons name="logout" size={24} color="#FF6B5C" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -157,8 +166,13 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* STREAK HERO CARD (Clay Element) - Changed to View */}
-        <View style={styles.heroCard}>
+        {/* STREAK HERO CARD */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.heroCard,
+            pressed && styles.pressedShadow4,
+          ]}
+        >
           <View style={styles.fireIconContainer}>
             <MaterialIcons
               name="local-fire-department"
@@ -179,8 +193,9 @@ export default function DashboardScreen() {
             size={28}
             color="rgba(255,255,255,0.8)"
           />
-        </View>
-        {/* REMINDER LIST (Neobrutalist Framed) */}
+        </Pressable>
+
+        {/* REMINDER LIST */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hari ini</Text>
           {reminders.length === 0 ? (
@@ -189,7 +204,18 @@ export default function DashboardScreen() {
             </Text>
           ) : (
             reminders.map((tanaman) => (
-              <View key={tanaman.id} style={styles.taskCard}>
+              <Pressable
+                key={tanaman.id}
+                style={({ pressed }) => [
+                  styles.taskCard,
+                  pressed && styles.pressedShadow4,
+                ]}
+                onPress={() => {
+                  if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+                    handleLogAktivitas(tanaman.id);
+                  }
+                }}
+              >
                 <View
                   style={[
                     styles.taskIconBox,
@@ -233,32 +259,26 @@ export default function DashboardScreen() {
                       : `Masa panen tinggal ${tanaman.sisaHariPanen} hari lagi!`}
                   </Text>
                 </View>
-                <TouchableOpacity
+                <View
                   style={[
                     styles.checkbox,
                     tanaman.statusPenyiraman !== "PERLU_SIRAM" &&
                       styles.checkboxDoneAmber,
                   ]}
-                  onPress={() => {
-                    if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
-                      handleLogAktivitas(tanaman.id);
-                    }
-                  }}
-                  disabled={tanaman.statusPenyiraman !== "PERLU_SIRAM"}
                 >
                   {tanaman.statusPenyiraman !== "PERLU_SIRAM" && (
                     <MaterialIcons name="check" size={16} color="#FFFFFF" />
                   )}
-                </TouchableOpacity>
-              </View>
+                </View>
+              </Pressable>
             ))
           )}
         </View>
-        {/* YOUR PLANTS SECTION (Horizontal Scroll) */}
+
+        {/* YOUR PLANTS SECTION */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Tanaman kamu</Text>
-            {/* Phantom UI ("Lihat semua") removed */}
           </View>
           <ScrollView
             horizontal
@@ -271,10 +291,13 @@ export default function DashboardScreen() {
               </Text>
             ) : (
               tanamanList.map((tanaman) => (
-                <TouchableOpacity
+                <Pressable
                   key={tanaman.id}
-                  style={styles.plantCard}
-                  activeOpacity={0.9}
+                  style={({ pressed }) => [
+                    styles.plantCard,
+                    pressed && styles.pressedShadow4,
+                  ]}
+                  onPress={() => router.push("/detail-tanaman")}
                 >
                   <View
                     style={[
@@ -318,7 +341,7 @@ export default function DashboardScreen() {
                       </Text>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               ))
             )}
           </ScrollView>
@@ -327,6 +350,7 @@ export default function DashboardScreen() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -340,6 +364,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     paddingTop: 16,
   },
+
+  // Style animasi neobrutalism saat ditekan
+  pressedShadow4: {
+    boxShadow: "0px 0px 0px #123924",
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+    transform: [{ translateX: 4 }, { translateY: 4 }],
+  },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -411,7 +444,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 4,
   },
-  heroSubtitle: { fontFamily: "Nunito_500Medium", 
+  heroSubtitle: {
+    fontFamily: "Nunito_500Medium",
     fontSize: 12,
     color: "rgba(255,255,255,0.75)",
   },
@@ -460,7 +494,8 @@ const styles = StyleSheet.create({
     color: "#123924",
     marginBottom: 4,
   },
-  taskStatus: { fontFamily: "Nunito_500Medium", 
+  taskStatus: {
+    fontFamily: "Nunito_500Medium",
     fontSize: 11,
     color: "#5C5A4F",
   },

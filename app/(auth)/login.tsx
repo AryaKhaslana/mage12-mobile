@@ -1,4 +1,4 @@
-import { Image,  MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
@@ -9,6 +9,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    Image,
     View,
 } from "react-native";
 import Animated, {

@@ -74,9 +74,7 @@ export const googleSignIn = async () => {
       }
       
       if (!userData.latitude) {
-        console.log("[LOCATION-SETUP] perlu diarahkan ke sini");
-        // For now just redirect to location-setup (which we will create later)
-        // router.replace("/(auth)/location-setup");
+        router.replace("/(auth)/location-setup");
       } else {
         router.replace("/");
       }

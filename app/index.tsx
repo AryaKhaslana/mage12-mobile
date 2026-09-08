@@ -24,6 +24,15 @@ export default function IndexScreen() {
           return;
         }
 
+        const userDataStr = await SecureStore.getItemAsync("userData");
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          if (!userData.latitude) {
+            router.replace("/(auth)/location-setup");
+            return;
+          }
+        }
+
         router.replace("/(tabs)");
       } catch (e) {
         console.error(e);

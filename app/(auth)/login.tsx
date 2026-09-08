@@ -44,18 +44,26 @@ export default function LoginScreen() {
     };
   });
   const handleLogin = async () => {
-    if (!email || !password) return;
+    if (!email || !password) {
+      Alert.alert("Perhatian", "Email dan password wajib diisi");
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await api.post("/auth/login", { email, password });
-      const token = response.data?.token;
+      
+      // Fallback: token bisa di response.data.token atau response.data.data.token
+      const token = response.data?.token || response.data?.data?.token;
       const userData = response.data?.data;
+      
       if (token) {
         await SecureStore.setItemAsync("userToken", token);
         if (userData) {
           await SecureStore.setItemAsync("userData", JSON.stringify(userData));
         }
         router.replace("/");
+      } else {
+        Alert.alert("Login Gagal", "Login sukses tapi token tidak ditemukan di response.");
       }
     } catch (error: any) {
       const msg =

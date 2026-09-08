@@ -20,7 +20,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api from "../../services/api";
+import api, { googleSignIn } from "../../services/api";
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -140,7 +140,6 @@ export default function LoginScreen() {
           onPress={async () => {
             try {
               setIsLoading(true);
-              const { googleSignIn } = await import("../../services/api");
               await googleSignIn();
             } catch (error) {
               console.error("Google sign in error", error);

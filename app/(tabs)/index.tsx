@@ -146,8 +146,8 @@ export default function DashboardScreen() {
           onPress={async () => {
             await SecureStore.deleteItemAsync("userToken");
             await SecureStore.deleteItemAsync("userData");
-            await AsyncStorage.removeItem("hasSeenOnboarding");
-            router.replace("/");
+            // await AsyncStorage.removeItem("hasSeenOnboarding"); // Jangan hapus onboarding statenya
+            router.replace("/(auth)/login");
           }}
         >
           <MaterialIcons name="logout" size={24} color="#FF6B5C" />

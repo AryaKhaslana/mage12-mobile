@@ -242,6 +242,11 @@ export default function ProfilScreen() {
             styles.logoutButton,
             pressed && styles.pressedShadow3,
           ]}
+          onPress={async () => {
+            await SecureStore.deleteItemAsync("userToken");
+            await SecureStore.deleteItemAsync("userData");
+            router.replace("/(auth)/login");
+          }}
         >
           <MaterialIcons name="logout" size={24} color="#FF6B5C" />
           <Text style={styles.logoutText}>Keluar</Text>

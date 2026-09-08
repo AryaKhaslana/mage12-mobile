@@ -50,7 +50,7 @@ api.interceptors.response.use(
 export default api;
 
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "694319697914-8rvbgiikftnv41g0fltp0c3d8jqe813l.apps.googleusercontent.com",
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "694319697914-5ov6mf48s2votq1htk2tm5toeiap7jbs.apps.googleusercontent.com",
 });
 
 export const googleSignIn = async () => {

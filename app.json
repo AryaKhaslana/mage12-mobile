@@ -43,7 +43,19 @@
       "expo-image",
       "expo-status-bar",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "TaniSync butuh lokasi kamu buat menghubungkan kamu dengan urban farmer lain di sekitarmu broskie."
+        }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.694319697914-8rvbgiikftnv41g0fltp0c3d8jqe813l"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

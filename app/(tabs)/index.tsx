@@ -193,6 +193,22 @@ export default function DashboardScreen() {
           />
         }
       >
+        {/* STAT STRIP */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 8 }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', borderRadius: 100, paddingVertical: 6, gap: 4, boxShadow: "2px 2px 0px #123924" }}>
+            <MaterialIcons name="eco" size={16} color="#3FA86B" />
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924' }}>{tanamanList.length} Tanaman</Text>
+          </View>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', borderRadius: 100, paddingVertical: 6, gap: 4, boxShadow: "2px 2px 0px #123924" }}>
+            <MaterialIcons name="local-fire-department" size={16} color="#FF6B5C" />
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924' }}>{userData?.streak || 0} Streak</Text>
+          </View>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', borderRadius: 100, paddingVertical: 6, gap: 4, boxShadow: "2px 2px 0px #123924" }}>
+            <MaterialIcons name="star" size={16} color="#FFB627" />
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924' }}>Level {userData?.level || 1}</Text>
+          </View>
+        </View>
+
         {/* STREAK HERO CARD */}
         <Pressable
           style={({ pressed }) => [
@@ -220,6 +236,69 @@ export default function DashboardScreen() {
             size={28}
             color="rgba(255,255,255,0.8)"
           />
+        </Pressable>
+
+        {/* PANEN TERDEKAT CARD */}
+        {(() => {
+          const panenTerdekat = tanamanList.length > 0 
+            ? [...tanamanList].sort((a, b) => a.sisaHariPanen - b.sisaHariPanen)[0]
+            : null;
+            
+          if (!panenTerdekat) return null;
+          
+          const hariKe = Math.floor((Date.now() - new Date(panenTerdekat.tanggalTanam).getTime())/86400000)+1;
+          const totalHari = hariKe + panenTerdekat.sisaHariPanen;
+          const persen = Math.min(100, Math.max(0, (hariKe / totalHari) * 100));
+          
+          return (
+            <Pressable 
+              style={({ pressed }) => [{
+                backgroundColor: '#FFFFFF',
+                borderWidth: 2,
+                borderColor: '#123924',
+                borderRadius: 24,
+                padding: 16,
+                marginBottom: 16,
+                boxShadow: "4px 4px 0px #123924"
+              }, pressed && styles.pressedShadow4]}
+              onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: panenTerdekat.id } })}
+            >
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#5C5A4F', marginBottom: 4 }}>PANEN TERDEKAT 🌾</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924', flex: 1 }} numberOfLines={1}>
+                  {panenTerdekat.nickname || panenTerdekat.jenisTanaman}
+                </Text>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 32, color: '#1F5C3D', lineHeight: 36 }}>
+                  {panenTerdekat.sisaHariPanen} <Text style={{ fontSize: 14 }}>hari</Text>
+                </Text>
+              </View>
+              <View style={{ backgroundColor: '#E8F5E9', borderWidth: 2, borderColor: '#123924', borderRadius: 100, height: 12, width: '100%', overflow: 'hidden' }}>
+                <View style={{ backgroundColor: '#3FA86B', width: `${persen}%`, height: '100%', borderRadius: 100 }} />
+              </View>
+            </Pressable>
+          );
+        })()}
+
+        {/* TANIBOT SHORTCUT */}
+        <Pressable
+          style={({ pressed }) => [{
+            backgroundColor: '#FFFFFF',
+            borderWidth: 2,
+            borderColor: '#123924',
+            borderRadius: 100,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 32,
+            boxShadow: "2px 2px 0px #123924",
+            gap: 8
+          }, pressed && { boxShadow: "0px 0px 0px #123924", transform: [{ translateX: 2 }, { translateY: 2 }] }]}
+          onPress={() => router.push("/(tabs)/tanibot" as any)}
+        >
+          <MaterialIcons name="smart-toy" size={20} color="#1F5C3D" />
+          <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Mau tanya TaniBot?</Text>
         </Pressable>
 
         {/* REMINDER LIST */}

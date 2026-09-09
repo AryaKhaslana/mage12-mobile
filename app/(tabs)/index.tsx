@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import {
+  Image,
   ActivityIndicator,
   Alert,
   Pressable,
@@ -15,6 +16,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
+
+const FALLBACK_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
+
+const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
+  <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 24, paddingHorizontal: 16 }}>
+    <MaterialIcons name={icon} size={40} color="#bdcabd" style={{ marginBottom: 12 }} />
+    <Text style={{ fontSize: 14, fontFamily: 'Nunito_700Bold', color: '#123924', textAlign: 'center', marginBottom: 4 }}>{title}</Text>
+    <Text style={{ fontSize: 12, fontFamily: 'Nunito_500Medium', color: '#5C5A4F', textAlign: 'center' }}>{subtitle}</Text>
+    {ctaText && onCtaPress && (
+      <Pressable onPress={onCtaPress} style={{ marginTop: 16, backgroundColor: '#3FA86B', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100, borderWidth: 2, borderColor: '#123924' }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 12, fontFamily: 'Nunito_700Bold' }}>{ctaText}</Text>
+      </Pressable>
+    )}
+  </View>
+);
 
 export default function DashboardScreen() {
   const [userData, setUserData] = useState<any>(null);
@@ -106,7 +122,12 @@ export default function DashboardScreen() {
   }
 
   const reminders = [...tanamanList]
-    .filter((t) => t.statusPenyiraman === "PERLU_SIRAM" || t.sisaHariPanen <= 7)
+    .filter((t) => {
+      const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+      if (t.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni) return true;
+      if (t.sisaHariPanen <= 7) return true;
+      return false;
+    })
     .sort((a, b) => {
       if (
         a.statusPenyiraman === "PERLU_SIRAM" &&
@@ -286,63 +307,49 @@ export default function DashboardScreen() {
             contentContainerStyle={styles.horizontalScroll}
           >
             {tanamanList.length === 0 ? (
-              <Text style={{ color: "#5C5A4F" }}>
-                Belum ada tanaman. Yuk tambah!
-              </Text>
+              <EmptyHint 
+                icon="local-florist"
+                title="Kebunmu masih kosong nih 🌱"
+                subtitle="Yuk mulai tanam tanaman pertamamu!"
+                ctaText="Tanam Sekarang"
+                onCtaPress={() => router.push("/(tabs)/tanaman")}
+              />
             ) : (
-              tanamanList.map((tanaman) => (
-                <Pressable
-                  key={tanaman.id}
-                  style={({ pressed }) => [
-                    styles.plantCard,
-                    pressed && styles.pressedShadow4,
-                  ]}
-                  onPress={() => router.push("/detail-tanaman")}
-                >
-                  <View
-                    style={[
-                      styles.plantImagePlaceholder,
-                      { alignItems: "center", justifyContent: "center" },
+              tanamanList.map((tanaman) => {
+                const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+                const badgeBg = sudahValidasiHariIni ? "#3FA86B" : (tanaman.statusPenyiraman === "PERLU_SIRAM" ? "#FFB627" : "#3FA86B");
+                const badgeTextCol = sudahValidasiHariIni ? "#FFFFFF" : (tanaman.statusPenyiraman === "PERLU_SIRAM" ? "#123924" : "#FFFFFF");
+                const badgeText = sudahValidasiHariIni ? "Sudah Disiram ✅" : `${tanaman.sisaHariPanen} hari lagi`;
+
+                return (
+                  <Pressable
+                    key={tanaman.id}
+                    style={({ pressed }) => [
+                      styles.plantCard,
+                      pressed && styles.pressedShadow4,
                     ]}
+                    onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
                   >
-                    <MaterialIcons
-                      color="#123924"
-                      name="local-florist"
-                      size={40}
-                    />
-                  </View>
-                  <View style={styles.plantCardBody}>
-                    <Text style={styles.plantName} numberOfLines={1}>
-                      {tanaman.jenisTanaman}
-                    </Text>
-                    <View
-                      style={[
-                        styles.badge,
-                        {
-                          backgroundColor:
-                            tanaman.statusPenyiraman === "PERLU_SIRAM"
-                              ? "#FFB627"
-                              : "#3FA86B",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.badgeText,
-                          {
-                            color:
-                              tanaman.statusPenyiraman === "PERLU_SIRAM"
-                                ? "#123924"
-                                : "#FFFFFF",
-                          },
-                        ]}
-                      >
-                        {tanaman.sisaHariPanen} hari lagi
-                      </Text>
+                    <View style={[styles.plantImagePlaceholder, { overflow: 'hidden' }]}>
+                      { tanaman.logTerakhir?.fotoUrl ? (
+                        <Image source={{ uri: tanaman.logTerakhir.fotoUrl }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      ) : (
+                        <Image source={{ uri: FALLBACK_THUMB }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      )}
                     </View>
-                  </View>
-                </Pressable>
-              ))
+                    <View style={styles.plantCardBody}>
+                      <Text style={styles.plantName} numberOfLines={1}>
+                        {tanaman.nickname || tanaman.jenisTanaman}
+                      </Text>
+                      <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+                        <Text style={[styles.badgeText, { color: badgeTextCol }]}>
+                          {badgeText}
+                        </Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })
             )}
           </ScrollView>
         </View>

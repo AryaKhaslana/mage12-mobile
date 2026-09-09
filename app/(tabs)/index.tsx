@@ -33,6 +33,13 @@ const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, 
 );
 
 export default function DashboardScreen() {
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 4 && hour < 10) return "Selamat pagi";
+    if (hour >= 10 && hour < 15) return "Selamat siang";
+    if (hour >= 15 && hour < 18) return "Selamat sore";
+    return "Selamat malam";
+  };
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,9 +159,8 @@ export default function DashboardScreen() {
           </View>
           <View>
             <Text style={styles.greeting}>
-              Halo, {userData?.nama || "Petani"}
+              {getGreeting()}, {userData?.nama || "Petani"}
             </Text>
-            <Text style={styles.subtitle}>Yuk cek tanamanmu hari ini</Text>
           </View>
         </View>
 
@@ -222,7 +228,7 @@ export default function DashboardScreen() {
           {reminders.length === 0 ? (
             <EmptyHint 
               icon="emoji-emotions"
-              title="Mantap! Semua tanaman aman hari ini 🎉"
+              title="Mantap! Semua tanaman aman hari ini"
               subtitle="Belum ada yang perlu disiram. Nikmati harimu, petani hebat!"
             />
           ) : (

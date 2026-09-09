@@ -73,36 +73,41 @@ export default function DetailTanamanModal() {
   const handleValidasiPhoto = async () => {
     if (isSubmitting) return;
     
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert("Izin Kamera Ditolak", "TaniSync butuh izin kamera untuk memvalidasi tanamanmu broskie!");
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Izin Kamera Ditolak", "TaniSync butuh izin kamera untuk memvalidasi tanamanmu broskie!");
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+      });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      
-      Alert.alert("Validasi Foto", "Yakin mau kirim foto ini?", [
-        { text: "Batal", style: "cancel" },
-        { text: "Kirim", onPress: async () => {
-            setIsSubmitting(true);
-            try {
-              const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uri });
-              setToastMessage(`Keren! +5 poin! Streak: ${res.streak} hari 🔥`);
-              setTimeout(() => setToastMessage(null), 4000);
-              fetchData();
-            } catch (e: any) {
-              Alert.alert("Gagal", e.response?.data?.message || "Gagal upload foto");
-            } finally {
-              setIsSubmitting(false);
-            }
-        }}
-      ]);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        
+        Alert.alert("Validasi Foto", "Yakin mau kirim foto ini?", [
+          { text: "Batal", style: "cancel" },
+          { text: "Kirim", onPress: async () => {
+              setIsSubmitting(true);
+              try {
+                const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uri });
+                setToastMessage(`Keren! +5 poin! Streak: ${res.streak} hari 🔥`);
+                setTimeout(() => setToastMessage(null), 4000);
+                fetchData();
+              } catch (e: any) {
+                Alert.alert("Gagal", e.response?.data?.message || "Gagal upload foto");
+              } finally {
+                setIsSubmitting(false);
+              }
+          }}
+        ]);
+      }
+    } catch (e: any) {
+      setIsSubmitting(false);
+      Alert.alert("Gagal", e?.message || "Gagal membuka kamera");
     }
   };
 

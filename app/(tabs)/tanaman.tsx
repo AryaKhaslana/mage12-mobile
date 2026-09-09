@@ -103,28 +103,7 @@ export default function TanamanScreen() {
     }
   };
 
-  const handleSiram = async (tanamanId: number) => {
-    try {
-      const response = await api.post("/logs", {
-        tanamanId,
-        tipeValidasi: "button_only",
-      });
-      if (response.data?.status === "success") {
-        const { skorSaatIni, streak } = response.data.data;
-        Alert.alert(
-          "Sukses Menyiram!",
-          `+${skorSaatIni} poin! Streak: ${streak} hari 🔥`,
-        );
-        fetchTanaman();
-      }
-    } catch (error: any) {
-      console.error("Error nyiram:", error);
-      Alert.alert(
-        "Gagal Menyiram",
-        error.response?.data?.message || "Terjadi kesalahan.",
-      );
-    }
-  };
+
 
   const filteredList = tanamanList.filter((tanaman) => {
     if (activeFilter === "Perlu Disiram")

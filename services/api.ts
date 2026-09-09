@@ -113,6 +113,12 @@ export interface TanamanDetail {
   predictiveScore: number;
   statusPenyiraman: string;
   sisaHariPanen: number;
+  logTerakhir: {
+    id: number;
+    tipeValidasi: string;
+    fotoUrl: string | null;
+    createdAt: string;
+  } | null;
 }
 
 export interface LogAktivitas {

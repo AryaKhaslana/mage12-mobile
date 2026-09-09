@@ -3,6 +3,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 import { useEffect, useState } from "react";
 import {
+  Image,
   ActivityIndicator,
   Alert,
   Modal,
@@ -16,6 +17,8 @@ import {
 import { TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
+
+const FALLBACK_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
 
 const JENIS_TANAMAN_ENUM = [
   "Padi",
@@ -206,6 +209,14 @@ export default function TanamanScreen() {
                 } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
                   statusText = "Sudah Disiram";
                 }
+                
+                // Jika backend ternyata menyelipkan field ini (undocumented)
+                if ((tanaman as any).sudahValidasiHariIni) {
+                  bgColor = "#E8F5E9";
+                  borderColor = "#3FA86B";
+                  textColor = "#123924";
+                  statusText = "Sudah Disiram Hari Ini ✅";
+                }
 
                 return (
                   <Pressable
@@ -216,13 +227,12 @@ export default function TanamanScreen() {
                     ]}
                     onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
                   >
-                    <View
-                      style={[
-                        styles.imageContainer,
-                        { alignItems: "center", justifyContent: "center" },
-                      ]}
-                    >
-                      <MaterialIcons name="local-florist" size={48} color="#123924" />
+                    <View style={[styles.imageContainer, { overflow: 'hidden' }]}>
+                      { (tanaman as any).fotoUrl ? (
+                        <Image source={{ uri: (tanaman as any).fotoUrl }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      ) : (
+                        <Image source={{ uri: FALLBACK_THUMB }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      )}
                     </View>
                     <View style={styles.cardBody}>
                       <Text style={styles.cardTitle} numberOfLines={1}>

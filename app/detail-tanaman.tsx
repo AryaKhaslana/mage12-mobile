@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIn
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog } from '../services/api';
+import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 
 const FALLBACK_HERO = 'https://lh3.googleusercontent.com/aida-public/AOSwzR6X7y3O2Q2_0uXwFhK8TQKf0vFvP4o7SjYdJ9k-h-5E8tV8D2Q3g0K_b8QkLp6g5zZ9n3nK2N8k5L0g-v4c0r9r6p2y2J5b8w';
@@ -26,6 +26,7 @@ export default function DetailTanamanModal() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchData = async () => {
     if (!tanamanId) return;
@@ -61,6 +62,32 @@ export default function DetailTanamanModal() {
     const today = new Date().toDateString();
     return logs.some(l => new Date(l.createdAt).toDateString() === today);
   }, [logs]);
+
+  const handleDeleteTanaman = () => {
+    Alert.alert(
+      "Hapus Tanaman?",
+      "Tanaman ini beserta seluruh riwayat jurnalnya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!",
+      [
+        { text: "Batal", style: "cancel" },
+        { 
+          text: "Hapus", 
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteTanaman(tanamanId);
+              Alert.alert("Terhapus", "Tanaman berhasil dihapus!", [
+                { text: "OK", onPress: () => router.back() }
+              ]);
+            } catch (e: any) {
+              setIsDeleting(false);
+              Alert.alert("Gagal", e.response?.data?.message || "Gagal menghapus tanaman");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleValidasiButton = async () => {
     if (isSubmitting) return;
@@ -168,8 +195,15 @@ export default function DetailTanamanModal() {
 
         {/* TOP BAR */}
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()} disabled={isDeleting}>
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={handleDeleteTanaman} disabled={isDeleting}>
+            {isDeleting ? (
+              <ActivityIndicator size="small" color="#FF6B5C" />
+            ) : (
+              <MaterialIcons name="delete-outline" size={24} color="#FF6B5C" />
+            )}
           </TouchableOpacity>
         </View>
 

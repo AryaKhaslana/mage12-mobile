@@ -141,6 +141,10 @@ export const getTanamanById = async (id: number): Promise<TanamanDetail> => {
   return response.data.data;
 };
 
+export const deleteTanaman = async (id: number): Promise<void> => {
+  await api.delete(`/tanaman/${id}`);
+};
+
 export const getLogsByTanaman = async (tanamanId: number): Promise<LogAktivitas[]> => {
   const response = await api.get(`/logs/${tanamanId}`);
   return response.data.data;

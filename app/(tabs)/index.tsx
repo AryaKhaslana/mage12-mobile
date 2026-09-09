@@ -42,6 +42,7 @@ export default function DashboardScreen() {
   };
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
+  const [weather, setWeather] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -64,7 +65,7 @@ export default function DashboardScreen() {
       setIsRefreshing(true);
     }
     try {
-      const [meRes, tanamanRes] = await Promise.all([
+      const [meRes, tanamanRes, weatherRes] = await Promise.all([
         api.get("/user/me").catch((err) => {
           console.log("Endpoint /user/me belum siap (404).");
           return null;
@@ -73,12 +74,21 @@ export default function DashboardScreen() {
           console.error("Gagal get tanaman:", err);
           return null;
         }),
+        api.get("/weather/today").catch((err) => {
+          console.log("Weather fetch failed (normal if location unset):", err?.message);
+          return null;
+        }),
       ]);
       if (meRes?.data?.data) {
         setUserData(meRes.data.data);
       }
       if (tanamanRes?.data?.data) {
         setTanamanList(tanamanRes.data.data);
+      }
+      if (weatherRes?.data?.data) {
+        setWeather(weatherRes.data.data);
+      } else {
+        setWeather(null);
       }
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
@@ -304,6 +314,52 @@ export default function DashboardScreen() {
         {/* REMINDER LIST */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hari ini</Text>
+          
+          {/* WEATHER CARD */}
+          {weather && (() => {
+            let bg = "#FFF9E6";
+            let iconName = "wb-sunny";
+            let iconColor = "#FFB627";
+            let titleText = "Cerah hari ini, saatnya menyiram 🌞";
+
+            if (weather.kondisi === "BERAWAN") {
+              bg = "#F0F2F0";
+              iconName = "cloud";
+              iconColor = "#5C5A4F";
+              titleText = "Langit berawan hari ini ☁️";
+            } else if (weather.kondisi === "HUJAN") {
+              bg = "#E3F2FD";
+              iconName = "umbrella";
+              iconColor = "#3FA86B";
+              titleText = "Hujan diprediksi! Penyiraman ditunda ya ☔";
+            }
+
+            return (
+              <View style={{
+                backgroundColor: bg,
+                borderWidth: 2,
+                borderColor: '#123924',
+                borderRadius: 24,
+                padding: 16,
+                marginBottom: 16,
+                boxShadow: "4px 4px 0px #123924"
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <MaterialIcons name={iconName as any} size={24} color={iconColor} style={{ marginRight: 8 }} />
+                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 13, color: '#123924', flex: 1 }}>{titleText}</Text>
+                </View>
+                <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 11, color: '#5C5A4F', marginLeft: 32 }}>
+                  {weather.deskripsi} • {Math.round(weather.suhu)}°C
+                </Text>
+                {weather.prediksiHujanHariIni && (
+                  <Text style={{ fontFamily: 'Nunito_500Medium', fontStyle: 'italic', fontSize: 10, color: '#5C5A4F', marginLeft: 32, marginTop: 4 }}>
+                    Penyiraman beberapa tanaman mungkin ditunda sistem.
+                  </Text>
+                )}
+              </View>
+            );
+          })()}
+
           {reminders.length === 0 ? (
             <EmptyHint 
               icon="emoji-emotions"

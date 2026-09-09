@@ -141,6 +141,11 @@ export const getTanamanById = async (id: number): Promise<TanamanDetail> => {
   return response.data.data;
 };
 
+export const getWeatherToday = async (): Promise<any> => {
+  const response = await api.get("/weather/today");
+  return response.data.data;
+};
+
 export const deleteTanaman = async (id: number): Promise<void> => {
   await api.delete(`/tanaman/${id}`);
 };

@@ -1,3 +1,4 @@
+import * as SecureStore from "expo-secure-store";
 import React from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';

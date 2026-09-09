@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   greeting: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Nunito_800ExtraBold",
     color: "#00522c",
   },
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   heroTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "Nunito_800ExtraBold",
     color: "#FFFFFF",
     marginBottom: 4,

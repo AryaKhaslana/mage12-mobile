@@ -171,6 +171,7 @@ export default function DashboardScreen() {
             <Text style={styles.greeting}>
               {getGreeting()}, {userData?.nama || "Petani"}
             </Text>
+            <Text style={styles.subtitle}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>
 

@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -29,7 +30,8 @@ export default function DetailTanamanModal() {
   const fetchData = async () => {
     if (!tanamanId) return;
     try {
-      setIsLoading(true);
+      // Tidak set isLoading(true) di sini karena state awal sudah true.
+      // Jika refresh dari useFocusEffect, fetch berjalan silently di background (tanpa loading berulang).
       const [tanamanData, logsData] = await Promise.all([
         getTanamanById(tanamanId),
         getLogsByTanaman(tanamanId)

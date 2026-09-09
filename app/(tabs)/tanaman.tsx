@@ -51,9 +51,13 @@ export default function TanamanScreen() {
   const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchTanaman = async () => {
-    if (tanamanList.length === 0) setIsLoading(true);
-    else setIsRefreshing(true);
+  const fetchTanaman = async (isManualRefresh = false) => {
+    if (tanamanList.length === 0) {
+      setIsLoading(true);
+    } else if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    // Jika bukan manual refresh dan list sudah ada, fetch berjalan SILENT (tanpa loading indicator apa pun)
     try {
       const response = await api.get("/tanaman");
       if (response.data?.status === "success") {
@@ -121,7 +125,7 @@ export default function TanamanScreen() {
             <RefreshControl
               colors={["#3FA86B"]}
               refreshing={isRefreshing}
-              onRefresh={fetchTanaman}
+              onRefresh={() => fetchTanaman(true)}
             />
           }
         >

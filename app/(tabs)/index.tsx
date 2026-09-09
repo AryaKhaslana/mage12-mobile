@@ -220,79 +220,71 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hari ini</Text>
           {reminders.length === 0 ? (
-            <Text style={{ color: "#5C5A4F" }}>
-              Mantap! Tidak ada pengingat mendesak hari ini.
-            </Text>
+            <EmptyHint 
+              icon="emoji-emotions"
+              title="Mantap! Semua tanaman aman hari ini 🎉"
+              subtitle="Belum ada yang perlu disiram. Nikmati harimu, petani hebat!"
+            />
           ) : (
-            reminders.map((tanaman) => (
-              <Pressable
-                key={tanaman.id}
-                style={({ pressed }) => [
-                  styles.taskCard,
-                  pressed && styles.pressedShadow4,
-                ]}
-                onPress={() => {
-                  if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
-                    handleLogAktivitas(tanaman.id);
-                  }
-                }}
-              >
-                <View
-                  style={[
-                    styles.taskIconBox,
-                    {
-                      backgroundColor:
-                        tanaman.statusPenyiraman === "PERLU_SIRAM"
-                          ? "#FF6B5C"
-                          : "#FFB627",
-                    },
+            reminders.map((tanaman) => {
+              const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+              const isPenyiraman = tanaman.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
+
+              return (
+                <Pressable
+                  key={tanaman.id}
+                  style={({ pressed }) => [
+                    styles.taskCard,
+                    pressed && styles.pressedShadow4,
                   ]}
+                  onPress={() => {
+                    if (isPenyiraman) {
+                      handleLogAktivitas(tanaman.id);
+                    } else {
+                      router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } });
+                    }
+                  }}
                 >
-                  <MaterialIcons
-                    name={
-                      tanaman.statusPenyiraman === "PERLU_SIRAM"
-                        ? "water-drop"
-                        : "eco"
-                    }
-                    size={24}
-                    color={
-                      tanaman.statusPenyiraman === "PERLU_SIRAM"
-                        ? "#FFFFFF"
-                        : "#123924"
-                    }
-                  />
-                </View>
-                <View style={styles.taskInfo}>
-                  <Text style={styles.taskName}>{tanaman.jenisTanaman}</Text>
-                  <Text
+                  <View
                     style={[
-                      styles.taskStatus,
-                      {
-                        color:
-                          tanaman.statusPenyiraman === "PERLU_SIRAM"
-                            ? "#FF6B5C"
-                            : "#5C5A4F",
-                      },
+                      styles.taskIconBox,
+                      { backgroundColor: isPenyiraman ? "#FF6B5C" : "#FFB627" },
                     ]}
                   >
-                    {tanaman.statusPenyiraman === "PERLU_SIRAM"
-                      ? "Perlu disiram sekarang"
-                      : `Masa panen tinggal ${tanaman.sisaHariPanen} hari lagi!`}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.checkbox,
-                    tanaman.statusPenyiraman !== "PERLU_SIRAM" &&
-                      styles.checkboxDoneAmber,
-                  ]}
-                >
-                  {tanaman.statusPenyiraman !== "PERLU_SIRAM" && (
-                    <MaterialIcons name="check" size={16} color="#FFFFFF" />
-                  )}
-                </View>
-              </Pressable>
-            ))
+                    <MaterialIcons
+                      name={isPenyiraman ? "water-drop" : "eco"}
+                      size={24}
+                      color="#FFFFFF"
+                    />
+                  </View>
+                  <View style={styles.taskInfo}>
+                    <Text style={styles.taskName}>
+                      {tanaman.nickname || tanaman.jenisTanaman}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.taskStatus,
+                        { color: isPenyiraman ? "#FF6B5C" : "#5C5A4F" },
+                      ]}
+                    >
+                      {isPenyiraman
+                        ? "Perlu disiram sekarang"
+                        : `Masa panen tinggal ${tanaman.sisaHariPanen} hari lagi!`}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.checkbox,
+                      !isPenyiraman && styles.checkboxDoneAmber,
+                    ]}
+                  >
+                    {!isPenyiraman && (
+                      <MaterialIcons name="check" size={16} color="#FFFFFF" />
+                    )}
+                  </View>
+                </Pressable>
+              );
+            })
           )}
         </View>
 

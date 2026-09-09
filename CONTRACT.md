@@ -71,6 +71,13 @@ res 401: { status: "fail", message: "Token Google tidak valid atau kedaluwarsa."
 ### GET /api/logs/:tanamanId
 - **res 200:** `{ "status": "success", "data": [ { "id": int, "userId": int, "tanamanId": int, "tipeValidasi": string, "fotoUrl": string | null, "createdAt": string(ISO) } ] }`
 
+### GET /api/weather/today
+- **res 200:** `{ "status": "success", "data": { "kondisi": "HUJAN" | "BERAWAN" | "CERAH", "deskripsi": string, "suhu": float, "pop": float, "prediksiHujanHariIni": boolean } }`
+- **catatan:** `pop` = probability of precipitation 0..1 (3 jam ke depan), `prediksiHujanHariIni` = true jika `pop >= 0.4` (threshold identik dengan cron DITUNDA_HUJAN).
+- **res 400:** `{ "status": "fail", "message": "Koordinat lokasi belum disetel." }` (user belum set lat/lng)
+- **res 502:** `{ "status": "error", "message": "Layanan cuaca sedang tidak tersedia." }`
+⚠️ **CATATAN CUACA**: Frontend WAJIB handle user koordinat `null` (skip kartu cuaca, JANGAN crash).
+
 ### GET /api/community
 - **query:** `latitude: float (wajib)`, `longitude: float (wajib)`, `page: int (opsional)`, `limit: int (opsional)`
 - **res 200:** `{ "status": "success", "meta": { "halamanSekarang": int, "dataPerHalaman": int }, "data": [ { "id": int, "userId": int, "user_nama": string, "tipePost": "progress_update" | "panen_surplus" | "pertanyaan", "deskripsi": string, "fotoUrl": string | null, "createdAt": string(ISO), "latitude": float, "longitude": float, "distance": float(km) } ] }`

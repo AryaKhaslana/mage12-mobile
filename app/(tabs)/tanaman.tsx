@@ -1,5 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
@@ -46,6 +48,7 @@ export default function TanamanScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
+  const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchTanaman = async () => {
@@ -68,15 +71,18 @@ export default function TanamanScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchTanaman();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTanaman();
+    }, [])
+  );
 
   const handleTambahTanaman = async () => {
     setIsSubmitting(true);
     try {
       const response = await api.post("/tanaman", {
         jenisTanaman: selectedTanaman,
+        nickname: nickname || undefined,
       });
       if (response.data?.status === "success") {
         Alert.alert(
@@ -198,12 +204,26 @@ export default function TanamanScreen() {
           ) : (
             <View style={styles.gridContainer}>
               {filteredList.map((tanaman) => {
-                const hariKe =
-                  Math.floor(
-                    (Date.now() - new Date(tanaman.tanggalTanam).getTime()) /
-                      86400000,
-                  ) + 1;
-                const isPerluSiram = tanaman.statusPenyiraman === "PERLU_SIRAM";
+                const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam).getTime()) / 86400000) + 1;
+                let bgColor = "#E8F5E9";
+                let borderColor = "#3FA86B";
+                let textColor = "#123924";
+                let statusText = "Aman";
+                
+                if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+                  bgColor = "#FFECEB";
+                  borderColor = "#FF6B5C";
+                  textColor = "#FF6B5C";
+                  statusText = "Perlu Disiram";
+                } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+                  bgColor = "#FFF9E6";
+                  borderColor = "#FFB627";
+                  textColor = "#FFB627";
+                  statusText = "Ditunda Hujan";
+                } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+                  statusText = "Sudah Disiram";
+                }
+
                 return (
                   <Pressable
                     key={tanaman.id}
@@ -211,7 +231,7 @@ export default function TanamanScreen() {
                       styles.card,
                       pressed && styles.pressedShadow4,
                     ]}
-                    onPress={() => router.push("/detail-tanaman")}
+                    onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
                   >
                     <View
                       style={[
@@ -219,52 +239,32 @@ export default function TanamanScreen() {
                         { alignItems: "center", justifyContent: "center" },
                       ]}
                     >
-                      <MaterialIcons
-                        name="local-florist"
-                        size={40}
-                        color="#123924"
-                      />
+                      <MaterialIcons name="local-florist" size={48} color="#123924" />
                     </View>
                     <View style={styles.cardBody}>
                       <Text style={styles.cardTitle} numberOfLines={1}>
-                        {tanaman.jenisTanaman}
+                        {tanaman.nickname || tanaman.jenisTanaman}
                       </Text>
-                      <Text style={styles.cardSubtitle}>Hari ke-{hariKe}</Text>
+                      <Text style={styles.cardSubtitle}>Skor: {tanaman.predictiveScore} • Panen: {tanaman.sisaHariPanen}hr</Text>
                       <View style={styles.cardFooter}>
                         <View
                           style={[
                             styles.badge,
                             {
-                              backgroundColor: isPerluSiram
-                                ? "#FF6B5C"
-                                : "#3FA86B",
+                              backgroundColor: bgColor,
+                              borderColor: borderColor,
                             },
                           ]}
                         >
                           <Text
-                            style={[styles.badgeText, { color: "#FFFFFF" }]}
+                            style={[
+                              styles.badgeText,
+                              { color: textColor },
+                            ]}
                           >
-                            {isPerluSiram ? "Perlu Disiram" : "Aman"}
+                            {statusText}
                           </Text>
                         </View>
-                        {isPerluSiram && (
-                          <Pressable
-                            style={({ pressed }) => [
-                              styles.waterButton,
-                              pressed && { transform: [{ scale: 0.9 }] },
-                            ]}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleSiram(tanaman.id);
-                            }}
-                          >
-                            <MaterialIcons
-                              name="water-drop"
-                              size={20}
-                              color="#FFFFFF"
-                            />
-                          </Pressable>
-                        )}
                       </View>
                     </View>
                   </Pressable>
@@ -300,6 +300,14 @@ export default function TanamanScreen() {
                   <MaterialIcons name="close" size={24} color="#123924" />
                 </Pressable>
               </View>
+              <Text style={styles.modalLabel}>Nama Panggilan (Opsional)</Text>
+              <TextInput 
+                style={styles.textInput}
+                placeholder="Misal: Tomat Si Jago"
+                value={nickname}
+                onChangeText={setNickname}
+                placeholderTextColor="#a09d91"
+              />
               <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
               <ScrollView style={styles.pickerContainer}>
                 {JENIS_TANAMAN_ENUM.map((jenis) => (
@@ -553,6 +561,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
+  },
+  textInput: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#123924",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "Nunito_700Bold",
+    color: "#123924",
+    marginBottom: 20,
   },
   modalLabel: {
     fontSize: 14,

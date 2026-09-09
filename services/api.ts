@@ -102,3 +102,68 @@ export const googleSignIn = async () => {
     throw error;
   }
 };
+
+export interface TanamanDetail {
+  id: number;
+  userId: number;
+  jenisTanaman: string;
+  nickname: string | null;
+  tanggalTanam: string;
+  daysToHarvest: number;
+  predictiveScore: number;
+  statusPenyiraman: string;
+  sisaHariPanen: number;
+}
+
+export interface LogAktivitas {
+  id: number;
+  userId: number;
+  tanamanId: number;
+  tipeValidasi: string;
+  fotoUrl: string | null;
+  createdAt: string;
+}
+
+export interface CreateLogResponse {
+  log: LogAktivitas;
+  skorSaatIni: number;
+  streak: number;
+}
+
+export const getTanamanById = async (id: number): Promise<TanamanDetail> => {
+  const response = await api.get(`/tanaman/${id}`);
+  return response.data.data;
+};
+
+export const getLogsByTanaman = async (tanamanId: number): Promise<LogAktivitas[]> => {
+  const response = await api.get(`/logs/${tanamanId}`);
+  return response.data.data;
+};
+
+export const createLog = async ({
+  tanamanId,
+  tipeValidasi,
+  fotoUri,
+}: {
+  tanamanId: number;
+  tipeValidasi: "button_only" | "photo";
+  fotoUri?: string;
+}): Promise<CreateLogResponse> => {
+  if (tipeValidasi === "button_only") {
+    const response = await api.post("/logs", { tanamanId, tipeValidasi });
+    return response.data.data;
+  } else {
+    const formData = new FormData();
+    formData.append("tanamanId", String(tanamanId));
+    formData.append("tipeValidasi", tipeValidasi);
+    if (fotoUri) {
+      formData.append("foto", {
+        uri: fotoUri,
+        name: "foto.jpg",
+        type: "image/jpeg",
+      } as any);
+    }
+    const response = await api.post("/logs", formData);
+    return response.data.data;
+  }
+};

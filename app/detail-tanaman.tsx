@@ -55,6 +55,11 @@ export default function DetailTanamanModal() {
     return photoLog?.fotoUrl || FALLBACK_HERO;
   }, [logs]);
 
+  const sudahValidasiHariIni = useMemo(() => {
+    const today = new Date().toDateString();
+    return logs.some(l => new Date(l.createdAt).toDateString() === today);
+  }, [logs]);
+
   const handleValidasiButton = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -143,6 +148,13 @@ export default function DetailTanamanModal() {
     badgeText = "Sudah Disiram";
   }
 
+  if (sudahValidasiHariIni) {
+    badgeBgColor = "#E8F5E9";
+    badgeBorderColor = "#3FA86B";
+    badgeTextColor = "#123924";
+    badgeText = "Sudah Disiram Hari Ini ✅";
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -191,15 +203,21 @@ export default function DetailTanamanModal() {
         </View>
 
         {/* ACTION BUTTONS (Sesuai mockup tapi dimodif buat Konfirmasi Disiram) */}
-        {tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={[styles.actionBtn, styles.btnWhite]} onPress={handleValidasiButton} disabled={isSubmitting}>
-              {isSubmitting ? <ActivityIndicator color="#123924" /> : <Text style={styles.btnWhiteText}>Konfirmasi{`\n`}Disiram</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, styles.btnGreen]} onPress={handleValidasiPhoto} disabled={isSubmitting}>
-              {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnGreenText}>Foto &{`\n`}Validasi</Text>}
-            </TouchableOpacity>
-          </View>
+        {sudahValidasiHariIni ? (
+          <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
+            Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 🌱
+          </Text>
+        ) : (
+          tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={[styles.actionBtn, styles.btnWhite]} onPress={handleValidasiButton} disabled={isSubmitting}>
+                {isSubmitting ? <ActivityIndicator color="#123924" /> : <Text style={styles.btnWhiteText}>Konfirmasi{`\n`}Disiram</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.actionBtn, styles.btnGreen]} onPress={handleValidasiPhoto} disabled={isSubmitting}>
+                {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnGreenText}>Foto &{`\n`}Validasi</Text>}
+              </TouchableOpacity>
+            </View>
+          )
         )}
 
         {/* HISTORY SECTION */}

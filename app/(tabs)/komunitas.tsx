@@ -50,7 +50,15 @@ const PostSkeleton = () => {
   }, [fadeAnim]);
 
   return (
-    <Animated.View style={[styles.postCard, { opacity: fadeAnim, marginBottom: 16 }]}>
+    <Animated.View style={[{
+      backgroundColor: '#FFFFFF',
+      borderRadius: 24,
+      borderWidth: 2,
+      borderColor: '#123924',
+      padding: 16,
+      opacity: fadeAnim, 
+      marginBottom: 16 
+    }]}>
       <View style={styles.postHeader}>
         <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E8E5DA' }} />
         <View style={{ flex: 1, gap: 4 }}>
@@ -214,14 +222,16 @@ export default function KomunitasScreen() {
   if (isLoading && !isRefreshing && posts.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
-                <View style={styles.header}>
-          <Text style={styles.headerTitle}>Komunitas</Text>
-          <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital 🌱</Text>
-        </View>
-        <View style={styles.scrollContent}>
-          <PostSkeleton />
-          <PostSkeleton />
-          <PostSkeleton />
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Komunitas</Text>
+            <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital 🌱</Text>
+          </View>
+          <View style={styles.scrollContent}>
+            <PostSkeleton />
+            <PostSkeleton />
+            <PostSkeleton />
+          </View>
         </View>
       </SafeAreaView>
     );

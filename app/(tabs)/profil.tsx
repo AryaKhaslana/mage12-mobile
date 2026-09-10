@@ -1,6 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import api from '../../services/api';

@@ -333,7 +333,13 @@ export default function KomunitasScreen() {
               }
 
               return (
-                <View style={styles.postCard}>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.postCard,
+                    pressed && { opacity: 0.9 } // slight feedback
+                  ]}
+                  onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: item.id } } as any)}
+                >
                   <View style={styles.postHeader}>
                     <View style={styles.avatarContainer}>
                       <Text style={styles.avatarInitials}>{item.user_nama.charAt(0).toUpperCase()}</Text>
@@ -375,7 +381,7 @@ export default function KomunitasScreen() {
                     <MaterialIcons name="place" size={12} color="#5C5A4F" />
                     <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
                   </View>
-                </View>
+                </Pressable>
               );
             }}
           />

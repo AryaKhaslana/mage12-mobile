@@ -164,6 +164,23 @@ export interface AchievementResponse {
   achievements: Achievement[];
 }
 
+
+export interface CommunityPostDetail extends CommunityPost {
+  jumlahKomentar: number;
+  jumlahLike: number;
+  isLiked: boolean;
+  isOwner: boolean;
+}
+
+export interface CommunityComment {
+  id: number;
+  userId: number;
+  userNama: string;
+  userAvatar: string | null;
+  teks: string;
+  createdAt: string;
+}
+
 export interface CommunityPost {
   id: number;
   userId: number;
@@ -232,4 +249,33 @@ export const harvestTanaman = async (id: number): Promise<any> => {
 export const getAchievements = async (): Promise<AchievementResponse> => {
   const response = await api.get('/achievements');
   return response.data.data;
+};
+
+export const getCommunityPostDetail = async (id: number): Promise<CommunityPostDetail> => {
+  const response = await api.get(`/community/${id}`);
+  return response.data;
+};
+
+export const getCommunityComments = async (id: number, page: number = 1, limit: number = 20): Promise<{ meta: any; data: CommunityComment[] }> => {
+  const response = await api.get(`/community/${id}/komentar`, { params: { page, limit } });
+  return response.data;
+};
+
+export const addCommunityComment = async (id: number, teks: string): Promise<CommunityComment> => {
+  const response = await api.post(`/community/${id}/komentar`, { teks });
+  // the API says it returns "201 data komentar baru"
+  return response.data.data ? response.data.data : response.data;
+};
+
+export const deleteCommunityComment = async (id: number): Promise<void> => {
+  await api.delete(`/community/komentar/${id}`);
+};
+
+export const toggleCommunityLike = async (id: number): Promise<{ liked: boolean; jumlahLike: number }> => {
+  const response = await api.post(`/community/${id}/like`);
+  // POST /community/:id/like (toggle) -> { liked: boolean, jumlahLike: number }
+  // Usually wrapped in response.data or response.data.data, let's assume response.data handles it if no 'data' wrapper, else we check.
+  // We'll return response.data directly assuming the backend returns it at the root of the JSON or inside data.
+  // Actually, standard TaniSync response format is { status: "success", data: {...} } or directly.
+  return response.data.data || response.data;
 };

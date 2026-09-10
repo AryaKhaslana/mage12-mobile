@@ -258,8 +258,6 @@ export default function DashboardScreen() {
             <Text style={styles.subtitle}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>
-
-
       </View>
 
       <ScrollView

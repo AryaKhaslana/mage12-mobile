@@ -172,6 +172,14 @@ export interface CommunityPostDetail extends CommunityPost {
   isOwner: boolean;
 }
 
+
+export interface ChatMessage {
+  id: number;
+  role: "USER" | "BOT";
+  message: string;
+  createdAt: string;
+}
+
 export interface CommunityComment {
   id: number;
   userId: number;
@@ -281,4 +289,14 @@ export const toggleCommunityLike = async (id: number): Promise<{ liked: boolean;
   // We'll return response.data directly assuming the backend returns it at the root of the JSON or inside data.
   // Actually, standard TaniSync response format is { status: "success", data: {...} } or directly.
   return response.data.data || response.data;
+};
+
+export const sendTanibotMessage = async (message: string): Promise<string> => {
+  const response = await api.post("/tanibot", { message });
+  return response.data.data.reply;
+};
+
+export const getTanibotHistory = async (page: number = 1, limit: number = 20): Promise<{ meta: any; data: ChatMessage[] }> => {
+  const response = await api.get("/tanibot/history", { params: { page, limit } });
+  return response.data;
 };

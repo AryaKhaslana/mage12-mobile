@@ -138,6 +138,18 @@ export default function DashboardScreen() {
         ]}
       >
         <ActivityIndicator size="large" color="#3FA86B" />
+      
+      {/* TANIBOT FAB */}
+      <Pressable 
+        style={({ pressed }) => [
+          styles.tanibotFab,
+          pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }
+        ]}
+        onPress={() => router.push("/tanibot")}
+      >
+        <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
+      </Pressable>
+
       </SafeAreaView>
     );
   }
@@ -493,6 +505,19 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
+    
+      {/* TANIBOT FAB */}
+      <Pressable 
+        style={({ pressed }) => [
+          styles.tanibotFab,
+          pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }
+        ]}
+        onPress={() => router.push("/tanibot")}
+      >
+        <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
+      </Pressable>
+
+
     </SafeAreaView>
   );
 }
@@ -551,6 +576,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#5C5A4F",
     fontFamily: "Nunito_500Medium",
+  },
+
+  tanibotFab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#123924',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#3FA86B',
+    boxShadow: '4px 4px 0px #3FA86B',
+    elevation: 8,
+    zIndex: 100,
   },
   logoutButton: {
     width: 48,

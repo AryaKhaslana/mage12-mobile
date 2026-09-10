@@ -137,7 +137,7 @@ export default function KomunitasScreen() {
       const msg = error.response?.data?.message || "Gagal memposting.";
       if (msg.toLowerCase().includes("lokasi")) {
         Alert.alert("Lokasi belum lengkap", msg, [
-          { text: "OK", onPress: () => router.push("/(tabs)/profil") }
+          { text: "OK", onPress: () => router.push("/(auth)/location-setup") }
         ]);
       } else {
         Alert.alert("Gagal", msg);

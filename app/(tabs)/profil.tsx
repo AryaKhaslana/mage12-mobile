@@ -1,11 +1,12 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import api from '../../services/api';
+import { Image } from "expo-image"; // use expo-image for avatars if they have it, or react-native Image
 
 export default function ProfilScreen() {
   const [userData, setUserData] = useState<any>(null);
@@ -32,38 +33,30 @@ export default function ProfilScreen() {
             }
           }
         } catch (error) {
-          console.error(error);
+          console.error("Gagal mengambil data profil:", error);
         } finally {
           if (isActive) setIsLoading(false);
         }
       };
 
       fetchData();
-      return () => {
-        isActive = false;
-      };
+      return () => { isActive = false; };
     }, [])
   );
 
-  if (isLoading && !userData) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#3FA86B" />
-      </SafeAreaView>
-    );
-  }
-
-  const nama = userData?.nama || "Petani";
+  const nameFallback = userData?.nama || "Petani";
   const avatarUrl = userData?.avatarUrl;
+  const initial = nameFallback.charAt(0).toUpperCase();
+
   const streak = userData?.streak || 0;
-  const tanamanDirawat = tanamanList.length;
-  const siapPanen = tanamanList.filter(t => t.sisaHariPanen <= 0).length;
+  const tanamanCount = tanamanList.length;
+  const siapPanenCount = tanamanList.filter(t => t.sisaHariPanen <= 0).length;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* HEADER SECTION */}
+        {/* HEADER */}
         <View style={styles.headerBackground}>
           <Pressable 
             style={({ pressed }) => [
@@ -71,15 +64,17 @@ export default function ProfilScreen() {
               pressed && styles.pressedShadow2,
             ]}
           >
-            <MaterialIcons name="settings" size={20} color="#3FA86B" />
+            <MaterialIcons name="settings" size={24} color="#123924" />
           </Pressable>
-          
+
           <View style={styles.avatarWrapper}>
-            <View style={[styles.avatarContainer, !avatarUrl && { backgroundColor: '#3FA86B', justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={styles.avatarContainer}>
               {avatarUrl ? (
                 <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
               ) : (
-                <Text style={styles.avatarInitials}>{nama.charAt(0).toUpperCase()}</Text>
+                <View style={[styles.avatarImage, { backgroundColor: '#3FA86B', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Text style={styles.avatarInitials}>{initial}</Text>
+                </View>
               )}
             </View>
             <View style={styles.editBadge}>
@@ -87,24 +82,26 @@ export default function ProfilScreen() {
             </View>
           </View>
 
-          <Text style={styles.profileName}>{nama}</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.profileName}>{nameFallback}</Text>
+          )}
         </View>
 
-        {/* STATS GRID (Overlapping Header) */}
+        {/* STAT BOXES (OVERLAPPING HEADER) */}
         <View style={styles.statsContainer}>
           <View style={[styles.statBox, { backgroundColor: '#FFB627' }]}>
             <Text style={styles.statValue}>{streak}</Text>
-            <Text style={styles.statLabel}>Streak{'\n'}hari</Text>
+            <Text style={styles.statLabel}>Streak</Text>
           </View>
-
           <View style={[styles.statBox, { backgroundColor: '#3FA86B' }]}>
-            <Text style={[styles.statValue, { color: '#FFFFFF' }]}>{tanamanDirawat}</Text>
-            <Text style={[styles.statLabel, { color: '#FFFFFF' }]}>Tanaman{'\n'}dirawat</Text>
+            <Text style={[styles.statValue, { color: '#FFFFFF' }]}>{tanamanCount}</Text>
+            <Text style={[styles.statLabel, { color: '#FFFFFF' }]}>Tanaman dirawat</Text>
           </View>
-
           <View style={[styles.statBox, { backgroundColor: '#FF6B5C' }]}>
-            <Text style={[styles.statValue, { color: '#FFFFFF' }]}>{siapPanen}</Text>
-            <Text style={[styles.statLabel, { color: '#FFFFFF' }]}>Siap{'\n'}panen</Text>
+            <Text style={[styles.statValue, { color: '#FFFFFF' }]}>{siapPanenCount}</Text>
+            <Text style={[styles.statLabel, { color: '#FFFFFF' }]}>Siap panen</Text>
           </View>
         </View>
 
@@ -112,37 +109,39 @@ export default function ProfilScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Tanaman kamu</Text>
-            {tanamanList.length > 0 && (
-              <Pressable onPress={() => router.push('/(tabs)/tanaman')} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-                <Text style={styles.seeAllText}>Lihat semua</Text>
-              </Pressable>
-            )}
+            <Pressable onPress={() => router.push("/(tabs)/tanaman")}>
+              <Text style={styles.seeAllText}>Lihat semua</Text>
+            </Pressable>
           </View>
+          
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            {tanamanList.slice(0, 5).map(tanaman => (
+            {tanamanList.slice(0, 5).map((t) => (
               <Pressable 
-                key={tanaman.id}
-                onPress={() => router.push(`/detail-tanaman?id=${tanaman.id}`)}
+                key={t.id}
                 style={({ pressed }) => [
                   styles.plantCard,
                   pressed && styles.pressedShadow2,
                 ]}
+                onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: t.id } } as any)}
               >
                 <View style={styles.plantBlock}>
                   <MaterialIcons name="eco" size={28} color="#3FA86B" />
                 </View>
                 <View style={styles.plantNameContainer}>
-                  <Text style={styles.plantName} numberOfLines={1}>{tanaman.nickname || tanaman.jenisTanaman}</Text>
+                  <Text style={styles.plantName} numberOfLines={1}>
+                    {t.nickname || t.jenisTanaman}
+                  </Text>
                 </View>
               </Pressable>
             ))}
 
+            {/* KARTU TAMBAH (Selalu ada di akhir) */}
             <Pressable 
-              onPress={() => router.push('/(tabs)/tanaman')} // Navigate to the plants tab to add
               style={({ pressed }) => [
                 styles.plantAddCard,
                 pressed && styles.pressedShadow2,
               ]}
+              onPress={() => router.push("/(tabs)/tanaman")}
             >
               <View style={styles.plantAddIcon}>
                 <MaterialIcons name="add" size={24} color="#123924" />
@@ -152,28 +151,17 @@ export default function ProfilScreen() {
           </ScrollView>
         </View>
 
-        {/* MENU */}
+        {/* MENU LIST */}
         <View style={styles.menuContainer}>
           <Pressable 
             style={({ pressed }) => [
               styles.menuItem, 
               pressed && styles.menuItemPressed,
             ]}
-            onPress={() => Alert.alert("Segera hadir")}
+            onPress={() => Alert.alert("Segera hadir", "Fitur Edit Profil sedang dalam pengembangan.")}
           >
             <MaterialIcons name="person-outline" size={24} color="#123924" />
             <Text style={styles.menuText}>Edit Profil</Text>
-            <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
-          </Pressable>
-
-          <Pressable 
-            style={({ pressed }) => [
-              styles.menuItem, 
-              pressed && styles.menuItemPressed,
-            ]}
-          >
-            <MaterialIcons name="help-outline" size={24} color="#123924" />
-            <Text style={styles.menuText}>Pusat Bantuan</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
           </Pressable>
 

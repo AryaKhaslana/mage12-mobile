@@ -1,197 +1,219 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, Pressable, StyleSheet, SafeAreaView, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import api from '../../services/api';
+import { getCommunityPosts, CommunityPost } from '../../services/api';
+
+const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
+  <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+    <MaterialIcons name={icon} size={56} color="#bdcabd" style={{ marginBottom: 16 }} />
+    <Text style={{ fontSize: 16, fontFamily: 'Nunito_700Bold', color: '#123924', textAlign: 'center', marginBottom: 8 }}>{title}</Text>
+    <Text style={{ fontSize: 14, fontFamily: 'Nunito_500Medium', color: '#5C5A4F', textAlign: 'center' }}>{subtitle}</Text>
+    {ctaText && onCtaPress && (
+      <Pressable onPress={onCtaPress} style={({ pressed }) => [
+        { marginTop: 24, backgroundColor: '#3FA86B', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 100, borderWidth: 2, borderColor: '#123924', boxShadow: "3px 3px 0px #123924" },
+        pressed && { boxShadow: "0px 0px 0px #123924", transform: [{ translateX: 3 }, { translateY: 3 }] }
+      ]}>
+        <Text style={{ color: '#FFFFFF', fontSize: 14, fontFamily: 'Nunito_700Bold' }}>{ctaText}</Text>
+      </Pressable>
+    )}
+  </View>
+);
+
+const getRelativeTime = (isoString: string) => {
+  const date = new Date(isoString);
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 60) return `${Math.max(1, diffMins)} mnt lalu`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} jam lalu`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays} hari lalu`;
+  return date.toLocaleDateString("id-ID");
+};
 
 export default function KomunitasScreen() {
-  const [activeTab, setActiveTab] = useState('Terbaru');
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [coords, setCoords] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const limit = 10;
+
+  const fetchUserLocationAndPosts = async () => {
+    setIsLoading(true);
+    try {
+      const meRes = await api.get("/user/me").catch(() => null);
+      const lat = meRes?.data?.data?.latitude;
+      const lon = meRes?.data?.data?.longitude;
+      
+      if (lat != null && lon != null) {
+        setCoords({ latitude: lat, longitude: lon });
+        const commRes = await getCommunityPosts(lat, lon, 1, limit).catch(() => null);
+        if (commRes?.data) {
+          setPosts(commRes.data);
+          setPage(commRes.meta.halamanSekarang);
+          setHasMore(commRes.data.length >= limit);
+        } else {
+          setPosts([]);
+          setHasMore(false);
+        }
+      } else {
+        setCoords(null);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserLocationAndPosts();
+    }, [])
+  );
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (coords) {
+        const commRes = await getCommunityPosts(coords.latitude, coords.longitude, 1, limit).catch(() => null);
+        if (commRes?.data) {
+          setPosts(commRes.data);
+          setPage(commRes.meta.halamanSekarang);
+          setHasMore(commRes.data.length >= limit);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!hasMore || isLoadingMore || !coords) return;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const commRes = await getCommunityPosts(coords.latitude, coords.longitude, nextPage, limit).catch(() => null);
+      if (commRes?.data) {
+        setPosts(prev => [...prev, ...commRes.data]);
+        setPage(commRes.meta.halamanSekarang);
+        setHasMore(commRes.data.length >= limit);
+      } else {
+        setHasMore(false);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  if (isLoading && !isRefreshing && posts.length === 0) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3FA86B" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Komunitas</Text>
-            <Pressable 
-              style={({ pressed }) => [
-                styles.searchButton,
-                pressed && styles.pressedShadow3,
-              ]}
-            >
-              <MaterialIcons name="search" size={24} color="#123924" />
-            </Pressable>
-          </View>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Komunitas</Text>
+        </View>
 
-          {/* TABS TOGGLE */}
-          <View style={styles.tabContainer}>
-            <Pressable 
-              style={[styles.tabButton, activeTab === 'Terbaru' ? styles.tabActive : styles.tabInactive]}
-              onPress={() => setActiveTab('Terbaru')}
-            >
-              <Text style={[styles.tabText, activeTab === 'Terbaru' ? styles.tabTextActive : styles.tabTextInactive]}>Terbaru</Text>
-            </Pressable>
-            
-            <Pressable 
-              style={[styles.tabButton, activeTab === 'Terdekat' ? styles.tabActive : styles.tabInactive]}
-              onPress={() => setActiveTab('Terdekat')}
-            >
-              <Text style={[styles.tabText, activeTab === 'Terdekat' ? styles.tabTextActive : styles.tabTextInactive]}>Terdekat</Text>
-            </Pressable>
+        {!coords ? (
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <EmptyHint
+              icon="location-off"
+              title="Lokasimu belum disetel 📍"
+              subtitle="Komunitas butuh lokasimu buat nampilin postingan petani di sekitar."
+              ctaText="Set Lokasi Sekarang"
+              onCtaPress={() => router.push('/(tabs)/profil')}
+            />
           </View>
+        ) : (
+          <FlatList
+            data={posts}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={["#3FA86B"]} />
+            }
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            ListEmptyComponent={
+              !isLoading ? (
+                <EmptyHint
+                  icon="groups"
+                  title="Belum ada postingan di sekitarmu 🌾"
+                  subtitle="Jadilah petani pertama yang berbagi di sini!"
+                />
+              ) : null
+            }
+            ListFooterComponent={
+              isLoadingMore ? <ActivityIndicator size="small" color="#3FA86B" style={{ marginVertical: 16 }} /> : null
+            }
+            renderItem={({ item }) => {
+              let badgeText = "";
+              let badgeBg = "";
+              let badgeColor = "";
+              if (item.tipePost === "progress_update") {
+                badgeText = "Progress 🌱";
+                badgeBg = "#E8F5E9";
+                badgeColor = "#3FA86B";
+              } else if (item.tipePost === "panen_surplus") {
+                badgeText = "Panen Surplus 🌾";
+                badgeBg = "#FFF9E6";
+                badgeColor = "#B8860B";
+              } else if (item.tipePost === "pertanyaan") {
+                badgeText = "Pertanyaan ❓";
+                badgeBg = "#FFECEB";
+                badgeColor = "#FF6B5C";
+              }
 
-          {/* FEED LIST */}
-          <View style={styles.feedContainer}>
-            
-            {/* POST 1 (Fatih) */}
-            <Pressable 
-              style={({ pressed }) => [
-                styles.postCard,
-                pressed && styles.pressedShadow3,
-              ]}
-              onPress={() => router.push('/post-detail')}
-            >
-              {/* Post Header */}
-              <View style={styles.postHeader}>
-                <View style={styles.avatarContainer}>
-                  <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDMNyKkXQVH-96lmVRDApu0au4UNjpO6P1rk3kF8eL7T6qODKwBmtEGdXYCLun1L8OP-FSju7jPHolY6uExg-9N-zP49FWtJvWhf5dAAyAyrmeH07qDqW-ZTsIzPyVfBn0SiNe5NGg9c1jY7MiJLckIaULsHGbGuuiYDefmw6P2cM2ALin8NXP89nAI7Z2eukz62NZvsWbTpCCqNdG8x70U8xU1AuAhBRaaiekac9htmjcZVJRO3kq3yQ' }} style={styles.avatar} />
-                </View>
-                <View style={styles.postMeta}>
-                  <View style={styles.nameRow}>
-                    <Text style={styles.authorName}>Fatih</Text>
-                    <View style={styles.streakBadge}>
-                      <Text style={styles.streakText}>🔥 12</Text>
+              return (
+                <View style={styles.postCard}>
+                  <View style={styles.postHeader}>
+                    <View style={styles.avatarContainer}>
+                      <Text style={styles.avatarInitials}>{item.user_nama.charAt(0).toUpperCase()}</Text>
                     </View>
-                  </View>
-                  <Text style={styles.timeText}>2 jam lalu</Text>
-                </View>
-              </View>
-              
-              {/* Post Image */}
-              <View style={styles.postImageContainer}>
-                <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA48RspILvxZZypZnlP8G-YYwS0D2C3IvmDeNwFSbm0JaWNvKoXxisLtqsKJ50IK3MlwyWipdT5CobNgGnMb8hfvN0-muw0PzcAA5hG9RbJunRoElZn7cLmfPS-EPrTTh3RuZZWoYRjS7NQfr-iLF2LXbMvuX4BiD8tq-VXVq8jYNOsp2rdczFyIaHvJUs4tUgMfHGxGiCGHyLf-pR_PMIq5_GRiGtRxukwerLeQ1K0cDGWerqpwqW59A' }} style={styles.postImage} />
-              </View>
-
-              {/* Post Text */}
-              <Text style={styles.postCaption}>
-                Cabai rawitku mulai merah-merah nih! Seneng banget akhirnya bisa panen sendiri di balkon.
-              </Text>
-
-              {/* Post Tags */}
-              <View style={[styles.tagBadge, { backgroundColor: '#2E9E8C' }]}>
-                <Text style={styles.tagText}>Hari ke-14 · Cabai Rawit</Text>
-              </View>
-
-              {/* Post Actions */}
-              <View style={styles.actionRow}>
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.actionButton, 
-                    { backgroundColor: '#FF6B5C' },
-                    pressed && { transform: [{ scale: 0.92 }] }
-                  ]}
-                >
-                  <MaterialIcons name="favorite" size={16} color="#FFFFFF" />
-                </Pressable>
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    pressed && { transform: [{ scale: 0.92 }] }
-                  ]}
-                >
-                  <MaterialIcons name="chat-bubble" size={16} color="#123924" />
-                </Pressable>
-              </View>
-            </Pressable>
-
-            {/* POST 2 (Budi) */}
-            <Pressable 
-              style={({ pressed }) => [
-                styles.postCard,
-                pressed && styles.pressedShadow3,
-              ]}
-              onPress={() => router.push('/post-detail')}
-            >
-              {/* Post Header */}
-              <View style={styles.postHeader}>
-                <View style={styles.avatarContainer}>
-                  <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsctsztjTi8eV_cXIRVlOOZpdr4CjWW33lY52alMs6DRTvpaSvVyqgUr-zamCfvVk-ZaHv_FVAe16NqMWYVlJw9f8b6P_Wc6ZMni88Bf_4obLn4ZOelo-8aEz6Yv1I15P-IpbQeeNB0v8wNOLFdYYEa5IQUv2KIadb56bZR70dB7igSa8jgqsvIvsfpM-yo1XV34b7v1SXbzZmQJCjMGcOEWEuyBs0KScPg5371wK0mbJ_u09VICW02w' }} style={styles.avatar} />
-                </View>
-                <View style={styles.postMeta}>
-                  <View style={styles.nameRow}>
-                    <Text style={styles.authorName}>Budi</Text>
-                    <View style={styles.streakBadge}>
-                      <Text style={styles.streakText}>🔥 5</Text>
+                    <View style={styles.postMeta}>
+                      <Text style={styles.authorName}>{item.user_nama}</Text>
+                      <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
                     </View>
+                    {badgeText ? (
+                      <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+                        <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                  <Text style={styles.timeText}>5 jam lalu</Text>
+
+                  <Text style={styles.postCaption}>{item.deskripsi}</Text>
+
+                  {item.fotoUrl && (
+                    <View style={styles.postImageContainer}>
+                      <Image source={{ uri: item.fotoUrl }} style={styles.postImage} />
+                    </View>
+                  )}
+
+                  <View style={styles.locationRow}>
+                    <MaterialIcons name="place" size={12} color="#5C5A4F" />
+                    <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+                  </View>
                 </View>
-              </View>
-              
-              {/* Post Image */}
-              <View style={styles.postImageContainer}>
-                <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCnAfEZVomKBI40ycKsqljttolfs2Iwvx9rv2tsgxay8nuYjjdvmRolsLqKAATqee85ASt7DQntviilxzcj6IR_pRZj5JIZ_sDeS9LdPlxhAEPOkcDcX1-qeeyOr40YtO_u9O3VICFzrZje6PZ9fVVxvWdx5_7h9m2qrW5z7SDV4v6ncKAASZpmipE1bcDdXKdoksCv7BRbXUKZH5c4suznJNnzJN523mctNc4F7fOyJgU2iqj0pM4YKQ' }} style={styles.postImage} />
-              </View>
-
-              {/* Post Text */}
-              <Text style={styles.postCaption}>
-                Daun baru monstera jandabolong akhirnya mekar sempurna. Pagi yang indah!
-              </Text>
-
-              {/* Post Tags */}
-              <View style={[styles.tagBadge, { backgroundColor: '#2E9E8C' }]}>
-                <Text style={styles.tagText}>Tanaman Hias · Monstera</Text>
-              </View>
-
-              {/* Post Actions */}
-              <View style={styles.actionRow}>
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    pressed && { transform: [{ scale: 0.92 }] }
-                  ]}
-                >
-                  <MaterialIcons name="favorite-border" size={16} color="#123924" />
-                </Pressable>
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    pressed && { transform: [{ scale: 0.92 }] }
-                  ]}
-                >
-                  <MaterialIcons name="chat-bubble-outline" size={16} color="#123924" />
-                </Pressable>
-              </View>
-            </Pressable>
-
-          </View>
-        </ScrollView>
-
-        {/* LEFT FAB (Mascot / Assistant) */}
-        <Pressable 
-          style={({ pressed }) => [
-            styles.leftFab,
-            pressed && styles.pressedShadow4,
-          ]}
-        >
-          <View style={styles.mascotContainer}>
-            <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCTjpOOMGzAtXXTR7E78hS9yI72ZAtQLhgRDnMHEqp4UgwUbZIhFbvpbfav6sQkBELuAo1TXgv3kF-QZzF-zu10Cts5xWZANv_wWvv8jLBgSfsNeVHo0rmA_O_3mYQF6gGBxy27YMN61UgAI_KC2RSdflCFRqzkpVvNZVA3IeEK5M6xzG7GD3qFx0wHdjkb6Cwg-EQgEfkHbqZq6p-rA_E0rzZJDjxWVJblyVlYv4nXSijUmezM-ecGQA' }} style={styles.mascotImage} />
-          </View>
-          <View style={styles.mascotDot} />
-        </Pressable>
-
-        {/* RIGHT FAB (Camera) */}
-        <Pressable 
-          style={({ pressed }) => [
-            styles.rightFab,
-            pressed && styles.pressedShadow3,
-          ]}
-        >
-          <MaterialIcons name="photo-camera" size={28} color="#FFFFFF" />
-        </Pressable>
-
+              );
+            }}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -204,269 +226,102 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    position: 'relative',
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 120,
+    gap: 16,
   },
-
-  // State tertekan neobrutalism
-  pressedShadow3: {
-    boxShadow: '0px 0px 0px #123924',
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
-    transform: [{ translateX: 3 }, { translateY: 3 }],
-  },
-  pressedShadow4: {
-    boxShadow: '0px 0px 0px #123924',
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-  },
-
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 8,
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#123924',
-  },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '3px 3px 0px #123924',
-    shadowColor: '#123924',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#123924',
-    padding: 4,
-    marginBottom: 24,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 999,
-    alignItems: 'center',
-    borderWidth: 2,
-  },
-  tabActive: {
-    backgroundColor: '#3FA86B',
-    borderColor: '#123924',
-  },
-  tabInactive: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  tabTextActive: {
-    color: '#FFFFFF',
-  },
-  tabTextInactive: {
-    color: '#3e4a40',
-  },
-  feedContainer: {
-    gap: 24,
   },
   postCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 24,
     borderWidth: 2,
     borderColor: '#123924',
     padding: 16,
-    boxShadow: '3px 3px 0px #123924',
-    shadowColor: '#123924',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
+    boxShadow: '4px 4px 0px #123924',
     elevation: 4,
   },
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 12,
   },
   avatarContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#123924',
-    overflow: 'hidden',
-    backgroundColor: '#e5e2db',
+    backgroundColor: '#3FA86B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  avatarInitials: {
+    color: '#FFFFFF',
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 16,
   },
   postMeta: {
     flex: 1,
   },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   authorName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#123924',
-  },
-  streakBadge: {
-    backgroundColor: '#FFB627',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#123924',
-  },
-  streakText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 14,
+    fontFamily: 'Nunito_700Bold',
     color: '#123924',
   },
   timeText: {
-    fontSize: 11,
-    color: '#3e4a40',
-    marginTop: 2,
+    fontSize: 10,
+    color: '#5C5A4F',
+    fontFamily: 'Nunito_500Medium',
+  },
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: '#123924',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontFamily: 'Nunito_700Bold',
+  },
+  postCaption: {
+    fontSize: 14,
+    fontFamily: 'Nunito_500Medium',
+    color: '#123924',
+    lineHeight: 20,
+    marginBottom: 12,
   },
   postImageContainer: {
     width: '100%',
-    height: 192,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#123924',
+    aspectRatio: 4/3,
+    borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#e5e2db',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   postImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  postCaption: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: '#123924',
-    marginBottom: 16,
-  },
-  tagBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#123924',
-    marginBottom: 16,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  actionRow: {
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 4,
   },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  leftFab: {
-    position: 'absolute',
-    bottom: 24,
-    left: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#2e6949',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '4px 4px 0px #123924',
-    shadowColor: '#123924',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
-    zIndex: 50,
-  },
-  mascotContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FBF8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  mascotImage: {
-    width: 32,
-    height: 32,
-    resizeMode: 'contain',
-  },
-  mascotDot: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 16,
-    height: 16,
-    backgroundColor: '#FFB627',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#123924',
-  },
-  rightFab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#3FA86B',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '3px 3px 0px #123924',
-    shadowColor: '#123924',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
-    zIndex: 40,
+  distanceText: {
+    fontSize: 10,
+    color: '#5C5A4F',
+    fontFamily: 'Nunito_500Medium',
   },
 });

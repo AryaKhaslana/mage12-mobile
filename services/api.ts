@@ -146,6 +146,25 @@ export const getWeatherToday = async (): Promise<any> => {
   return response.data.data;
 };
 
+export interface CommunityPost {
+  id: number;
+  userId: number;
+  user_nama: string;
+  tipePost: "progress_update" | "panen_surplus" | "pertanyaan";
+  deskripsi: string;
+  fotoUrl: string | null;
+  createdAt: string;
+  latitude: number;
+  longitude: number;
+  distance: number;
+}
+
+export const getCommunityPosts = async (latitude: number, longitude: number, page: number = 1, limit: number = 10) => {
+  const response = await api.get("/community", { params: { latitude, longitude, page, limit } });
+  return response.data;
+};
+
+
 export const deleteTanaman = async (id: number): Promise<void> => {
   await api.delete(`/tanaman/${id}`);
 };

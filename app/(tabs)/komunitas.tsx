@@ -212,8 +212,9 @@ export default function KomunitasScreen() {
   if (isLoading && !isRefreshing && posts.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
+                <View style={styles.header}>
           <Text style={styles.headerTitle}>Komunitas</Text>
+          <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital 🌱</Text>
         </View>
         <View style={styles.scrollContent}>
           <PostSkeleton />
@@ -227,8 +228,9 @@ export default function KomunitasScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.header}>
+                <View style={styles.header}>
           <Text style={styles.headerTitle}>Komunitas</Text>
+          <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital 🌱</Text>
         </View>
 
         {!coords ? (
@@ -336,10 +338,17 @@ export default function KomunitasScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
+              <View style={styles.modalDragIndicator} />
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Bagikan ke Komunitas</Text>
-                <Pressable onPress={() => !isSubmitting && setIsModalVisible(false)}>
-                  <MaterialIcons name="close" size={24} color="#123924" />
+                <View>
+                  <Text style={styles.modalTitle}>Mau bahas apa? 💬</Text>
+                  <Text style={styles.modalSubtitle}>Bagikan ceritamu ke petani lain!</Text>
+                </View>
+                <Pressable 
+                  style={styles.closeModalButton}
+                  onPress={() => !isSubmitting && setIsModalVisible(false)}
+                >
+                  <MaterialIcons name="close" size={20} color="#123924" />
                 </Pressable>
               </View>
 
@@ -375,8 +384,17 @@ export default function KomunitasScreen() {
               </View>
 
               {!foto ? (
-                <Pressable style={styles.photoButton} onPress={handlePickImage}>
-                  <Text style={styles.photoButtonText}>📷 Pilih Foto</Text>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.photoDashedButton,
+                    pressed && { backgroundColor: '#F4F6F0' }
+                  ]} 
+                  onPress={handlePickImage}
+                >
+                  <View style={styles.photoIconWrapper}>
+                    <MaterialIcons name="add-a-photo" size={24} color="#123924" />
+                  </View>
+                  <Text style={styles.photoDashedText}>Tambahin foto biar makin asik!</Text>
                 </Pressable>
               ) : (
                 <View style={styles.previewContainer}>
@@ -395,7 +413,7 @@ export default function KomunitasScreen() {
                 {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Posting!</Text>
+                  <Text style={styles.submitButtonText}>Kirim Sekarang 🚀</Text>
                 )}
               </Pressable>
             </View>
@@ -430,6 +448,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontFamily: 'Nunito_800ExtraBold',
     color: '#123924',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito_500Medium',
+    color: '#5C5A4F',
+    marginTop: 4,
   },
   postCard: {
     backgroundColor: '#FFFFFF',
@@ -537,15 +561,41 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(18,57,36,0.5)',
     justifyContent: 'flex-end',
   },
+  modalDragIndicator: {
+    width: 48,
+    height: 6,
+    backgroundColor: '#bdcabd',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
   modalContent: {
     backgroundColor: '#FBF8F0',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     borderWidth: 2,
     borderColor: '#123924',
     borderBottomWidth: 0,
     padding: 24,
-    maxHeight: '80%',
+    paddingTop: 16,
+    maxHeight: '85%',
+  },
+  closeModalButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#123924',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '2px 2px 0px #123924',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito_500Medium',
+    color: '#5C5A4F',
+    marginTop: 2,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -566,10 +616,11 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 100,
     borderWidth: 2,
     borderColor: '#123924',
+    boxShadow: '2px 2px 0px #123924',
   },
   chipActive: {
     backgroundColor: '#3FA86B',
@@ -601,6 +652,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#123924',
     textAlignVertical: 'top',
+    boxShadow: '4px 4px 0px #123924',
   },
   counterText: {
     fontFamily: 'Nunito_500Medium',
@@ -609,19 +661,32 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 4,
   },
-  photoButton: {
+  photoDashedButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#123924',
-    borderRadius: 100,
-    padding: 12,
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 24,
-    alignSelf: 'flex-start',
+    boxShadow: '4px 4px 0px #123924',
   },
-  photoButtonText: {
+  photoIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E8F5E9',
+    borderWidth: 2,
+    borderColor: '#123924',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  photoDashedText: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 12,
+    fontSize: 14,
     color: '#123924',
   },
   previewContainer: {

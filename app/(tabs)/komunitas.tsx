@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import api from '../../services/api';
-import { getCommunityPosts, CommunityPost } from '../../services/api';
+import { getCommunityPosts, CommunityPost, deleteCommunityPost } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
@@ -79,6 +79,8 @@ const PostSkeleton = () => {
 
 export default function KomunitasScreen() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
   const [coords, setCoords] = useState<{ latitude: number, longitude: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -151,8 +153,12 @@ export default function KomunitasScreen() {
     setIsLoading(true);
     try {
       const meRes = await api.get("/user/me").catch(() => null);
-      const lat = meRes?.data?.data?.latitude;
-      const lon = meRes?.data?.data?.longitude;
+      const userData = meRes?.data?.data;
+      if (userData?.id) {
+        setCurrentUserId(userData.id);
+      }
+      const lat = userData?.latitude;
+      const lon = userData?.longitude;
       
       if (lat != null && lon != null) {
         setCoords({ latitude: lat, longitude: lon });
@@ -217,6 +223,37 @@ export default function KomunitasScreen() {
     } finally {
       setIsLoadingMore(false);
     }
+  };
+
+
+  const handleDeletePost = (id: number) => {
+    Alert.alert(
+      "Hapus postingan ini?",
+      "Postingan yang dihapus tidak bisa dikembalikan.",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: async () => {
+            setIsDeletingId(id);
+            try {
+              await deleteCommunityPost(id);
+              setPosts(prev => prev.filter(p => p.id !== id));
+            } catch (error: any) {
+              if (error.response?.status === 404) {
+                // Already deleted
+                setPosts(prev => prev.filter(p => p.id !== id));
+              } else {
+                Alert.alert("Gagal", error.response?.data?.message || "Gagal menghapus postingan.");
+              }
+            } finally {
+              setIsDeletingId(null);
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (isLoading && !isRefreshing && posts.length === 0) {
@@ -310,6 +347,20 @@ export default function KomunitasScreen() {
                         <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
                       </View>
                     ) : null}
+                    {item.userId === currentUserId && (
+                      <Pressable 
+                        hitSlop={10}
+                        style={{ marginLeft: 8 }}
+                        disabled={isDeletingId === item.id}
+                        onPress={() => handleDeletePost(item.id)}
+                      >
+                        {isDeletingId === item.id ? (
+                          <ActivityIndicator size="small" color="#FF6B5C" />
+                        ) : (
+                          <MaterialIcons name="more-vert" size={18} color="#5C5A4F" />
+                        )}
+                      </Pressable>
+                    )}
                   </View>
 
                   <Text style={styles.postCaption}>{item.deskripsi}</Text>

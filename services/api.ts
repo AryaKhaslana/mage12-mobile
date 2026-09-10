@@ -201,3 +201,7 @@ export const createLog = async ({
     return response.data.data;
   }
 };
+
+export const deleteCommunityPost = async (id: number): Promise<void> => {
+  await api.delete(`/community/${id}`);
+};

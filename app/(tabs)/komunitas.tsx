@@ -238,7 +238,7 @@ export default function KomunitasScreen() {
               title="Lokasimu belum disetel 📍"
               subtitle="Komunitas butuh lokasimu buat nampilin postingan petani di sekitar."
               ctaText="Set Lokasi Sekarang"
-              onCtaPress={() => router.push('/(tabs)/profil')}
+              onCtaPress={() => router.push('/(auth)/location-setup')}
             />
           </View>
         ) : (

@@ -377,9 +377,22 @@ export default function KomunitasScreen() {
                     </View>
                   )}
 
-                  <View style={styles.locationRow}>
-                    <MaterialIcons name="place" size={12} color="#5C5A4F" />
-                    <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+                  <View style={styles.cardFooter}>
+                    <View style={styles.actionBar}>
+                      <View style={styles.actionItem}>
+                        <MaterialIcons name={item.isLiked ? "favorite" : "favorite-border"} size={20} color={item.isLiked ? "#FF6B5C" : "#5C5A4F"} />
+                        <Text style={[styles.actionText, item.isLiked && { color: "#FF6B5C" }]}>{item.jumlahLike || 0}</Text>
+                      </View>
+                      <View style={styles.actionItem}>
+                        <MaterialIcons name="chat-bubble-outline" size={20} color="#5C5A4F" />
+                        <Text style={styles.actionText}>{item.jumlahKomentar || 0}</Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.locationRow}>
+                      <MaterialIcons name="place" size={12} color="#5C5A4F" />
+                      <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+                    </View>
                   </View>
                 </Pressable>
               );
@@ -594,6 +607,29 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 2,
+    borderTopColor: '#E8E5DA',
+  },
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionText: {
+    fontSize: 13,
+    fontFamily: 'Nunito_700Bold',
+    color: '#5C5A4F',
   },
   locationRow: {
     flexDirection: 'row',

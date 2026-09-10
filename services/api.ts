@@ -192,6 +192,9 @@ export interface CommunityPost {
   latitude: number;
   longitude: number;
   distance: number;
+  jumlahKomentar?: number;
+  jumlahLike?: number;
+  isLiked?: boolean;
 }
 
 export const getCommunityPosts = async (latitude: number, longitude: number, page: number = 1, limit: number = 10) => {

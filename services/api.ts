@@ -300,3 +300,16 @@ export const getTanibotHistory = async (page: number = 1, limit: number = 20): P
   const response = await api.get("/tanibot/history", { params: { page, limit } });
   return response.data;
 };
+
+
+export const updateProfile = async (formData: FormData): Promise<any> => {
+  const response = await api.put("/user/me", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data.data;
+};
+
+export const updateTanaman = async (id: number, data: { jenisTanaman?: string; nickname?: string }): Promise<any> => {
+  const response = await api.put(`/tanaman/${id}`, data);
+  return response.data.data;
+};

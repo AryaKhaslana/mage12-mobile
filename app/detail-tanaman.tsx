@@ -1,12 +1,21 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman, harvestTanaman } from '../services/api';
+import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman, updateTanaman, harvestTanaman } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
+import { useNotification } from '../components/NotificationContext';
 
 const FALLBACK_HERO = 'https://lh3.googleusercontent.com/aida-public/AOSwzR6X7y3O2Q2_0uXwFhK8TQKf0vFvP4o7SjYdJ9k-h-5E8tV8D2Q3g0K_b8QkLp6g5zZ9n3nK2N8k5L0g-v4c0r9r6p2y2J5b8w';
+
+const JENIS_TANAMAN_ENUM = [
+  "Padi", "Jagung", "Singkong", "Ubi Jalar", "Kedelai", "Kacang Tanah", 
+  "Tomat", "Cabai Merah", "Cabai Rawit", "Bawang Merah", "Bawang Putih", 
+  "Kubis", "Kangkung", "Bayam", "Terong", "Timun", "Labu Siam", "Wortel", 
+  "Kentang", "Pisang",
+];
+
 const FALLBACK_THUMB = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA';
 
 const formatDate = (isoString: string) => {
@@ -22,12 +31,44 @@ export default function DetailTanamanModal() {
   const tanamanId = Number(id);
 
   const [tanaman, setTanaman] = useState<TanamanDetail | null>(null);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editNickname, setEditNickname] = useState("");
+  const [editJenis, setEditJenis] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const { showNotification } = useNotification();
+
   const [logs, setLogs] = useState<LogAktivitas[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isHarvesting, setIsHarvesting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  
+  const handleOpenEdit = () => {
+    if (tanaman) {
+      setEditNickname(tanaman.nickname || "");
+      setEditJenis(tanaman.jenisTanaman);
+      setIsEditModalVisible(true);
+    }
+  };
+
+  const handleEditSave = async () => {
+    setIsSavingEdit(true);
+    try {
+      await updateTanaman(Number(id), {
+        nickname: editNickname || undefined,
+        jenisTanaman: editJenis,
+      });
+      showNotification("Sukses", "Tanaman berhasil diupdate!");
+      setIsEditModalVisible(false);
+      fetchData(); // refetch to update UI
+    } catch (e: any) {
+      Alert.alert("Gagal", e.response?.data?.message || "Gagal mengupdate tanaman.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   const fetchData = async () => {
     if (!tanamanId) return;
@@ -176,7 +217,10 @@ export default function DetailTanamanModal() {
     return (
       <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color="#1F5C3D" />
-      </SafeAreaView>
+      
+      
+
+    </SafeAreaView>
     );
   }
 
@@ -334,11 +378,165 @@ export default function DetailTanamanModal() {
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
       )}
-    </SafeAreaView>
+    
+      
+
+    
+      {/* EDIT MODAL */}
+      <Modal visible={isEditModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Tanaman</Text>
+              <Pressable onPress={() => setIsEditModalVisible(false)} disabled={isSavingEdit}>
+                <MaterialIcons name="close" size={24} color="#123924" />
+              </Pressable>
+            </View>
+
+            <Text style={styles.modalLabel}>Panggilan Kesayangan (Opsional)</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={editNickname}
+              onChangeText={setEditNickname}
+              placeholder="Nickname tanaman"
+              placeholderTextColor="#a09d91"
+            />
+
+            <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
+            <ScrollView style={styles.pickerContainer}>
+              {JENIS_TANAMAN_ENUM.map((jenis) => (
+                <Pressable
+                  key={jenis}
+                  style={({ pressed }) => [
+                    styles.pickerItem,
+                    editJenis === jenis && styles.pickerItemActive,
+                    pressed && { opacity: 0.75 },
+                  ]}
+                  onPress={() => setEditJenis(jenis)}
+                >
+                  <Text
+                    style={[
+                      styles.pickerItemText,
+                      editJenis === jenis && styles.pickerItemTextActive,
+                    ]}
+                  >
+                    {jenis}
+                  </Text>
+                  {editJenis === jenis && (
+                    <MaterialIcons name="check-circle" size={20} color="#FFFFFF" />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.submitButton,
+                pressed && !isSavingEdit && { opacity: 0.8 },
+              ]}
+              onPress={handleEditSave}
+              disabled={isSavingEdit}
+            >
+              {isSavingEdit ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitButtonText}>Simpan Perubahan</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+</SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FBF8F0',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    borderWidth: 2,
+    borderColor: '#123924',
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#123924',
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontFamily: 'Nunito_700Bold',
+    color: '#123924',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  modalInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#123924',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: 'Nunito_500Medium',
+    color: '#123924',
+  },
+  pickerContainer: {
+    maxHeight: 200,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#123924',
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E5DA',
+  },
+  pickerItemActive: {
+    backgroundColor: '#3FA86B',
+  },
+  pickerItemText: {
+    fontSize: 14,
+    fontFamily: 'Nunito_500Medium',
+    color: '#123924',
+  },
+  pickerItemTextActive: {
+    color: '#FFFFFF',
+    fontFamily: 'Nunito_700Bold',
+  },
+  submitButton: {
+    backgroundColor: '#3FA86B',
+    paddingVertical: 16,
+    borderRadius: 100,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#123924',
+    boxShadow: '3px 3px 0px #123924',
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#123924',
+  },
   safeArea: { flex: 1, backgroundColor: '#FBF8F0' },
   scrollContent: { paddingBottom: 40 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, marginBottom: 16 },

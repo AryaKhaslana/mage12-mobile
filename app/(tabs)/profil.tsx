@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Modal, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import api, { getAchievements, AchievementResponse, Achievement } from '../../se
 import { Image } from "expo-image"; // use expo-image for avatars if they have it, or react-native Image
 
 export default function ProfilScreen() {
+  const [showAbout, setShowAbout] = React.useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -209,10 +210,22 @@ export default function ProfilScreen() {
               styles.menuItem, 
               pressed && styles.menuItemPressed,
             ]}
-            onPress={() => Alert.alert("Segera hadir", "Fitur Edit Profil sedang dalam pengembangan.")}
+            onPress={() => router.push("/edit-profil" as any)}
           >
             <MaterialIcons name="person-outline" size={24} color="#123924" />
             <Text style={styles.menuText}>Edit Profil</Text>
+            <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
+          </Pressable>
+          
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem, 
+              pressed && styles.menuItemPressed,
+            ]}
+            onPress={() => Alert.alert("Segera hadir", "Fitur Notifikasi sedang dalam pengembangan.")}
+          >
+            <MaterialIcons name="notifications-none" size={24} color="#123924" />
+            <Text style={styles.menuText}>Pengaturan Notifikasi</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
           </Pressable>
 
@@ -221,9 +234,10 @@ export default function ProfilScreen() {
               styles.menuItem, 
               pressed && styles.menuItemPressed,
             ]}
+            onPress={() => setShowAbout(true)}
           >
             <MaterialIcons name="info-outline" size={24} color="#123924" />
-            <Text style={styles.menuText}>Informasi Akun</Text>
+            <Text style={styles.menuText}>Tentang Aplikasi</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
           </Pressable>
 
@@ -240,6 +254,7 @@ export default function ProfilScreen() {
           </Pressable>
         </View>
 
+        
         {/* LOGOUT BUTTON */}
         <Pressable 
           style={({ pressed }) => [
@@ -255,6 +270,29 @@ export default function ProfilScreen() {
           <MaterialIcons name="logout" size={24} color="#FF6B5C" />
           <Text style={styles.logoutText}>Keluar</Text>
         </Pressable>
+
+        {/* ABOUT MODAL */}
+        <Modal visible={showAbout} transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <View style={{ backgroundColor: '#FBF8F0', padding: 24, borderRadius: 24, borderWidth: 2, borderColor: '#123924', boxShadow: '4px 4px 0px #123924', width: '100%', alignItems: 'center' }}>
+              <MaterialIcons name="eco" size={48} color="#3FA86B" style={{ marginBottom: 12 }} />
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', marginBottom: 4 }}>TaniSync</Text>
+              <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', marginBottom: 16 }}>Versi 1.0.0</Text>
+              
+              <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#123924', textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
+                Aplikasi teman bertani kaum urban. TaniSync membantumu merawat tanaman dengan mudah dan menyenangkan. Dibuat untuk Project MAGE 🌱.
+              </Text>
+              
+              <Pressable 
+                onPress={() => setShowAbout(false)}
+                style={({ pressed }) => [{ backgroundColor: '#3FA86B', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 100, borderWidth: 2, borderColor: '#123924', boxShadow: '2px 2px 0px #123924' }, pressed && { boxShadow: '0px 0px 0px #123924', transform: [{translateX: 2}, {translateY: 2}] }]}
+              >
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Tutup</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
 
       </ScrollView>
     </SafeAreaView>

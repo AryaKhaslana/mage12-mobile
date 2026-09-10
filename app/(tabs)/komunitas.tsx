@@ -377,22 +377,9 @@ export default function KomunitasScreen() {
                     </View>
                   )}
 
-                  <View style={styles.cardFooter}>
-                    <View style={styles.actionBar}>
-                      <View style={styles.actionItem}>
-                        <MaterialIcons name={item.isLiked ? "favorite" : "favorite-border"} size={20} color={item.isLiked ? "#FF6B5C" : "#5C5A4F"} />
-                        <Text style={[styles.actionText, item.isLiked && { color: "#FF6B5C" }]}>{item.jumlahLike || 0}</Text>
-                      </View>
-                      <View style={styles.actionItem}>
-                        <MaterialIcons name="chat-bubble-outline" size={20} color="#5C5A4F" />
-                        <Text style={styles.actionText}>{item.jumlahKomentar || 0}</Text>
-                      </View>
-                    </View>
-                    
-                    <View style={styles.locationRow}>
-                      <MaterialIcons name="place" size={12} color="#5C5A4F" />
-                      <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
-                    </View>
+                  <View style={styles.locationRow}>
+                    <MaterialIcons name="place" size={12} color="#5C5A4F" />
+                    <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
                   </View>
                 </Pressable>
               );

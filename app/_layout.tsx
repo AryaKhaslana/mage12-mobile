@@ -12,6 +12,8 @@ import { useEffect } from "react";
 
 SplashScreen.preventAutoHideAsync();
 
+import { NotificationProvider } from "../components/NotificationContext";
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     Nunito_400Regular,
@@ -31,7 +33,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <NotificationProvider>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
@@ -43,6 +45,6 @@ export default function RootLayout() {
 
       {/* Kunci status bar HP ke mode gelap karena background aplikasi kita terang */}
       <StatusBar style="dark" />
-    </>
+    </NotificationProvider>
   );
 }

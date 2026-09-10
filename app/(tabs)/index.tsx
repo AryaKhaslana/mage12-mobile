@@ -6,13 +6,12 @@ import { useEffect, useState } from "react";
 import {
   Image,
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
@@ -45,6 +44,7 @@ export default function DashboardScreen() {
   const [weather, setWeather] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const checkAuthAndFetch = async () => {
@@ -92,10 +92,11 @@ export default function DashboardScreen() {
       }
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
-      Alert.alert(
+      showNotification(
         "Gagal Memuat Data",
         error.response?.data?.message ||
           "Terjadi kesalahan koneksi saat memuat dashboard.",
+        "error"
       );
     } finally {
       setIsLoading(false);
@@ -110,17 +111,19 @@ export default function DashboardScreen() {
         tipeValidasi: "button_only",
       });
       if (response.data?.status === "success") {
-        Alert.alert(
+        showNotification(
           "Mantap!",
           `+${response.data.data.skorSaatIni} poin! Streak: ${response.data.data.streak} hari 🔥`,
+          "success"
         );
         fetchDashboardData();
       }
     } catch (error: any) {
       console.error("Error logging activity:", error);
-      Alert.alert(
+      showNotification(
         "Gagal Mencatat",
         error.response?.data?.message || "Terjadi kesalahan.",
+        "error"
       );
     }
   };
@@ -488,6 +491,7 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
       </ScrollView>
+
     </SafeAreaView>
   );
 }

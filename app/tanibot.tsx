@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, FlatList, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, FlatList, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
@@ -15,6 +15,30 @@ const getRelativeTime = (isoString: string) => {
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 7) return `${diffDays} hari lalu`;
   return date.toLocaleDateString("id-ID");
+};
+
+
+const TypingIndicator = () => {
+  const fadeAnim = useRef(new Animated.Value(0.3)).current;
+  
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.3, duration: 600, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View style={[styles.bubbleWrapperLeft, { marginTop: 16, opacity: fadeAnim }]}>
+      <View style={styles.bubbleBot}>
+        <Text style={[styles.bubbleText, styles.textBot, { fontStyle: 'italic' }]}>
+          TaniBot sedang mengetik...
+        </Text>
+      </View>
+    </Animated.View>
+  );
 };
 
 export default function TanibotScreen() {
@@ -103,7 +127,7 @@ export default function TanibotScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         
         {/* HEADER */}
         <View style={styles.header}>
@@ -135,12 +159,14 @@ export default function TanibotScreen() {
               onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
               ListEmptyComponent={
                 <View>
-                  <View style={styles.bubbleWrapperLeft}>
-                    <View style={styles.bubbleBot}>
-                      <Text style={[styles.bubbleText, styles.textBot]}>
-                        Hai! Aku TaniBot 🌱 Tanya apa aja soal tanamanmu — kapan panen, perlu siram nggak, atau tips merawat!
-                      </Text>
+                  <View style={styles.welcomeContainer}>
+                    <View style={styles.welcomeIconWrapper}>
+                      <MaterialIcons name="smart-toy" size={48} color="#FFFFFF" />
                     </View>
+                    <Text style={styles.welcomeTitle}>Halo! Aku TaniBot 🌱</Text>
+                    <Text style={styles.welcomeSubtitle}>
+                      Asisten pintar pertanianmu. Tanya apa aja seputar perawatan, panen, atau cuaca hari ini!
+                    </Text>
                   </View>
                   <View style={{ marginTop: 12, gap: 8, flexDirection: 'row', flexWrap: 'wrap' }}>
                     {["Tanamanku perlu disiram nggak hari ini?", "Kapan tanamanku panen?", "Apa tips merawat tanaman tomat?"].map((q, i) => (
@@ -168,11 +194,7 @@ export default function TanibotScreen() {
               renderItem={renderMessage}
               ListFooterComponent={
                 isSending ? (
-                  <View style={[styles.bubbleWrapperLeft, { marginTop: 16, opacity: 0.6 }]}>
-                    <View style={styles.bubbleBot}>
-                      <Text style={[styles.textBot, { fontStyle: 'italic' }]}>TaniBot sedang mengetik...</Text>
-                    </View>
-                  </View>
+                  <TypingIndicator />
                 ) : null
               }
             />
@@ -226,6 +248,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
     color: '#5C5A4F',
+  },
+  welcomeContainer: {
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#123924',
+    boxShadow: '4px 4px 0px #123924',
+    elevation: 4,
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  welcomeIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#3FA86B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#123924',
+  },
+  welcomeTitle: {
+    fontSize: 20,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#123924',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito_500Medium',
+    color: '#5C5A4F',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   bubbleWrapper: {
     marginBottom: 24,

@@ -292,8 +292,8 @@ export const toggleCommunityLike = async (id: number): Promise<{ liked: boolean;
 };
 
 export const sendTanibotMessage = async (message: string): Promise<string> => {
-  const response = await api.post("/tanibot", { message });
-  return response.data.data.reply;
+  const response = await api.post("/tanibot", { pertanyaan: message });
+  return response.data.data.jawaban;
 };
 
 export const getTanibotHistory = async (page: number = 1, limit: number = 20): Promise<{ meta: any; data: ChatMessage[] }> => {

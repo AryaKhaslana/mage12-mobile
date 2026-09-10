@@ -134,11 +134,34 @@ export default function TanibotScreen() {
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
               ListEmptyComponent={
-                <View style={styles.bubbleWrapperLeft}>
-                  <View style={styles.bubbleBot}>
-                    <Text style={styles.textBot}>
-                      Hai! Aku TaniBot 🌱 Tanya apa aja soal tanamanmu — kapan panen, perlu siram nggak, atau tips merawat!
-                    </Text>
+                <View>
+                  <View style={styles.bubbleWrapperLeft}>
+                    <View style={styles.bubbleBot}>
+                      <Text style={[styles.bubbleText, styles.textBot]}>
+                        Hai! Aku TaniBot 🌱 Tanya apa aja soal tanamanmu — kapan panen, perlu siram nggak, atau tips merawat!
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={{ marginTop: 12, gap: 8, flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {["Tanamanku perlu disiram nggak hari ini?", "Kapan tanamanku panen?", "Apa tips merawat tanaman tomat?"].map((q, i) => (
+                      <Pressable 
+                        key={i}
+                        onPress={() => setInputText(q)}
+                        style={({ pressed }) => [
+                          {
+                            backgroundColor: '#E8F5E9',
+                            borderWidth: 1,
+                            borderColor: '#3FA86B',
+                            borderRadius: 100,
+                            paddingHorizontal: 16,
+                            paddingVertical: 8,
+                          },
+                          pressed && { opacity: 0.7 }
+                        ]}
+                      >
+                        <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924' }}>{q}</Text>
+                      </Pressable>
+                    ))}
                   </View>
                 </View>
               }
@@ -205,7 +228,7 @@ const styles = StyleSheet.create({
     color: '#5C5A4F',
   },
   bubbleWrapper: {
-    marginBottom: 16,
+    marginBottom: 24,
     maxWidth: '80%',
   },
   bubbleWrapperLeft: {
@@ -233,7 +256,7 @@ const styles = StyleSheet.create({
   bubbleText: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   textUser: {
     color: '#FFFFFF',

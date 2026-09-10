@@ -78,6 +78,15 @@ res 401: { status: "fail", message: "Token Google tidak valid atau kedaluwarsa."
 - **res 502:** `{ "status": "error", "message": "Layanan cuaca sedang tidak tersedia." }`
 ⚠️ **CATATAN CUACA**: Frontend WAJIB handle user koordinat `null` (skip kartu cuaca, JANGAN crash).
 
+### POST /api/tanaman/:id/panen
+- **res 201:** `{ "status": "success", "message": "Panen berhasil dicatat broskie! 🌾", "data": { "id": int, "userId": int, "tanamanId": int | null, "namaTanaman": string, "jenisTanaman": string, "tanggalPanen": string(ISO) } }`
+- **res 400:** `{ "status": "fail", "message": "Tanaman ini belum siap panen broskie!" }` atau `"Tanaman ini sudah pernah dipanen broskie!"`
+- **res 403/404:** `{ "status": "fail", "message": "Tanaman tidak ditemukan atau bukan milik lu broskie!" }`
+- **catatan:** Saat dipanen, record tanaman dihapus permanen dari tabel `Tanaman` tapi tercatat rapi di `RiwayatPanen`.
+
+### GET /api/achievements
+- **res 200:** `{ "status": "success", "data": { "streak": int, "totalPanen": int, "tanamanAktif": int, "level": int, "achievements": [ { "kode": string, "judul": string, "deskripsi": string, "tercapai": boolean, "progress": int, "target": int } ] } }`
+
 ### GET /api/community
 - **query:** `latitude: float (wajib)`, `longitude: float (wajib)`, `page: int (opsional)`, `limit: int (opsional)`
 - **res 200:** `{ "status": "success", "meta": { "halamanSekarang": int, "dataPerHalaman": int }, "data": [ { "id": int, "userId": int, "user_nama": string, "tipePost": "progress_update" | "panen_surplus" | "pertanyaan", "deskripsi": string, "fotoUrl": string | null, "createdAt": string(ISO), "latitude": float, "longitude": float, "distance": float(km) } ] }`

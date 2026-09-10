@@ -306,28 +306,6 @@ export default function DashboardScreen() {
           );
         })()}
 
-        {/* TANIBOT SHORTCUT */}
-        <Pressable
-          style={({ pressed }) => [{
-            backgroundColor: '#FFFFFF',
-            borderWidth: 2,
-            borderColor: '#123924',
-            borderRadius: 100,
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 32,
-            boxShadow: "2px 2px 0px #123924",
-            gap: 8
-          }, pressed && { boxShadow: "0px 0px 0px #123924", transform: [{ translateX: 2 }, { translateY: 2 }] }]}
-          onPress={() => router.push("/(tabs)/tanibot" as any)}
-        >
-          <MaterialIcons name="smart-toy" size={20} color="#1F5C3D" />
-          <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Mau tanya TaniBot?</Text>
-        </Pressable>
-
         {/* REMINDER LIST */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hari ini</Text>

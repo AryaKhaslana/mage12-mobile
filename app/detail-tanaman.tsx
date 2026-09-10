@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIn
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman } from '../services/api';
+import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman, harvestTanaman } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 
 const FALLBACK_HERO = 'https://lh3.googleusercontent.com/aida-public/AOSwzR6X7y3O2Q2_0uXwFhK8TQKf0vFvP4o7SjYdJ9k-h-5E8tV8D2Q3g0K_b8QkLp6g5zZ9n3nK2N8k5L0g-v4c0r9r6p2y2J5b8w';
@@ -25,6 +25,7 @@ export default function DetailTanamanModal() {
   const [logs, setLogs] = useState<LogAktivitas[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isHarvesting, setIsHarvesting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -62,6 +63,32 @@ export default function DetailTanamanModal() {
     const today = new Date().toDateString();
     return logs.some(l => new Date(l.createdAt).toDateString() === today);
   }, [logs]);
+
+
+  const handleHarvest = () => {
+    Alert.alert(
+      "Panen tanaman ini? 🌾",
+      "Tanaman akan ditandai selesai dan dicatat di riwayat panenmu.",
+      [
+        { text: "Batal", style: "cancel" },
+        { 
+          text: "Panen!", 
+          onPress: async () => {
+            setIsHarvesting(true);
+            try {
+              const res = await harvestTanaman(tanamanId);
+              Alert.alert("Panen berhasil! 🌾", `${res.data?.namaTanaman || tanaman?.jenisTanaman} masuk riwayat.`, [
+                { text: "OK", onPress: () => router.back() }
+              ]);
+            } catch (e: any) {
+              setIsHarvesting(false);
+              Alert.alert("Gagal", e.response?.data?.message || "Gagal memanen.");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleDeleteTanaman = () => {
     Alert.alert(
@@ -219,7 +246,7 @@ export default function DetailTanamanModal() {
 
         {/* TITLE SECTION */}
         <View style={styles.titleSection}>
-          <Text style={styles.plantTitle}>{tanaman.nickname ?? tanaman.jenisTanaman}</Text>
+          <Text style={styles.plantTitle}>{tanaman.nickname ?? tanaman?.jenisTanaman}</Text>
           <Text style={styles.plantSubtitle}>Ditanam sejak {hariKe} hari lalu</Text>
           
           <View style={[styles.badge, { backgroundColor: badgeBgColor, borderColor: badgeBorderColor, marginTop: 8, alignSelf: 'flex-start' }]}>
@@ -237,6 +264,23 @@ export default function DetailTanamanModal() {
             <Text style={styles.harvestSubtitle}>Sisa {tanaman.sisaHariPanen || 0} hari lagi ({estPanenString})</Text>
           </View>
         </View>
+
+
+        {tanaman.sisaHariPanen <= 0 && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+            <TouchableOpacity 
+              style={styles.harvestActionBtn} 
+              onPress={handleHarvest} 
+              disabled={isHarvesting}
+            >
+              {isHarvesting ? (
+                <ActivityIndicator color="#123924" />
+              ) : (
+                <Text style={styles.harvestActionBtnText}>Panen! 🌾</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* ACTION BUTTONS (Sesuai mockup tapi dimodif buat Konfirmasi Disiram) */}
         {sudahValidasiHariIni ? (
@@ -285,7 +329,7 @@ export default function DetailTanamanModal() {
           )}
         </View>
       </ScrollView>
-      {isSubmitting && (
+      {(isSubmitting || isHarvesting) && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
@@ -311,6 +355,27 @@ const styles = StyleSheet.create({
   harvestTextContainer: { marginLeft: 16, flex: 1 },
   harvestTitle: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   harvestSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+
+  harvestActionBtn: {
+    backgroundColor: '#FFB627',
+    borderWidth: 2,
+    borderColor: '#123924',
+    borderRadius: 30,
+    minHeight: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#123924',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
+  },
+  harvestActionBtnText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 20,
+    color: '#123924',
+  },
+
   actionRow: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, marginBottom: 20 },
   actionBtn: { flex: 1, minHeight: 56, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, shadowColor: '#123924', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   btnWhite: { backgroundColor: '#FFFFFF' },

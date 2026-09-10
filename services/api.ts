@@ -146,6 +146,24 @@ export const getWeatherToday = async (): Promise<any> => {
   return response.data.data;
 };
 
+
+export interface Achievement {
+  kode: string;
+  judul: string;
+  deskripsi: string;
+  tercapai: boolean;
+  progress: number;
+  target: number;
+}
+
+export interface AchievementResponse {
+  streak: number;
+  totalPanen: number;
+  tanamanAktif: number;
+  level: number;
+  achievements: Achievement[];
+}
+
 export interface CommunityPost {
   id: number;
   userId: number;
@@ -204,4 +222,14 @@ export const createLog = async ({
 
 export const deleteCommunityPost = async (id: number): Promise<void> => {
   await api.delete(`/community/${id}`);
+};
+
+export const harvestTanaman = async (id: number): Promise<any> => {
+  const response = await api.post(`/tanaman/${id}/panen`);
+  return response.data;
+};
+
+export const getAchievements = async (): Promise<AchievementResponse> => {
+  const response = await api.get('/achievements');
+  return response.data.data;
 };

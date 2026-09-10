@@ -5,13 +5,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import api from '../../services/api';
+import api, { getAchievements, AchievementResponse, Achievement } from '../../services/api';
 import { Image } from "expo-image"; // use expo-image for avatars if they have it, or react-native Image
 
 export default function ProfilScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [achievementsData, setAchievementsData] = useState<AchievementResponse | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -19,9 +20,10 @@ export default function ProfilScreen() {
       const fetchData = async () => {
         setIsLoading(true);
         try {
-          const [userRes, tanamanRes] = await Promise.all([
+          const [userRes, tanamanRes, achRes] = await Promise.all([
             api.get("/user/me").catch(() => null),
-            api.get("/tanaman").catch(() => null)
+            api.get("/tanaman").catch(() => null),
+            getAchievements().catch(() => null)
           ]);
 
           if (isActive) {
@@ -30,6 +32,9 @@ export default function ProfilScreen() {
             }
             if (tanamanRes?.data?.data) {
               setTanamanList(tanamanRes.data.data);
+            }
+            if (achRes) {
+              setAchievementsData(achRes);
             }
           }
         } catch (error) {
@@ -103,6 +108,52 @@ export default function ProfilScreen() {
             <Text style={[styles.statValue, { color: '#FFFFFF' }]}>{siapPanenCount}</Text>
             <Text style={[styles.statLabel, { color: '#FFFFFF' }]}>Siap panen</Text>
           </View>
+        </View>
+
+        
+        {/* PENCAPAIAN */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Pencapaian</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+            {achievementsData?.achievements ? achievementsData.achievements.map((ach: Achievement, index: number) => {
+              const bgColors = ["#FFB627", "#3FA86B", "#FF6B5C"];
+              const bgColor = bgColors[index % bgColors.length];
+              
+              let iconName = "star";
+              if (ach.kode === "panen_pertama" || ach.kode === "panen_lima") iconName = "agriculture";
+              else if (ach.kode === "panen_sepuluh") iconName = "emoji-events";
+              else if (ach.kode === "kolektor") iconName = "eco";
+              else if (ach.kode === "streak_tujuh") iconName = "local-fire-department";
+              else if (ach.kode === "streak_tigapuluh") iconName = "whatshot";
+
+              return (
+                <Pressable 
+                  key={ach.kode}
+                  onPress={() => {
+                    Alert.alert(
+                      ach.judul,
+                      `${ach.deskripsi}\n\nProgress: ${ach.tercapai ? "Tercapai! 🎉" : `${ach.progress}/${ach.target}`}`
+                    );
+                  }}
+                  style={({ pressed }) => [
+                    ach.tercapai ? [styles.achievementIcon, { backgroundColor: bgColor }] : styles.achievementIconLocked,
+                    pressed && ach.tercapai && styles.pressedShadow2
+                  ]}
+                >
+                  <MaterialIcons 
+                    name={iconName as any} 
+                    size={ach.tercapai ? 28 : 24} 
+                    color={ach.tercapai ? "#FFFFFF" : "#5C5A4F"} 
+                  />
+                </Pressable>
+              );
+            }) : (
+              // Skeleton loading for achievements
+              [1, 2, 3, 4].map(i => (
+                <View key={i} style={[styles.achievementIconLocked, { backgroundColor: '#E8E5DA', opacity: 0.5 }]} />
+              ))
+            )}
+          </ScrollView>
         </View>
 
         {/* TANAMAN KAMU */}
@@ -306,6 +357,35 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 0,
+  },
+  profileLevel: {
+    fontSize: 12,
+    fontFamily: 'Nunito_500Medium',
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 4,
+  },
+  achievementIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#123924',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '2px 2px 0px #123924',
+    elevation: 3,
+  },
+  achievementIconLocked: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FBF8F0',
+    borderWidth: 2,
+    borderColor: '#123924',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.7,
+    marginTop: 6,
   },
   profileName: {
     fontSize: 20,

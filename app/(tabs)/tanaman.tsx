@@ -1,7 +1,9 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
+import { useState } from "react";
 import {
+  Image,
   ActivityIndicator,
   Alert,
   Modal,
@@ -12,8 +14,11 @@ import {
   Text,
   View,
 } from "react-native";
+import { TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api from "../../services/api";
+import api, { TanamanDetail } from "../../services/api";
+
+const FALLBACK_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
 
 const JENIS_TANAMAN_ENUM = [
   "Padi",
@@ -41,16 +46,21 @@ const JENIS_TANAMAN_ENUM = [
 export default function TanamanScreen() {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const filters = ["Semua", "Perlu Disiram"];
-  const [tanamanList, setTanamanList] = useState<any[]>([]);
+  const [tanamanList, setTanamanList] = useState<TanamanDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
+  const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchTanaman = async () => {
-    if (tanamanList.length === 0) setIsLoading(true);
-    else setIsRefreshing(true);
+  const fetchTanaman = async (isManualRefresh = false) => {
+    if (tanamanList.length === 0) {
+      setIsLoading(true);
+    } else if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    // Jika bukan manual refresh dan list sudah ada, fetch berjalan SILENT (tanpa loading indicator apa pun)
     try {
       const response = await api.get("/tanaman");
       if (response.data?.status === "success") {
@@ -68,15 +78,18 @@ export default function TanamanScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchTanaman();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTanaman();
+    }, [])
+  );
 
   const handleTambahTanaman = async () => {
     setIsSubmitting(true);
     try {
       const response = await api.post("/tanaman", {
         jenisTanaman: selectedTanaman,
+        nickname: nickname || undefined,
       });
       if (response.data?.status === "success") {
         Alert.alert(
@@ -97,28 +110,7 @@ export default function TanamanScreen() {
     }
   };
 
-  const handleSiram = async (tanamanId: number) => {
-    try {
-      const response = await api.post("/logs", {
-        tanamanId,
-        tipeValidasi: "button_only",
-      });
-      if (response.data?.status === "success") {
-        const { skorSaatIni, streak } = response.data.data;
-        Alert.alert(
-          "Sukses Menyiram!",
-          `+${skorSaatIni} poin! Streak: ${streak} hari 🔥`,
-        );
-        fetchTanaman();
-      }
-    } catch (error: any) {
-      console.error("Error nyiram:", error);
-      Alert.alert(
-        "Gagal Menyiram",
-        error.response?.data?.message || "Terjadi kesalahan.",
-      );
-    }
-  };
+
 
   const filteredList = tanamanList.filter((tanaman) => {
     if (activeFilter === "Perlu Disiram")
@@ -136,7 +128,7 @@ export default function TanamanScreen() {
             <RefreshControl
               colors={["#3FA86B"]}
               refreshing={isRefreshing}
-              onRefresh={fetchTanaman}
+              onRefresh={() => fetchTanaman(true)}
             />
           }
         >
@@ -198,12 +190,34 @@ export default function TanamanScreen() {
           ) : (
             <View style={styles.gridContainer}>
               {filteredList.map((tanaman) => {
-                const hariKe =
-                  Math.floor(
-                    (Date.now() - new Date(tanaman.tanggalTanam).getTime()) /
-                      86400000,
-                  ) + 1;
-                const isPerluSiram = tanaman.statusPenyiraman === "PERLU_SIRAM";
+                const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam).getTime()) / 86400000) + 1;
+                let bgColor = "#E8F5E9";
+                let borderColor = "#3FA86B";
+                let textColor = "#123924";
+                let statusText = "Aman";
+                
+                if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+                  bgColor = "#FFECEB";
+                  borderColor = "#FF6B5C";
+                  textColor = "#FF6B5C";
+                  statusText = "Perlu Disiram";
+                } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+                  bgColor = "#FFF9E6";
+                  borderColor = "#FFB627";
+                  textColor = "#FFB627";
+                  statusText = "Ditunda Hujan";
+                } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+                  statusText = "Sudah Disiram";
+                }
+                
+                const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+                if (sudahValidasiHariIni) {
+                  bgColor = "#E8F5E9";
+                  borderColor = "#3FA86B";
+                  textColor = "#123924";
+                  statusText = "Sudah Disiram Hari Ini ✅";
+                }
+
                 return (
                   <Pressable
                     key={tanaman.id}
@@ -211,60 +225,39 @@ export default function TanamanScreen() {
                       styles.card,
                       pressed && styles.pressedShadow4,
                     ]}
-                    onPress={() => router.push("/detail-tanaman")}
+                    onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
                   >
-                    <View
-                      style={[
-                        styles.imageContainer,
-                        { alignItems: "center", justifyContent: "center" },
-                      ]}
-                    >
-                      <MaterialIcons
-                        name="local-florist"
-                        size={40}
-                        color="#123924"
-                      />
+                    <View style={[styles.imageContainer, { overflow: 'hidden' }]}>
+                      { tanaman.logTerakhir?.fotoUrl ? (
+                        <Image source={{ uri: tanaman.logTerakhir.fotoUrl }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      ) : (
+                        <Image source={{ uri: FALLBACK_THUMB }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      )}
                     </View>
                     <View style={styles.cardBody}>
                       <Text style={styles.cardTitle} numberOfLines={1}>
-                        {tanaman.jenisTanaman}
+                        {tanaman.nickname || tanaman.jenisTanaman}
                       </Text>
-                      <Text style={styles.cardSubtitle}>Hari ke-{hariKe}</Text>
+                      <Text style={styles.cardSubtitle}>Skor: {tanaman.predictiveScore} • Panen: {tanaman.sisaHariPanen}hr</Text>
                       <View style={styles.cardFooter}>
                         <View
                           style={[
                             styles.badge,
                             {
-                              backgroundColor: isPerluSiram
-                                ? "#FF6B5C"
-                                : "#3FA86B",
+                              backgroundColor: bgColor,
+                              borderColor: borderColor,
                             },
                           ]}
                         >
                           <Text
-                            style={[styles.badgeText, { color: "#FFFFFF" }]}
+                            style={[
+                              styles.badgeText,
+                              { color: textColor },
+                            ]}
                           >
-                            {isPerluSiram ? "Perlu Disiram" : "Aman"}
+                            {statusText}
                           </Text>
                         </View>
-                        {isPerluSiram && (
-                          <Pressable
-                            style={({ pressed }) => [
-                              styles.waterButton,
-                              pressed && { transform: [{ scale: 0.9 }] },
-                            ]}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleSiram(tanaman.id);
-                            }}
-                          >
-                            <MaterialIcons
-                              name="water-drop"
-                              size={20}
-                              color="#FFFFFF"
-                            />
-                          </Pressable>
-                        )}
                       </View>
                     </View>
                   </Pressable>
@@ -300,6 +293,14 @@ export default function TanamanScreen() {
                   <MaterialIcons name="close" size={24} color="#123924" />
                 </Pressable>
               </View>
+              <Text style={styles.modalLabel}>Nama Panggilan (Opsional)</Text>
+              <TextInput 
+                style={styles.textInput}
+                placeholder="Misal: Tomat Si Jago"
+                value={nickname}
+                onChangeText={setNickname}
+                placeholderTextColor="#a09d91"
+              />
               <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
               <ScrollView style={styles.pickerContainer}>
                 {JENIS_TANAMAN_ENUM.map((jenis) => (
@@ -481,16 +482,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Nunito_700Bold",
   },
-  waterButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#FF6B5C",
-    borderWidth: 1,
-    borderColor: "#123924",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   fab: {
     position: "absolute",
     bottom: 20,
@@ -553,6 +544,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
+  },
+  textInput: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#123924",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "Nunito_700Bold",
+    color: "#123924",
+    marginBottom: 20,
   },
   modalLabel: {
     fontSize: 14,

@@ -9,6 +9,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    Image,
     View,
 } from "react-native";
 import Animated, {
@@ -19,7 +20,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api from "../../services/api";
+import api, { googleSignIn } from "../../services/api";
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,18 +44,26 @@ export default function LoginScreen() {
     };
   });
   const handleLogin = async () => {
-    if (!email || !password) return;
+    if (!email || !password) {
+      Alert.alert("Perhatian", "Email dan password wajib diisi");
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await api.post("/auth/login", { email, password });
-      const token = response.data?.token;
+      
+      // Fallback: token bisa di response.data.token atau response.data.data.token
+      const token = response.data?.token || response.data?.data?.token;
       const userData = response.data?.data;
+      
       if (token) {
         await SecureStore.setItemAsync("userToken", token);
         if (userData) {
           await SecureStore.setItemAsync("userData", JSON.stringify(userData));
         }
         router.replace("/");
+      } else {
+        Alert.alert("Login Gagal", "Login sukses tapi token tidak ditemukan di response.");
       }
     } catch (error: any) {
       const msg =
@@ -124,6 +133,36 @@ export default function LoginScreen() {
             <Text style={styles.primaryButtonText}>Masuk</Text>
           )}
         </TouchableOpacity>
+        
+        {/* Google Sign In Button */}
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={async () => {
+            try {
+              setIsLoading(true);
+              await googleSignIn();
+            } catch (error) {
+              console.error("Google sign in error", error);
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#123924" />
+          ) : (
+            <>
+              <Image 
+                source={require("../../assets/images/google-logo.png")} 
+                style={styles.googleLogo} 
+                resizeMode="contain" 
+              />
+              <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
         {/* Footer */}
         <TouchableOpacity
           style={styles.footerLink}
@@ -198,4 +237,27 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_500Medium",
   },
   footerTextBold: { color: "#123924", fontFamily: "Nunito_700Bold" },
+
+  googleButton: {
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    height: 56,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: "#123924",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+    boxShadow: "4px 4px 0px #123924",
+  },
+  googleLogo: {
+    width: 24,
+    height: 24,
+    marginRight: 12,
+  },
+  googleButtonText: {
+    color: "#123924",
+    fontSize: 16,
+    fontFamily: "Nunito_700Bold",
+  },
 });

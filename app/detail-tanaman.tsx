@@ -1,429 +1,334 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman } from '../services/api';
+import * as ImagePicker from 'expo-image-picker';
+
+const FALLBACK_HERO = 'https://lh3.googleusercontent.com/aida-public/AOSwzR6X7y3O2Q2_0uXwFhK8TQKf0vFvP4o7SjYdJ9k-h-5E8tV8D2Q3g0K_b8QkLp6g5zZ9n3nK2N8k5L0g-v4c0r9r6p2y2J5b8w';
+const FALLBACK_THUMB = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA';
+
+const formatDate = (isoString: string) => {
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + 
+         date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+};
 
 export default function DetailTanamanModal() {
   const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const tanamanId = Number(id);
+
+  const [tanaman, setTanaman] = useState<TanamanDetail | null>(null);
+  const [logs, setLogs] = useState<LogAktivitas[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchData = async () => {
+    if (!tanamanId) return;
+    try {
+      // Tidak set isLoading(true) di sini karena state awal sudah true.
+      // Jika refresh dari useFocusEffect, fetch berjalan silently di background (tanpa loading berulang).
+      const [tanamanData, logsData] = await Promise.all([
+        getTanamanById(tanamanId),
+        getLogsByTanaman(tanamanId)
+      ]);
+      setTanaman(tanamanData);
+      setLogs(logsData);
+    } catch (e: any) {
+      Alert.alert("Gagal", e.response?.data?.message || "Gagal memuat data tanaman");
+      router.back();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [tanamanId])
+  );
+
+  const latestPhotoUrl = useMemo(() => {
+    const photoLog = logs.find(l => l.fotoUrl);
+    return photoLog?.fotoUrl || FALLBACK_HERO;
+  }, [logs]);
+
+  const sudahValidasiHariIni = useMemo(() => {
+    const today = new Date().toDateString();
+    return logs.some(l => new Date(l.createdAt).toDateString() === today);
+  }, [logs]);
+
+  const handleDeleteTanaman = () => {
+    Alert.alert(
+      "Hapus Tanaman?",
+      "Tanaman ini beserta seluruh riwayat jurnalnya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!",
+      [
+        { text: "Batal", style: "cancel" },
+        { 
+          text: "Hapus", 
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteTanaman(tanamanId);
+              Alert.alert("Terhapus", "Tanaman berhasil dihapus!", [
+                { text: "OK", onPress: () => router.back() }
+              ]);
+            } catch (e: any) {
+              setIsDeleting(false);
+              Alert.alert("Gagal", e.response?.data?.message || "Gagal menghapus tanaman");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleValidasiButton = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await createLog({ tanamanId, tipeValidasi: "button_only" });
+      setToastMessage(`Tanaman dapet +1 poin! Streak: ${res.streak} hari 🔥`);
+      setTimeout(() => setToastMessage(null), 4000);
+      fetchData();
+    } catch (e: any) {
+      Alert.alert("Gagal", e.response?.data?.message || "Gagal validasi");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleValidasiPhoto = async () => {
+    if (isSubmitting) return;
+    
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Izin Kamera Ditolak", "TaniSync butuh izin kamera untuk memvalidasi tanamanmu broskie!");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        
+        Alert.alert("Validasi Foto", "Yakin mau kirim foto ini?", [
+          { text: "Batal", style: "cancel" },
+          { text: "Kirim", onPress: async () => {
+              setIsSubmitting(true);
+              try {
+                const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uri });
+                setToastMessage(`Keren! +5 poin! Streak: ${res.streak} hari 🔥`);
+                setTimeout(() => setToastMessage(null), 4000);
+                fetchData();
+              } catch (e: any) {
+                Alert.alert("Gagal", e.response?.data?.message || "Gagal upload foto");
+              } finally {
+                setIsSubmitting(false);
+              }
+          }}
+        ]);
+      }
+    } catch (e: any) {
+      setIsSubmitting(false);
+      Alert.alert("Gagal", e?.message || "Gagal membuka kamera");
+    }
+  };
+
+  if (isLoading && !tanaman) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#1F5C3D" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!tanaman) return null;
+
+  const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam || Date.now()).getTime()) / 86400000) + 1;
+  const estPanenDate = new Date(new Date(tanaman.tanggalTanam || Date.now()).getTime() + ((tanaman.daysToHarvest || 0) * 86400000));
+  const estPanenString = isNaN(estPanenDate.getTime()) ? '-' : estPanenDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  let badgeBgColor = "#E8F5E9";
+  let badgeBorderColor = "#3FA86B";
+  let badgeTextColor = "#123924";
+  let badgeText = "Aman";
+  if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+    badgeBgColor = "#FFECEB";
+    badgeBorderColor = "#FF6B5C";
+    badgeTextColor = "#FF6B5C";
+    badgeText = "Perlu Disiram";
+  } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+    badgeBgColor = "#FFF9E6";
+    badgeBorderColor = "#FFB627";
+    badgeTextColor = "#FFB627";
+    badgeText = "Ditunda Hujan";
+  } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+    badgeText = "Sudah Disiram";
+  }
+
+  if (sudahValidasiHariIni) {
+    badgeBgColor = "#E8F5E9";
+    badgeBorderColor = "#3FA86B";
+    badgeTextColor = "#123924";
+    badgeText = "Sudah Disiram Hari Ini ✅";
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {toastMessage && (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        )}
+
         {/* TOP BAR */}
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()} disabled={isDeleting}>
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <MaterialIcons name="more-horiz" size={24} color="#123924" />
+          <TouchableOpacity style={styles.iconButton} onPress={handleDeleteTanaman} disabled={isDeleting}>
+            {isDeleting ? (
+              <ActivityIndicator size="small" color="#FF6B5C" />
+            ) : (
+              <MaterialIcons name="delete-outline" size={24} color="#FF6B5C" />
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* HERO IMAGE SECTION */}
+        {/* HERO SECTION */}
         <View style={styles.heroSection}>
           <View style={styles.imageWrapper}>
-            <Image 
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBXRNtfl7XZseKxwR1dh8ALcVrpAHuCc5v2331cWym096aNEd9zGlNTT54xT_MENrv5ThkT0fJEp5FAHkYGbEHXTIjO9j5Z7qkd9DJAIaubfqYI8Y1A2USUIkUMMRos4aaTS-ZeFburAehutLZYWS56kJ4GeCYk462HIS58E9KjJg3wgejvKfbnpIQ1YO6Sxy-nEJw-kaJFcqaenff8a5H0avaYRMh16-9AX8e1b4-twWBhz-7e8LGtFg' }} 
-              style={styles.heroImage} 
-            />
+            <Image source={{ uri: latestPhotoUrl }} style={styles.heroImage} />
           </View>
-          <TouchableOpacity style={styles.floatingCamButton}>
+          <TouchableOpacity style={styles.floatingCamButton} onPress={handleValidasiPhoto} disabled={isSubmitting}>
             <MaterialIcons name="photo-camera" size={24} color="#123924" />
           </TouchableOpacity>
         </View>
 
         {/* TITLE SECTION */}
         <View style={styles.titleSection}>
-          <Text style={styles.plantTitle}>Cabai Rawit</Text>
-          <Text style={styles.plantSubtitle}>Ditanam sejak 14 hari lalu</Text>
+          <Text style={styles.plantTitle}>{tanaman.nickname ?? tanaman.jenisTanaman}</Text>
+          <Text style={styles.plantSubtitle}>Ditanam sejak {hariKe} hari lalu</Text>
+          
+          <View style={[styles.badge, { backgroundColor: badgeBgColor, borderColor: badgeBorderColor, marginTop: 8, alignSelf: 'flex-start' }]}>
+            <Text style={[styles.badgeText, { color: badgeTextColor }]}>{badgeText}</Text>
+          </View>
         </View>
 
-        {/* HARVEST ESTIMATION (Clay Card) */}
+        {/* HARVEST CARD */}
         <View style={styles.harvestCard}>
           <View style={styles.harvestIconCircle}>
-            <MaterialIcons name="local-fire-department" size={24} color="#FFB627" />
+            <MaterialIcons name="stars" size={32} color="#FFB627" />
           </View>
           <View style={styles.harvestTextContainer}>
             <Text style={styles.harvestTitle}>Estimasi Panen</Text>
-            <Text style={styles.harvestSubtitle}>~2 minggu lagi</Text>
+            <Text style={styles.harvestSubtitle}>Sisa {tanaman.sisaHariPanen || 0} hari lagi ({estPanenString})</Text>
           </View>
         </View>
 
-        {/* ACTION BUTTONS (Belum Siap / Sudah Dipanen) */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={[styles.actionBtn, styles.btnWhite]}>
-            <Text style={styles.btnWhiteText}>Belum Siap,{'\n'}Ingatkan 3 Hari</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, styles.btnGreen]}>
-            <Text style={styles.btnGreenText}>Sudah{'\n'}Dipanen</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* REMINDERS / SETTINGS */}
-        <View style={styles.reminderCard}>
-          
-          {/* Penyiraman */}
-          <View style={styles.reminderRow}>
-            <View style={[styles.reminderIconBox, { backgroundColor: '#b1f1c8' }]}>
-              <MaterialIcons name="water-drop" size={20} color="#123924" />
+        {/* ACTION BUTTONS (Sesuai mockup tapi dimodif buat Konfirmasi Disiram) */}
+        {sudahValidasiHariIni ? (
+          <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
+            Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 🌱
+          </Text>
+        ) : (
+          tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={[styles.actionBtn, styles.btnWhite]} onPress={handleValidasiButton} disabled={isSubmitting}>
+                {isSubmitting ? <ActivityIndicator color="#123924" /> : <Text style={styles.btnWhiteText}>Konfirmasi{`\n`}Disiram</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.actionBtn, styles.btnGreen]} onPress={handleValidasiPhoto} disabled={isSubmitting}>
+                {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnGreenText}>Foto &{`\n`}Validasi</Text>}
+              </TouchableOpacity>
             </View>
-            <View style={styles.reminderTextCol}>
-              <Text style={styles.reminderTitle}>Penyiraman</Text>
-              <Text style={styles.reminderSubtitle}>Setiap hari, 07.00</Text>
-            </View>
-            <View style={[styles.toggleTrack, { backgroundColor: '#b1f1c8' }]}>
-              <View style={[styles.toggleThumb, { transform: [{ translateX: 24 }] }]} />
-            </View>
-          </View>
+          )
+        )}
 
-          <View style={styles.divider} />
-
-          {/* Pemupukan */}
-          <View style={styles.reminderRow}>
-            <View style={[styles.reminderIconBox, { backgroundColor: '#ffd9dc' }]}>
-              <MaterialIcons name="eco" size={20} color="#123924" />
-            </View>
-            <View style={styles.reminderTextCol}>
-              <Text style={styles.reminderTitle}>Pemupukan</Text>
-              <Text style={styles.reminderSubtitle}>Setiap 5 hari</Text>
-            </View>
-            <View style={[styles.toggleTrack, { backgroundColor: '#dcdad2' }]}>
-              <View style={[styles.toggleThumb, { transform: [{ translateX: 2 }] }]} />
-            </View>
-          </View>
-
-        </View>
-
-        {/* BIG PHOTO BUTTON */}
-        <TouchableOpacity style={styles.bigPhotoButton}>
-          <MaterialIcons name="photo-camera" size={20} color="#FFFFFF" />
-          <Text style={styles.bigPhotoText}>Foto & Konfirmasi Disiram</Text>
-        </TouchableOpacity>
-
-        {/* HISTORY */}
+        {/* HISTORY SECTION */}
         <View style={styles.historySection}>
-          <Text style={styles.historySectionTitle}>Riwayat perawatan</Text>
+          <Text style={styles.historySectionTitle}>Riwayat Perawatan</Text>
           
-          {/* History 1 */}
-          <View style={styles.historyItem}>
-            <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDxqsTaNRyGwtFsdPKKZUo5Xh9_TAb8NpRyDnTOwVlfVMxPryKy1j5DZLh5f7KnxsTbif_YAlFTIJUgoLeDmc9_D3rKOuyGAKAI0_pI3W8iguC56C-35immOSpLCukjuzXBGG2KhC0rANfSThGgtTv0TyNNpjBzVOjz9Ftm6ktNHe8q_991Fp_Lqz0fOFd9HTx36wOF0BlKwTvLqoOaqMBbfrhxFZCq-BX80efI8QmF62194Nd9GZ_jxQ' }} style={styles.historyImage} />
-            <View style={styles.historyTextCol}>
-              <Text style={styles.historyTitle}>Disiram</Text>
-              <Text style={styles.historySubtitle}>Hari ini, 07:15</Text>
+          {logs.length === 0 ? (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="history" size={48} color="#a09d91" style={{marginBottom: 8}}/>
+              <Text style={styles.emptyText}>Belum ada jurnal perawatan</Text>
             </View>
-          </View>
-
-          {/* History 2 */}
-          <View style={[styles.historyItem, { opacity: 0.6 }]}>
-            <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA' }} style={styles.historyImage} />
-            <View style={styles.historyTextCol}>
-              <Text style={styles.historyTitle}>Diberi Pupuk</Text>
-              <Text style={styles.historySubtitle}>Kemarin, 16:30</Text>
-            </View>
-          </View>
-
-          {/* History 3 */}
-          <View style={[styles.historyItem, { opacity: 0.6, borderBottomWidth: 0 }]}>
-            <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBzlz4_V_Bpw-gnQ_p5naZRf8BUI0AlHLbiqKW3W51wCd7UZYp38jJGzaNvZJGVQRbWAuuIvAWllIVrsJXImYeRxwUkAEhHsyiABfulZzvRXFE1LEWw6INvkiuuyG_xyQBd3RQZL7UVms7Yipt3t7KObJpGWoS8e4Ds4rzpTJQPnpklX0Ej39c3zfJGbFgCGAEppUCUmBzsJy-Oj5zNVBuiX2NZ4i24Gm1ooM5DnXF_LXKs7f6V9DRLyQ' }} style={styles.historyImage} />
-            <View style={styles.historyTextCol}>
-              <Text style={styles.historyTitle}>Ditanam</Text>
-              <Text style={styles.historySubtitle}>14 hari lalu, 08:00</Text>
-            </View>
-          </View>
+          ) : (
+            logs.map((log, index) => (
+              <View key={log.id} style={[styles.historyItem, index === logs.length - 1 && { borderBottomWidth: 0 }]}>
+                {log.tipeValidasi === 'photo' ? (
+                  <Image source={{ uri: log.fotoUrl || FALLBACK_THUMB }} style={styles.historyImage} />
+                ) : (
+                  <View style={[styles.historyImage, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <MaterialIcons name="check-circle" size={24} color="#3FA86B" />
+                  </View>
+                )}
+                
+                <View style={styles.historyTextCol}>
+                  <Text style={styles.historyTitle}>{log.tipeValidasi === 'photo' ? 'Validasi Foto' : 'Konfirmasi Penyiraman'}</Text>
+                  <Text style={styles.historySubtitle}>{formatDate(log.createdAt)}</Text>
+                </View>
+              </View>
+            ))
+          )}
         </View>
-
       </ScrollView>
+      {isSubmitting && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    marginBottom: 16,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#123924',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
-  heroSection: {
-    marginHorizontal: 20,
-    position: 'relative',
-    marginBottom: 16,
-  },
-  imageWrapper: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#123924',
-    overflow: 'hidden',
-    backgroundColor: '#96d4ad',
-    shadowColor: '#123924',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  floatingCamButton: {
-    position: 'absolute',
-    bottom: -16,
-    right: 24,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#123924',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
-    zIndex: 10,
-  },
-  titleSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  plantTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1F5C3D',
-    marginBottom: 4,
-  },
-  plantSubtitle: {
-    fontSize: 12,
-    color: '#5C5A4F',
-  },
-  harvestCard: {
-    marginHorizontal: 20,
-    backgroundColor: '#1F5C3D',
-    borderRadius: 28,
-    padding: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#123924',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 6,
-  },
-  harvestIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 4,
-    borderColor: '#FFB627',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  harvestTextContainer: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  harvestTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  harvestSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 4,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  actionBtn: {
-    flex: 1,
-    minHeight: 56,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    shadowColor: '#123924',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 3,
-  },
-  btnWhite: {
-    backgroundColor: '#FFFFFF',
-  },
-  btnGreen: {
-    backgroundColor: '#3FA86B',
-  },
-  btnWhiteText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#123924',
-    textAlign: 'center',
-  },
-  btnGreenText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  reminderCard: {
-    marginHorizontal: 20,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#123924',
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#123924',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
-  reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  reminderIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  reminderTextCol: {
-    flex: 1,
-  },
-  reminderTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#123924',
-  },
-  reminderSubtitle: {
-    fontSize: 12,
-    color: '#5C5A4F',
-    marginTop: 2,
-  },
-  toggleTrack: {
-    width: 48,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#123924',
-    justifyContent: 'center',
-  },
-  toggleThumb: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#123924',
-  },
-  divider: {
-    width: '100%',
-    height: 2,
-    backgroundColor: '#123924',
-    marginVertical: 8,
-  },
-  bigPhotoButton: {
-    marginHorizontal: 20,
-    backgroundColor: '#1F5C3D',
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#123924',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    marginBottom: 32,
-    gap: 8,
-    shadowColor: '#123924',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
-  },
-  bigPhotoText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  historySection: {
-    paddingHorizontal: 20,
-  },
-  historySectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F5C3D',
-    marginBottom: 12,
-  },
-  historyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: '#123924',
-  },
-  historyImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#123924',
-    marginRight: 12,
-    backgroundColor: '#e5e2db',
-  },
-  historyTextCol: {
-    flex: 1,
-  },
-  historyTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#123924',
-  },
-  historySubtitle: {
-    fontSize: 11,
-    color: '#5C5A4F',
-    marginTop: 2,
-  },
+  safeArea: { flex: 1, backgroundColor: '#FBF8F0' },
+  scrollContent: { paddingBottom: 40 },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, marginBottom: 16 },
+  iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center', shadowColor: '#123924', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 },
+  heroSection: { marginHorizontal: 20, position: 'relative', marginBottom: 16 },
+  imageWrapper: { width: '100%', aspectRatio: 1, borderRadius: 20, borderWidth: 2, borderColor: '#123924', overflow: 'hidden', backgroundColor: '#96d4ad', shadowColor: '#123924', shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 },
+  heroImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  floatingCamButton: { position: 'absolute', bottom: -16, right: 24, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center', shadowColor: '#123924', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 5, zIndex: 10 },
+  titleSection: { paddingHorizontal: 20, marginBottom: 20 },
+  plantTitle: { fontSize: 24, fontWeight: '800', color: '#1F5C3D', marginBottom: 4 },
+  plantSubtitle: { fontSize: 12, color: '#5C5A4F' },
+  harvestCard: { marginHorizontal: 20, backgroundColor: '#1F5C3D', borderRadius: 28, padding: 24, flexDirection: 'row', alignItems: 'center', marginBottom: 24, shadowColor: '#123924', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 },
+  harvestIconCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 4, borderColor: '#FFB627', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
+  harvestTextContainer: { marginLeft: 16, flex: 1 },
+  harvestTitle: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+  harvestSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  actionRow: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, marginBottom: 20 },
+  actionBtn: { flex: 1, minHeight: 56, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, shadowColor: '#123924', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  btnWhite: { backgroundColor: '#FFFFFF' },
+  btnGreen: { backgroundColor: '#3FA86B' },
+  btnWhiteText: { fontSize: 12, fontWeight: '700', color: '#123924', textAlign: 'center' },
+  btnGreenText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
+  historySection: { paddingHorizontal: 20 },
+  historySectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F5C3D', marginBottom: 12 },
+  historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: '#123924' },
+  historyImage: { width: 40, height: 40, borderRadius: 8, borderWidth: 2, borderColor: '#123924', marginRight: 12, backgroundColor: '#e5e2db' },
+  historyTextCol: { flex: 1 },
+  historyTitle: { fontSize: 12, fontWeight: '700', color: '#123924' },
+  historySubtitle: { fontSize: 11, color: '#5C5A4F', marginTop: 2 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
+  badgeText: { fontSize: 10, fontWeight: "800" },
+  toast: { position: 'absolute', top: 20, left: 20, right: 20, backgroundColor: '#FFB627', padding: 16, borderRadius: 12, zIndex: 50, elevation: 10, borderWidth: 2, borderColor: '#123924', shadowColor: '#123924', shadowOffset: {width:4, height:4}, shadowOpacity: 1, shadowRadius: 0 },
+  toastText: { color: '#123924', fontWeight: '800', textAlign: 'center' },
+  loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,57,36,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  emptyState: { alignItems: 'center', paddingVertical: 32, opacity: 0.7 },
+  emptyText: { fontSize: 14, color: '#5C5A4F', fontWeight: '600' }
 });

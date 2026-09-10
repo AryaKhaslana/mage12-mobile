@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, Stack } from 'expo-router';
 import api, { getCommunityPostDetail, getCommunityComments, addCommunityComment, deleteCommunityComment, toggleCommunityLike, deleteCommunityPost, CommunityPostDetail, CommunityComment } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 
@@ -227,7 +227,7 @@ export default function DetailKomunitasScreen() {
         <View style={styles.postCard}>
           <View style={styles.postHeader}>
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarInitials}>{post.user_nama.charAt(0).toUpperCase()}</Text>
+              <Text style={styles.avatarInitials}>{post.user_nama?.charAt(0) || '?'.toUpperCase()}</Text>
             </View>
             <View style={styles.postMeta}>
               <Text style={styles.authorName}>{post.user_nama}</Text>
@@ -274,6 +274,7 @@ export default function DetailKomunitasScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
@@ -290,6 +291,7 @@ export default function DetailKomunitasScreen() {
   if (isError || !post) {
     return (
       <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
@@ -311,6 +313,7 @@ export default function DetailKomunitasScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView 
         style={styles.container} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

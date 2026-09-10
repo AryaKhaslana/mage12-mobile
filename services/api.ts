@@ -253,7 +253,7 @@ export const getAchievements = async (): Promise<AchievementResponse> => {
 
 export const getCommunityPostDetail = async (id: number): Promise<CommunityPostDetail> => {
   const response = await api.get(`/community/${id}`);
-  return response.data;
+  return response.data.data ? response.data.data : response.data;
 };
 
 export const getCommunityComments = async (id: number, page: number = 1, limit: number = 20): Promise<{ meta: any; data: CommunityComment[] }> => {

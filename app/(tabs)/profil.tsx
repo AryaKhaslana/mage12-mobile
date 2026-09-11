@@ -222,7 +222,7 @@ export default function ProfilScreen() {
               styles.menuItem, 
               pressed && styles.menuItemPressed,
             ]}
-            onPress={() => Alert.alert("Segera hadir", "Fitur Notifikasi sedang dalam pengembangan.")}
+            onPress={() => router.push("/pengaturan-notifikasi" as any)}
           >
             <MaterialIcons name="notifications-none" size={24} color="#123924" />
             <Text style={styles.menuText}>Pengaturan Notifikasi</Text>

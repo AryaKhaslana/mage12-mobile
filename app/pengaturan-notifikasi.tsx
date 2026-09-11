@@ -168,6 +168,7 @@ export default function PengaturanNotifikasiScreen() {
             TaniSync akan mengingatkanmu setiap hari untuk merawat tanamanmu 🌱
           </Text>
         </View>
+
       </View>
     </SafeAreaView>
   );
@@ -247,6 +248,24 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     color: '#FFFFFF',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E5DA',
+  },
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuText: {
+    fontSize: 16,
+    fontFamily: 'Nunito_700Bold',
+    color: '#123924',
   },
   descriptionText: {
     fontSize: 12,

@@ -249,7 +249,11 @@ export default function DashboardScreen() {
       <View style={styles.header}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
-            <MaterialIcons name="person" size={24} color="#5C5A4F" />
+            {userData?.avatarUrl ? (
+              <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
+            ) : (
+              <MaterialIcons name="person" size={24} color="#5C5A4F" />
+            )}
           </View>
           <View>
             <Text style={styles.greeting}>

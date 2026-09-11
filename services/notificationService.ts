@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { SchedulableTriggerInputTypes } from "expo-notifications";
 import { Platform } from "react-native";
 import api from "./api";
 
@@ -83,9 +84,9 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
       sound: true,
     },
     trigger: {
+      type: SchedulableTriggerInputTypes.DAILY,
       hour: hour,
       minute: minute,
-      repeats: true,
-    } as any,
+    },
   });
 }

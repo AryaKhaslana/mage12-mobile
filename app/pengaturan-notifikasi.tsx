@@ -29,15 +29,23 @@ export default function PengaturanNotifikasiScreen() {
         const savedEnabled = await SecureStore.getItemAsync('notifEnabled');
         const savedTimeStr = await SecureStore.getItemAsync('notifTime');
         
-        if (savedEnabled === 'true') {
-          setIsEnabled(true);
-        }
-        
         if (savedTimeStr) {
           const parsedTime = JSON.parse(savedTimeStr);
           const foundTime = TIME_OPTIONS.find(t => t.hour === parsedTime.hour && t.minute === parsedTime.minute);
           if (foundTime) {
             setSelectedTime(foundTime);
+          }
+        }
+
+        if (savedEnabled === 'true') {
+          const granted = await registerForPushNotificationsAsync();
+          if (granted && savedTimeStr) {
+            const t = JSON.parse(savedTimeStr);
+            setIsEnabled(true);
+            await scheduleDailyPlantReminder(t.hour, t.minute);
+          } else {
+            setIsEnabled(false);
+            await SecureStore.setItemAsync('notifEnabled', 'false');
           }
         }
       } catch (error) {
@@ -47,36 +55,53 @@ export default function PengaturanNotifikasiScreen() {
       }
     };
     
-    loadSettings();
+    try {
+      loadSettings();
+    } catch (e) {
+      console.error("Critical failure during loadSettings", e);
+    }
   }, []);
 
   const handleToggle = async (value: boolean) => {
-    setIsEnabled(value);
-    await SecureStore.setItemAsync('notifEnabled', value ? 'true' : 'false');
-    
-    if (value) {
-      const granted = await registerForPushNotificationsAsync();
-      if (granted) {
-        await scheduleDailyPlantReminder(selectedTime.hour, selectedTime.minute);
-        showNotification("Sukses", "Reminder aktif! 🌱");
+    try {
+      setIsEnabled(value);
+      await SecureStore.setItemAsync('notifEnabled', value ? 'true' : 'false');
+      
+      if (value) {
+        const granted = await registerForPushNotificationsAsync();
+        if (granted) {
+          await scheduleDailyPlantReminder(selectedTime.hour, selectedTime.minute);
+          showNotification("Sukses", "Reminder aktif! 🌱");
+        } else {
+          Alert.alert("Izin Ditolak", "Izin notifikasi ditolak — aktifkan dari pengaturan HP");
+          setIsEnabled(false);
+          await SecureStore.setItemAsync('notifEnabled', 'false');
+        }
       } else {
-        Alert.alert("Izin Ditolak", "Izin notifikasi ditolak — aktifkan dari pengaturan HP");
-        setIsEnabled(false);
-        await SecureStore.setItemAsync('notifEnabled', 'false');
+        await cancelAllPlantReminders();
+        showNotification("Dimatikan", "Reminder dimatikan");
       }
-    } else {
-      await cancelAllPlantReminders();
-      showNotification("Dimatikan", "Reminder dimatikan");
+    } catch (e) {
+      console.error(e);
+      setIsEnabled(!value);
+      Alert.alert("Gagal", "Tidak bisa mengatur reminder. Coba lagi.");
     }
   };
 
   const handleTimeSelect = async (timeOption: typeof TIME_OPTIONS[0]) => {
-    setSelectedTime(timeOption);
-    await SecureStore.setItemAsync('notifTime', JSON.stringify({ hour: timeOption.hour, minute: timeOption.minute }));
-    
-    if (isEnabled) {
-      await scheduleDailyPlantReminder(timeOption.hour, timeOption.minute);
-      showNotification("Diupdate", `Reminder diatur ke jam ${timeOption.label}`);
+    const previousTime = selectedTime;
+    try {
+      setSelectedTime(timeOption);
+      await SecureStore.setItemAsync('notifTime', JSON.stringify({ hour: timeOption.hour, minute: timeOption.minute }));
+      
+      if (isEnabled) {
+        await scheduleDailyPlantReminder(timeOption.hour, timeOption.minute);
+        showNotification("Diupdate", `Reminder diatur ke jam ${timeOption.label}`);
+      }
+    } catch (e) {
+      console.error(e);
+      setSelectedTime(previousTime);
+      Alert.alert("Gagal", "Tidak bisa mengatur reminder. Coba lagi.");
     }
   };
 

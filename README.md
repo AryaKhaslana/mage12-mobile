@@ -1,50 +1,65 @@
-# Welcome to your Expo app 👋
+# TaniSync Mobile App 🌱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+TaniSync adalah aplikasi teman bertani kaum urban. TaniSync membantu kamu merawat tanaman dengan mudah dan menyenangkan. Aplikasi ini memiliki fitur utama:
+- **Manajemen Tanaman:** Catat tanamanmu, dapatkan prediksi panen, dan pengingat jadwal siram harian (notifikasi lokal).
+- **Komunitas:** Bagikan progress tanamanmu atau panen surplus ke petani urban lain di sekitarmu (berbasis geolokasi).
+- **TaniBot:** Asisten AI pintar yang siap menjawab semua pertanyaan seputar perawatan tanaman dan cuaca hari ini.
+- **Gamifikasi:** Dapatkan poin, *streak*, dan koleksi *achievement* setiap kali kamu merawat tanamanmu!
 
-## Get started
+## 🚀 Tech Stack (Real-based)
+Aplikasi ini dibangun menggunakan teknologi modern:
+- **Expo SDK:** `~57.0.21` (SDK 57)
+- **React Native:** `0.86.3`
+- **React:** `19.2.3`
+- **TypeScript:** `~6.0.3`
+- **Networking:** `axios` (`^1.20.0`)
+- **Routing:** `expo-router`
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 🛠 Panduan Setup (Windows / Mac / Linux)
 
-2. Start the app
+### 1. Install Persyaratan Sistem
+Pastikan kamu memiliki **Node.js** terinstal. Expo SDK 57 membutuhkan Node.js v18 atau versi LTS terbaru (sangat disarankan v20+).
+- **Windows / Mac / Linux:** Download dan install dari [nodejs.org](https://nodejs.org).
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+### 2. Clone Repositori
+Buka terminal (Mac/Linux) atau PowerShell (Windows) lalu jalankan:
 ```bash
-npm run reset-project
+git clone <URL_REPO_TANISYNC_MOBILE>
+cd mage12-mobile
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 3. Install Dependency
+```bash
+npm install
+```
 
-## Learn more
+### 4. Konfigurasi Environment Variables (.env)
+Buat file bernama `.env` di *root* direktori proyek (sejajar dengan `package.json`). Isi dengan variabel berikut (contoh):
+```env
+# URL Backend TaniSync (tanpa slash di akhir)
+EXPO_PUBLIC_API_URL=https://mage12-api-production.up.railway.app/api
 
-To learn more about developing your project with Expo, look at the following resources:
+# Client ID untuk Google Sign-In
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 5. Jalankan Aplikasi
+```bash
+npx expo start
+```
+- **Expo Go:** Scan QR Code yang muncul di terminal menggunakan aplikasi Expo Go di HP kamu.
+- ⚠️ **CATATAN PENTING:** Beberapa fitur native seperti **Google Sign-In** dan **Push Notification Lokal** *TIDAK BISA* berjalan sempurna di Expo Go biasa. Kamu **WAJIB** membuat dan menggunakan *Development Build* (APK / Simulator) untuk menguji fitur-fitur tersebut secara penuh.
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 📁 Struktur Direktori Penting
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `app/` → Berisi semua *screens* berbasis *file-system routing* dari Expo Router.
+  - `app/(auth)/` → Grup rute untuk alur otentikasi (Login, Register, Setup Lokasi).
+  - `app/(tabs)/` → Grup rute utama aplikasi yang menggunakan Bottom Navigation Bar (Beranda, Tanaman, Komunitas, Profil).
+- `components/` → Komponen UI yang bisa dipakai ulang (contoh: `NotificationContext.tsx` untuk sistem *toast* kustom).
+- `services/` → Layanan eksternal aplikasi.
+  - `services/api.ts` → Konfigurasi Axios, *interceptor* token JWT, dan semua fungsi panggilan endpoint *backend*.
+  - `services/notificationService.ts` → Logika penjadwalan dan perizinan Notifikasi Lokal (Expo Notifications).

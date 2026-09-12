@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChatMessage, getTanibotHistory, sendTanibotMessage } from '../../services/api';
 
@@ -32,9 +32,10 @@ const TypingIndicator = () => {
 
   return (
     <Animated.View style={[styles.bubbleWrapperLeft, { marginTop: 16, opacity: fadeAnim }]}>
-      <View style={styles.bubbleBot}>
-        <Text style={[styles.bubbleText, styles.textBot, { fontStyle: 'italic' }]}>
-          TaniBot sedang mengetik...
+      <View style={[styles.bubbleBot, { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 16 }]}>
+        <ActivityIndicator size="small" color="#5C5A4F" />
+        <Text style={[styles.bubbleText, styles.textBot, { fontStyle: 'italic', color: '#5C5A4F' }]}>
+          TaniBot sedang merangkai kata...
         </Text>
       </View>
     </Animated.View>

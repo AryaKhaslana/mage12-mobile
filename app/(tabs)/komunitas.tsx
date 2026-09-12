@@ -1,12 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Alert, Animated } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
-import api from '../../services/api';
-import { getCommunityPosts, CommunityPost, deleteCommunityPost } from '../../services/api';
+import api, { CommunityPost, deleteCommunityPost, getCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
@@ -386,6 +385,7 @@ export default function KomunitasScreen() {
             }}
           />
         )}
+      </View>
 
         {coords && (
           <Pressable 
@@ -488,7 +488,6 @@ export default function KomunitasScreen() {
             </View>
           </View>
         </Modal>
-      </View>
     </SafeAreaView>
 
   );
@@ -630,11 +629,11 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    bottom: 16,
+    right: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#3FA86B',
     borderWidth: 2,
     borderColor: '#123924',

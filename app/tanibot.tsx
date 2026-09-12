@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, FlatList, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator, Alert, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
-import { getTanibotHistory, sendTanibotMessage, ChatMessage } from '../services/api';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChatMessage, getTanibotHistory, sendTanibotMessage } from '../services/api';
 
 const getRelativeTime = (isoString: string) => {
   const date = new Date(isoString);
@@ -125,7 +125,7 @@ export default function TanibotScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         
@@ -333,7 +333,8 @@ const styles = StyleSheet.create({
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 16,
+    paddingBottom: 36,
+    padding:16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
     borderTopColor: '#E8E5DA',

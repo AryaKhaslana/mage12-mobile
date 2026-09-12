@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -234,13 +235,15 @@ export default function OnboardingScreen() {
             <Text style={styles.startButtonText}>Mulai Sekarang</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            style={styles.nextButton}
+          <Pressable
+            style={({ pressed }) => [
+              styles.nextButton,
+              pressed && styles.pressedNextButton
+            ]}
             onPress={handleNext}
-            activeOpacity={0.9}
           >
             <MaterialIcons name="arrow-forward" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
     </SafeAreaView>
@@ -373,5 +376,9 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontFamily: "Nunito_800ExtraBold",
+  },
+  pressedNextButton: {
+    boxShadow: "0px 0px 0px #123924",
+    transform: [{ translateX: 4 }, { translateY: 4 }],
   },
 });

@@ -208,11 +208,11 @@ export default function DashboardScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.tanibotFab,
-            pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
+            pressed && styles.pressedFab,
           ]}
-          onPress={() => router.push("/tanibot")}
+          onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
         >
-          <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
+          <MaterialIcons name="add" size={32} color="#FFFFFF" />
         </Pressable>
       </SafeAreaView>
     );
@@ -772,11 +772,11 @@ export default function DashboardScreen() {
       <Pressable
         style={({ pressed }) => [
           styles.tanibotFab,
-          pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
+          pressed && styles.pressedFab,
         ]}
-        onPress={() => router.push("/tanibot")}
+        onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
       >
-        <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
+        <MaterialIcons name="add" size={32} color="#FFFFFF" />
       </Pressable>
     </SafeAreaView>
   );
@@ -840,19 +840,23 @@ const styles = StyleSheet.create({
 
   tanibotFab: {
     position: "absolute",
-    bottom: 24,
+    bottom: 16,
     right: 24,
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#123924",
+    backgroundColor: "#3FA86B",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#3FA86B",
-    boxShadow: "4px 4px 0px #3FA86B",
+    borderColor: "#123924",
+    boxShadow: "4px 4px 0px #123924",
     elevation: 8,
-    zIndex: 100,
+    zIndex: 50,
+  },
+  pressedFab: {
+    boxShadow: "0px 0px 0px #123924",
+    transform: [{ translateX: 4 }, { translateY: 4 }],
   },
   logoutButton: {
     width: 48,

@@ -1,20 +1,19 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback } from "react";
-import { useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Image,
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
-import { TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api, { TanamanDetail } from "../../services/api";
 
@@ -53,6 +52,14 @@ export default function TanamanScreen() {
   const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
   const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const params = useLocalSearchParams();
+
+  useEffect(() => {
+    if (params.openModal === 'true') {
+      setModalVisible(true);
+      router.setParams({ openModal: '' });
+    }
+  }, [params.openModal]);
 
   const fetchTanaman = async (isManualRefresh = false) => {
     if (tanamanList.length === 0) {
@@ -266,8 +273,9 @@ export default function TanamanScreen() {
             </View>
           )}
         </ScrollView>
+      </View>
 
-        {/* FAB */}
+      {/* FAB */}
         <Pressable
           style={({ pressed }) => [
             styles.fab,
@@ -349,7 +357,6 @@ export default function TanamanScreen() {
             </View>
           </View>
         </Modal>
-      </View>
     </SafeAreaView>
   );
 }
@@ -484,11 +491,11 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    bottom: 16,
+    right: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: "#3FA86B",
     borderWidth: 2,
     borderColor: "#123924",

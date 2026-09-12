@@ -1,6 +1,6 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -41,6 +41,38 @@ export default function TabLayout() {
         options={{
           title: 'Tanaman',
           tabBarIcon: ({ color }) => <MaterialIcons size={24} name="yard" color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="tanibot"
+        options={{
+          title: 'Tanibot',
+          tabBarIcon: ({ color }) => (
+            <View style={{
+              width: 88,
+              height: 88,
+              borderRadius: 40,
+              backgroundColor: '#b1f1c8',
+              borderWidth: 2,
+              borderColor: '#123924',
+              alignItems: 'center',
+              justifyContent: 'center',
+              // top: -12, // Move up so it pops out of the tab bar
+            }}>
+              <MaterialIcons name="smart-toy" size={32} color="#123924" />
+            </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text style={{ 
+              fontFamily: 'Nunito_700Bold', 
+              fontSize: 10, 
+              color: focused ? '#3FA86B' : '#5C5A4F',
+              // marginTop: -12, 
+            }}>
+              Tanibot
+            </Text>
+          ),
         }}
       />
 

@@ -42,6 +42,28 @@ const TypingIndicator = () => {
   );
 };
 
+
+const formatMarkdown = (text: string) => {
+  // Parsing sederhana untuk **Bold** dan *Italic* tanpa library berat
+  const parts = text.split(/(\*\*.*?\*\*|\*[^\\n*]+\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <Text key={index} style={{ fontFamily: 'Nunito_800ExtraBold' }}>
+          {part.slice(2, -2)}
+        </Text>
+      );
+    } else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+      return (
+        <Text key={index} style={{ fontStyle: 'italic' }}>
+          {part.slice(1, -1)}
+        </Text>
+      );
+    }
+    return <Text key={index}>{part}</Text>;
+  });
+};
+
 export default function TanibotScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -117,7 +139,7 @@ export default function TanibotScreen() {
       <View style={[styles.bubbleWrapper, isUser ? styles.bubbleWrapperRight : styles.bubbleWrapperLeft]}>
         <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleBot]}>
           <Text style={[styles.bubbleText, isUser ? styles.textUser : styles.textBot]}>
-            {item.message}
+            {formatMarkdown(item.message)}
           </Text>
         </View>
         <Text style={[styles.timeText, isUser && { textAlign: 'right' }]}>{getRelativeTime(item.createdAt)}</Text>

@@ -210,7 +210,7 @@ export default function DashboardScreen() {
             styles.tanibotFab,
             pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
           ]}
-          onPress={() => router.push("/tanibot")}
+          onPress={() => router.push("/tanibot" as any)}
         >
           <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
         </Pressable>
@@ -770,7 +770,7 @@ export default function DashboardScreen() {
           styles.tanibotFab,
           pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
         ]}
-        onPress={() => router.push("/tanibot")}
+        onPress={() => router.push("/tanibot" as any)}
       >
         <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
       </Pressable>

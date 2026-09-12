@@ -1,3 +1,4 @@
+// @ts-ignore
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import api from "./api";

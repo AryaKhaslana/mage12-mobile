@@ -1,17 +1,18 @@
+import { MaterialIcons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
-import * as Location from "expo-location";
 import api from "../../services/api";
 
 export default function LocationSetupScreen() {
@@ -77,7 +78,11 @@ export default function LocationSetupScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <MaterialIcons name="my-location" size={64} color="#123924" />
+          <Image 
+            source={require("../../assets/images/icontampilanawal/seedling-halo.png")} 
+            style={{ width: 340, height: 340 }} 
+            resizeMode="contain" 
+          />
         </View>
         
         <Text style={styles.title}>Lokasi Kamu</Text>
@@ -88,11 +93,17 @@ export default function LocationSetupScreen() {
         <View style={styles.statusBox}>
           {locationStr ? (
             <>
-              <Text style={styles.statusLabel}>Lokasi Terdeteksi:</Text>
-              <Text style={styles.statusText}>{locationStr}</Text>
+              <MaterialIcons name="check-circle" size={24} color="#3FA86B" style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.statusLabel}>Lokasi Terdeteksi:</Text>
+                <Text style={styles.statusText}>{locationStr}</Text>
+              </View>
             </>
           ) : (
-            <Text style={styles.statusText}>Belum ada lokasi.</Text>
+            <>
+              <MaterialIcons name="location-pin" size={24} color="#5C5A4F" style={{ marginRight: 12 }} />
+              <Text style={[styles.statusText, { color: "#5C5A4F", flex: 1 }]}>Belum ada lokasi.</Text>
+            </>
           )}
         </View>
 
@@ -130,16 +141,9 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FBF8F0" },
   container: { flex: 1, padding: 24, paddingTop: 48, alignItems: "center" },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
   },
   title: {
     fontSize: 28,
@@ -158,27 +162,26 @@ const styles = StyleSheet.create({
   },
   statusBox: {
     width: "100%",
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    borderRadius: 16,
+    backgroundColor: "#F1EEE6",
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
     marginBottom: 32,
     alignItems: "center",
+    flexDirection: "row",
   },
   statusLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Nunito_700Bold",
     color: "#3FA86B",
     textTransform: "uppercase",
-    marginBottom: 8,
+    marginBottom: 2,
   },
   statusText: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: "Nunito_700Bold",
     color: "#123924",
-    textAlign: "center",
   },
   primaryButton: {
     backgroundColor: "#3FA86B",

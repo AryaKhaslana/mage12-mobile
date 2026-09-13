@@ -91,7 +91,17 @@ export default function ProfilScreen() {
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.profileName}>{nameFallback}</Text>
+            <>
+              <Text style={styles.profileName}>{nameFallback}</Text>
+              {userData?.username && (
+                <Text style={styles.profileUsername}>@{userData.username}</Text>
+              )}
+              {userData?.bio ? (
+                <Text style={styles.profileBio} numberOfLines={3}>{userData.bio}</Text>
+              ) : (
+                <Text style={styles.profileBioEmpty}>Belum ada bio ✍️</Text>
+              )}
+            </>
           )}
         </View>
 
@@ -345,7 +355,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 28,
     alignItems: 'center',
     paddingTop: 40,
-    paddingBottom: 60,
+    paddingBottom: 72,
     paddingHorizontal: 20,
     position: 'relative',
   },
@@ -443,6 +453,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Nunito_700Bold',
     color: '#FFFFFF',
+  },
+  profileUsername: {
+    fontSize: 13,
+    fontFamily: 'Nunito_700Bold',
+    color: '#5C5A4F',
+    marginTop: 4,
+  },
+  profileBio: {
+    fontSize: 12,
+    fontFamily: 'Nunito_500Medium',
+    color: '#5C5A4F',
+    marginTop: 4,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  profileBioEmpty: {
+    fontSize: 12,
+    fontFamily: 'Nunito_500Medium',
+    color: '#5C5A4F',
+    fontStyle: 'italic',
+    marginTop: 4,
+    opacity: 0.8,
   },
   statsContainer: {
     flexDirection: 'row',

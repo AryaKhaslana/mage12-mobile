@@ -278,7 +278,7 @@ export default function DashboardScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -288,6 +288,10 @@ export default function DashboardScreen() {
           />
         }
       >
+        {isLoading ? (
+          <HomeSkeleton />
+        ) : (
+          <>
         {/* STAT STRIP */}
         <View
           style={{
@@ -778,6 +782,8 @@ export default function DashboardScreen() {
             )}
           </ScrollView>
         </View>
+          </>
+        )}
       </ScrollView>
 
       {/* TANIBOT FAB */}

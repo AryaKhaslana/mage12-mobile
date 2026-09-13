@@ -59,7 +59,14 @@ const PlantGridSkeleton = () => {
   return (
     <Animated.View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', opacity: fadeAnim }}>
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <View key={i} style={{ width: '47%', aspectRatio: 1, backgroundColor: '#E8E5DA', borderRadius: 24, borderWidth: 2, borderColor: '#123924', marginBottom: 16 }} />
+        <View key={i} style={{ width: '48%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 2, borderColor: '#123924', marginBottom: 16, overflow: 'hidden' }}>
+          <View style={{ width: '100%', height: 100, backgroundColor: '#E8E5DA', borderBottomWidth: 2, borderBottomColor: '#123924' }} />
+          <View style={{ padding: 12, gap: 6 }}>
+            <View style={{ width: '80%', height: 14, borderRadius: 7, backgroundColor: '#E8E5DA' }} />
+            <View style={{ width: '90%', height: 10, borderRadius: 5, backgroundColor: '#E8E5DA' }} />
+            <View style={{ width: '60%', height: 20, borderRadius: 10, backgroundColor: '#E8E5DA', marginTop: 4 }} />
+          </View>
+        </View>
       ))}
     </Animated.View>
   );

@@ -2,7 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator, Animated,
   Image,
@@ -96,7 +96,6 @@ const EmptyHint = ({
 );
 
 
-import { useRef } from 'react';
 
 const HomeSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
@@ -161,7 +160,14 @@ export default function DashboardScreen() {
         let hasCache = false;
         if (cachedUser) { setUserData(JSON.parse(cachedUser)); hasCache = true; }
         if (cachedTanaman) { setTanamanList(JSON.parse(cachedTanaman)); hasCache = true; }
-        if (cachedWeather) { setWeather(JSON.parse(cachedWeather)); hasCache = true; }
+        if (cachedWeather) {
+          const parsed = JSON.parse(cachedWeather);
+          // Only use cache if it's less than 3 hours old
+          if (parsed.savedAt && Date.now() - parsed.savedAt < 3 * 60 * 60 * 1000) {
+            setWeather(parsed.data);
+            hasCache = true;
+          }
+        }
         
         // If we have cache, dismiss skeleton immediately!
         if (hasCache) {
@@ -259,7 +265,7 @@ export default function DashboardScreen() {
           new Date().toDateString();
       if (t.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni)
         return true;
-      if (t.sisaHariPanen <= 7) return true;
+      if ((t.sisaHariPanen ?? 999) <= 7) return true;
       return false;
     })
     .sort((a, b) => {
@@ -273,7 +279,7 @@ export default function DashboardScreen() {
         b.statusPenyiraman === "PERLU_SIRAM"
       )
         return 1;
-      return a.sisaHariPanen - b.sisaHariPanen;
+      return (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999);
     });
 
   return (
@@ -440,7 +446,7 @@ export default function DashboardScreen() {
           const panenTerdekat =
             tanamanList.length > 0
               ? [...tanamanList].sort(
-                  (a, b) => a.sisaHariPanen - b.sisaHariPanen,
+                  (a, b) => (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999),
                 )[0]
               : null;
 
@@ -451,7 +457,7 @@ export default function DashboardScreen() {
               (Date.now() - new Date(panenTerdekat.tanggalTanam).getTime()) /
                 86400000,
             ) + 1;
-          const totalHari = hariKe + panenTerdekat.sisaHariPanen;
+          const totalHari = hariKe + (panenTerdekat.sisaHariPanen ?? 999);
           const persen = Math.min(100, Math.max(0, (hariKe / totalHari) * 100));
 
           return (
@@ -512,7 +518,7 @@ export default function DashboardScreen() {
                     lineHeight: 36,
                   }}
                 >
-                  {panenTerdekat.sisaHariPanen}{" "}
+                  {panenTerdekat.sisaHariPanen ?? 999}{" "}
                   <Text style={{ fontSize: 14 }}>hari</Text>
                 </Text>
               </View>
@@ -686,7 +692,7 @@ export default function DashboardScreen() {
                     >
                       {isPenyiraman
                         ? "Perlu disiram sekarang"
-                        : `Masa panen tinggal ${tanaman.sisaHariPanen} hari lagi!`}
+                        : `Masa panen tinggal ${tanaman.sisaHariPanen ?? 999} hari lagi!`}
                     </Text>
                   </View>
                   <View
@@ -741,7 +747,7 @@ export default function DashboardScreen() {
                     : "#FFFFFF";
                 const badgeText = sudahValidasiHariIni
                   ? "Sudah Disiram ✅"
-                  : `${tanaman.sisaHariPanen} hari lagi`;
+                  : `${tanaman.sisaHariPanen ?? 999} hari lagi`;
 
                 return (
                   <Pressable
@@ -807,13 +813,13 @@ export default function DashboardScreen() {
         )}
       </ScrollView>
 
-      {/* TANIBOT FAB */}
+      {/* FAB TAMBAH TANAMAN */}
       <Pressable
         style={({ pressed }) => [
           styles.tanibotFab,
           pressed && styles.pressedFab,
         ]}
-        onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
+        onPress={() => router.push({ pathname: "/(tabs)/tanaman", params: { openModal: 'true' } })}
       >
         <MaterialIcons name="add" size={32} color="#FFFFFF" />
       </Pressable>

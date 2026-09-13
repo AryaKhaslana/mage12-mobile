@@ -457,13 +457,13 @@ const styles = StyleSheet.create({
   profileUsername: {
     fontSize: 13,
     fontFamily: 'Nunito_700Bold',
-    color: '#5C5A4F',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 4,
   },
   profileBio: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
-    color: '#5C5A4F',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 4,
     textAlign: 'center',
     paddingHorizontal: 20,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
   profileBioEmpty: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
-    color: '#5C5A4F',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontStyle: 'italic',
     marginTop: 4,
     opacity: 0.8,

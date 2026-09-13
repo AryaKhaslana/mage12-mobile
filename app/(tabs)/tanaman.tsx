@@ -2,7 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  ActivityIndicator, Animated,
   Alert,
   Image,
   Modal,
@@ -41,6 +41,29 @@ const JENIS_TANAMAN_ENUM = [
   "Kentang",
   "Pisang",
 ];
+
+import { useRef } from 'react';
+
+const PlantGridSkeleton = () => {
+  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
+      ])
+    ).start();
+  }, [fadeAnim]);
+
+  return (
+    <Animated.View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', opacity: fadeAnim }}>
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <View key={i} style={{ width: '47%', aspectRatio: 1, backgroundColor: '#E8E5DA', borderRadius: 24, borderWidth: 2, borderColor: '#123924', marginBottom: 16 }} />
+      ))}
+    </Animated.View>
+  );
+};
 
 export default function TanamanScreen() {
   const [activeFilter, setActiveFilter] = useState("Semua");
@@ -181,11 +204,7 @@ export default function TanamanScreen() {
 
           {/* PLANT GRID */}
           {isLoading ? (
-            <ActivityIndicator
-              size="large"
-              color="#3FA86B"
-              style={{ marginTop: 50 }}
-            />
+            <PlantGridSkeleton />
           ) : filteredList.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialIcons name="eco" size={64} color="#bdcabd" />

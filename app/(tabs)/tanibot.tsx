@@ -64,6 +64,28 @@ const formatMarkdown = (text: string) => {
   });
 };
 
+
+const ChatSkeleton = () => {
+  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
+      ])
+    ).start();
+  }, [fadeAnim]);
+
+  return (
+    <Animated.View style={{ padding: 20, gap: 16, opacity: fadeAnim }}>
+      <View style={[styles.bubbleBot, { width: 200, height: 60, backgroundColor: '#E8E5DA', borderColor: '#E8E5DA' }]} />
+      <View style={[styles.bubbleUser, { width: 160, height: 50, backgroundColor: '#E8E5DA', alignSelf: 'flex-end' }]} />
+      <View style={[styles.bubbleBot, { width: 240, height: 80, backgroundColor: '#E8E5DA', borderColor: '#E8E5DA' }]} />
+    </Animated.View>
+  );
+};
+
 export default function TanibotScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -164,11 +186,7 @@ export default function TanibotScreen() {
         {/* CHAT AREA */}
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {isLoadingHistory ? (
-            <View style={{ padding: 20, gap: 16 }}>
-              <View style={[styles.bubbleBot, { width: 200, height: 60, backgroundColor: '#E8E5DA', borderColor: '#E8E5DA' }]} />
-              <View style={[styles.bubbleUser, { width: 160, height: 50, backgroundColor: '#E8E5DA', alignSelf: 'flex-end' }]} />
-              <View style={[styles.bubbleBot, { width: 240, height: 80, backgroundColor: '#E8E5DA', borderColor: '#E8E5DA' }]} />
-            </View>
+            <ChatSkeleton />
           ) : (
             <FlatList
               ref={flatListRef}

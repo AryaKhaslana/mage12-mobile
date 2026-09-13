@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  ActivityIndicator, Animated,
   Image,
   Pressable,
   RefreshControl,
@@ -194,29 +194,7 @@ export default function DashboardScreen() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.safeArea,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <ActivityIndicator size="large" color="#3FA86B" />
-
-        {/* TANIBOT FAB */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.tanibotFab,
-            pressed && styles.pressedFab,
-          ]}
-          onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
-        >
-          <MaterialIcons name="add" size={32} color="#FFFFFF" />
-        </Pressable>
-      </SafeAreaView>
-    );
-  }
+  // isLoading check handled inside return to preserve Header
 
   const reminders = [...tanamanList]
     .filter((t) => {

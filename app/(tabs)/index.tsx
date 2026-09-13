@@ -1,6 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator, Animated,
@@ -150,6 +151,26 @@ export default function DashboardScreen() {
         router.replace("/(auth)/login");
         return;
       }
+      
+      // OPTIMIZATION: Load from cache instantly (Stale-While-Revalidate)
+      try {
+        const cachedUser = await SecureStore.getItemAsync("userData");
+        const cachedTanaman = await AsyncStorage.getItem("dashboard_tanaman");
+        const cachedWeather = await AsyncStorage.getItem("dashboard_weather");
+        
+        let hasCache = false;
+        if (cachedUser) { setUserData(JSON.parse(cachedUser)); hasCache = true; }
+        if (cachedTanaman) { setTanamanList(JSON.parse(cachedTanaman)); hasCache = true; }
+        if (cachedWeather) { setWeather(JSON.parse(cachedWeather)); hasCache = true; }
+        
+        // If we have cache, dismiss skeleton immediately!
+        if (hasCache) {
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.log("Cache read error:", e);
+      }
+
       fetchDashboardData();
     };
     checkAuthAndFetch();

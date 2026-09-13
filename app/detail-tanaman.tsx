@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated, Alert } from 'react-native';
+import { Share, View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -267,6 +267,18 @@ export default function DetailTanamanModal() {
   const estPanenDate = new Date(new Date(tanaman.tanggalTanam || Date.now()).getTime() + ((tanaman.daysToHarvest || 0) * 86400000));
   const estPanenString = isNaN(estPanenDate.getTime()) ? '-' : estPanenDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
+  const handleShare = async () => {
+    try {
+      const shareMessage = `🌱 Pamer Progres TaniSync! 🌱\n\nGue udah ngerawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari!\nStatus kesehatannya dapet skor ${tanaman?.predictiveScore}/100! ✨\n\nSisa ${tanaman?.sisaHariPanen} hari lagi menuju panen! Yuk buruan mulai kebun lu sendiri di TaniSync! 🚜💨`;
+      await Share.share({
+        message: shareMessage,
+        title: "Pamer Progres TaniSync",
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   let badgeBgColor = "#E8F5E9";
   let badgeBorderColor = "#3FA86B";
   let badgeTextColor = "#123924";
@@ -306,13 +318,18 @@ export default function DetailTanamanModal() {
           <TouchableOpacity style={styles.iconButton} onPress={() => router.back()} disabled={isDeleting}>
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={handleDeleteTanaman} disabled={isDeleting}>
-            {isDeleting ? (
-              <ActivityIndicator size="small" color="#FF6B5C" />
-            ) : (
-              <MaterialIcons name="delete-outline" size={24} color="#FF6B5C" />
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#FFB627', borderColor: '#123924' }]} onPress={handleShare}>
+              <MaterialIcons name="share" size={24} color="#123924" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={handleDeleteTanaman} disabled={isDeleting}>
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#FF6B5C" />
+              ) : (
+                <MaterialIcons name="delete-outline" size={24} color="#FF6B5C" />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* HERO SECTION */}

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,40 @@ const formatDate = (isoString: string) => {
   if (isNaN(date.getTime())) return '-';
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + 
          date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+};
+
+
+import { useRef, useEffect } from 'react';
+
+const DetailTanamanSkeleton = () => {
+  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
+      ])
+    ).start();
+  }, [fadeAnim]);
+
+  return (
+    <Animated.View style={{ flex: 1, opacity: fadeAnim, padding: 20, gap: 24 }}>
+      <View style={{ alignItems: 'center', gap: 12, marginTop: 20 }}>
+        <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ width: 150, height: 28, borderRadius: 14, backgroundColor: '#E8E5DA' }} />
+        <View style={{ width: 100, height: 18, borderRadius: 9, backgroundColor: '#E8E5DA' }} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+      </View>
+    </Animated.View>
+  );
 };
 
 export default function DetailTanamanModal() {
@@ -215,12 +249,15 @@ export default function DetailTanamanModal() {
 
   if (isLoading && !tanaman) {
     return (
-      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#1F5C3D" />
-      
-      
-
-    </SafeAreaView>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <MaterialIcons name="arrow-back" size={24} color="#123924" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Detail Tanaman</Text>
+        </View>
+        <DetailTanamanSkeleton />
+      </SafeAreaView>
     );
   }
 
@@ -451,6 +488,21 @@ export default function DetailTanamanModal() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: '#E8E5DA',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#123924',
+  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, Animated, FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
@@ -30,6 +30,52 @@ const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: any) => (
     )}
   </View>
 );
+
+
+const DetailKomunitasSkeleton = () => {
+  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
+      ])
+    ).start();
+  }, [fadeAnim]);
+
+  return (
+    <Animated.View style={{ flex: 1, opacity: fadeAnim, padding: 20 }}>
+      {/* User Info */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#E8E5DA' }} />
+        <View style={{ gap: 4 }}>
+          <View style={{ width: 140, height: 16, borderRadius: 8, backgroundColor: '#E8E5DA' }} />
+          <View style={{ width: 80, height: 12, borderRadius: 6, backgroundColor: '#E8E5DA' }} />
+        </View>
+      </View>
+      
+      {/* Content Text */}
+      <View style={{ gap: 8, marginBottom: 16 }}>
+        <View style={{ width: '100%', height: 14, borderRadius: 7, backgroundColor: '#E8E5DA' }} />
+        <View style={{ width: '100%', height: 14, borderRadius: 7, backgroundColor: '#E8E5DA' }} />
+        <View style={{ width: '60%', height: 14, borderRadius: 7, backgroundColor: '#E8E5DA' }} />
+      </View>
+
+      {/* Image Block */}
+      <View style={{ width: '100%', aspectRatio: 4/3, borderRadius: 16, backgroundColor: '#E8E5DA', marginBottom: 24 }} />
+      
+      {/* Comments Skeleton */}
+      <View style={{ gap: 16 }}>
+        <View style={{ width: 100, height: 16, borderRadius: 8, backgroundColor: '#E8E5DA' }} />
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#E8E5DA' }} />
+          <View style={{ flex: 1, height: 60, borderRadius: 12, backgroundColor: '#E8E5DA' }} />
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
 
 export default function DetailKomunitasScreen() {
   const { id } = useLocalSearchParams();
@@ -281,9 +327,7 @@ export default function DetailKomunitasScreen() {
           </Pressable>
           <Text style={styles.headerTitle}>Detail Postingan</Text>
         </View>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#3FA86B" />
-        </View>
+        <DetailKomunitasSkeleton />
       </SafeAreaView>
     );
   }
@@ -316,7 +360,8 @@ export default function DetailKomunitasScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView 
         style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>

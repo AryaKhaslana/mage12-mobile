@@ -94,6 +94,40 @@ const EmptyHint = ({
   </View>
 );
 
+
+import { useRef } from 'react';
+
+const HomeSkeleton = () => {
+  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
+      ])
+    ).start();
+  }, [fadeAnim]);
+
+  return (
+    <Animated.View style={{ opacity: fadeAnim, paddingHorizontal: 20, paddingTop: 16, gap: 24, paddingBottom: 40 }}>
+      <View style={{ width: '100%', height: 140, borderRadius: 24, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <View style={{ flex: 1, height: 100, borderRadius: 24, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ flex: 1, height: 100, borderRadius: 24, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ width: 150, height: 24, borderRadius: 12, backgroundColor: '#E8E5DA' }} />
+        <View style={{ width: 60, height: 16, borderRadius: 8, backgroundColor: '#E8E5DA' }} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 16 }}>
+        <View style={{ width: 140, height: 180, borderRadius: 24, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ width: 140, height: 180, borderRadius: 24, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+      </View>
+    </Animated.View>
+  );
+};
+
 export default function DashboardScreen() {
   const getGreeting = () => {
     const hour = new Date().getHours();

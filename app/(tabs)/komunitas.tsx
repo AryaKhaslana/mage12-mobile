@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
+import ErrorState from '../../components/ErrorState';
 import api, { CommunityPost, deleteCommunityPost, getCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
@@ -78,6 +79,7 @@ const PostSkeleton = () => {
 
 export default function KomunitasScreen() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [isError, setIsError] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
   const [coords, setCoords] = useState<{ latitude: number, longitude: number } | null>(null);
@@ -150,6 +152,7 @@ export default function KomunitasScreen() {
 
   const fetchUserLocationAndPosts = async () => {
     setIsLoading(true);
+    setIsError(false);
     try {
       const meRes = await api.get("/user/me").catch(() => null);
       const userData = meRes?.data?.data;
@@ -161,20 +164,16 @@ export default function KomunitasScreen() {
       
       if (lat != null && lon != null) {
         setCoords({ latitude: lat, longitude: lon });
-        const commRes = await getCommunityPosts(lat, lon, 1, limit).catch(() => null);
-        if (commRes?.data) {
-          setPosts(commRes.data);
-          setPage(commRes.meta.halamanSekarang);
-          setHasMore(commRes.data.length >= limit);
-        } else {
-          setPosts([]);
-          setHasMore(false);
-        }
+        const commRes = await getCommunityPosts(lat, lon, 1, limit);
+        setPosts(commRes.data);
+        setPage(commRes.meta.halamanSekarang);
+        setHasMore(commRes.data.length >= limit);
       } else {
         setCoords(null);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Komunitas fetch error:", e);
+      setIsError(true);
     } finally {
       setIsLoading(false);
     }
@@ -303,11 +302,15 @@ export default function KomunitasScreen() {
             onEndReachedThreshold={0.5}
             ListEmptyComponent={
               !isLoading ? (
-                <EmptyHint
-                  icon="groups"
-                  title="Belum ada postingan di sekitarmu 🌾"
-                  subtitle="Jadilah petani pertama yang berbagi di sini!"
-                />
+                isError ? (
+                  <ErrorState onRetry={fetchUserLocationAndPosts} />
+                ) : (
+                  <EmptyHint
+                    icon="groups"
+                    title="Belum ada postingan di sekitarmu 🌾"
+                    subtitle="Jadilah petani pertama yang berbagi di sini!"
+                  />
+                )
               ) : null
             }
             ListFooterComponent={

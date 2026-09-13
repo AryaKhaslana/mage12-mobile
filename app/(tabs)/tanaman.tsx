@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api, { TanamanDetail } from "../../services/api";
+import ErrorState from "../../components/ErrorState";
 
 const FALLBACK_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
 
@@ -77,6 +78,7 @@ export default function TanamanScreen() {
   const filters = ["Semua", "Perlu Disiram"];
   const [tanamanList, setTanamanList] = useState<TanamanDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
@@ -94,6 +96,7 @@ export default function TanamanScreen() {
   const fetchTanaman = async (isManualRefresh = false) => {
     if (tanamanList.length === 0) {
       setIsLoading(true);
+      setIsError(false);
     } else if (isManualRefresh) {
       setIsRefreshing(true);
     }
@@ -105,10 +108,9 @@ export default function TanamanScreen() {
       }
     } catch (error: any) {
       console.error("Error get tanaman:", error);
-      Alert.alert(
-        "Gagal",
-        error.response?.data?.message || "Tidak dapat memuat daftar tanaman",
-      );
+      if (tanamanList.length === 0) {
+        setIsError(true);
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -212,6 +214,8 @@ export default function TanamanScreen() {
           {/* PLANT GRID */}
           {isLoading ? (
             <PlantGridSkeleton />
+          ) : isError ? (
+            <ErrorState onRetry={() => fetchTanaman(true)} />
           ) : filteredList.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialIcons name="eco" size={64} color="#bdcabd" />

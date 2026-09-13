@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNotification } from "../../components/NotificationContext";
 import api from "../../services/api";
+import ErrorState from "../../components/ErrorState";
 
 const FALLBACK_THUMB =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
@@ -140,6 +141,7 @@ export default function DashboardScreen() {
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [weather, setWeather] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { showNotification } = useNotification();
 
@@ -185,26 +187,18 @@ export default function DashboardScreen() {
   const fetchDashboardData = async () => {
     if (tanamanList.length === 0 && !userData) {
       setIsLoading(true);
+      setIsError(false);
     } else {
       setIsRefreshing(true);
     }
     try {
       const [meRes, tanamanRes, weatherRes] = await Promise.all([
-        api.get("/user/me").catch((err) => {
-          console.log("Endpoint /user/me belum siap (404).");
-          return null;
+        api.get("/user/me").catch((e) => {
+          if (e.response && e.response.status === 404) return null;
+          throw e;
         }),
-        api.get("/tanaman").catch((err) => {
-          console.error("Gagal get tanaman:", err);
-          return null;
-        }),
-        api.get("/weather/today").catch((err) => {
-          console.log(
-            "Weather fetch failed (normal if location unset):",
-            err?.message,
-          );
-          return null;
-        }),
+        api.get("/tanaman"),
+        api.get("/weather/today").catch(() => null),
       ]);
       if (meRes?.data?.data) {
         setUserData(meRes.data.data);
@@ -317,6 +311,8 @@ export default function DashboardScreen() {
       >
         {isLoading ? (
           <HomeSkeleton />
+        ) : isError ? (
+          <ErrorState onRetry={fetchDashboardData} />
         ) : (
           <>
         {/* STAT STRIP */}

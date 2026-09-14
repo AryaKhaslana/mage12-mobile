@@ -9,6 +9,11 @@ import api, { getAchievements, AchievementResponse, Achievement } from '../../se
 import { Image } from "expo-image"; // use expo-image for avatars if they have it, or react-native Image
 
 export default function ProfilScreen() {
+  const getRankTitle = (level: number) => {
+    if (level >= 8) return "Sultan Hidroponik 👑";
+    if (level >= 4) return "Juragan Panen 🌾";
+    return "Petani Balkon 🌱";
+  };
   const [showAbout, setShowAbout] = React.useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
@@ -92,10 +97,20 @@ export default function ProfilScreen() {
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
             <>
-              <Text style={styles.profileName}>{nameFallback}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.profileName}>{nameFallback}</Text>
+                <View style={{ backgroundColor: '#FFB627', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, borderWidth: 1, borderColor: '#123924' }}>
+                  <Text style={{ fontSize: 10, fontFamily: 'Nunito_800ExtraBold', color: '#123924' }}>Lv.{userData?.level || 1}</Text>
+                </View>
+              </View>
               {userData?.username && (
                 <Text style={styles.profileUsername}>@{userData.username}</Text>
               )}
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#3FA86B', alignSelf: 'flex-start', marginTop: 4, marginBottom: 8 }}>
+                <Text style={{ fontSize: 12, fontFamily: 'Nunito_700Bold', color: '#123924' }}>{getRankTitle(userData?.level || 1)}</Text>
+              </View>
+              
               {userData?.bio ? (
                 <Text style={styles.profileBio} numberOfLines={3}>{userData.bio}</Text>
               ) : (

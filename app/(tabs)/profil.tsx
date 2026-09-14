@@ -107,7 +107,7 @@ export default function ProfilScreen() {
                 <Text style={styles.profileUsername}>@{userData.username}</Text>
               )}
               
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#3FA86B', alignSelf: 'flex-start', marginTop: 4, marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#3FA86B', alignSelf: 'center', marginTop: 4, marginBottom: 8 }}>
                 <Text style={{ fontSize: 12, fontFamily: 'Nunito_700Bold', color: '#123924' }}>{getRankTitle(userData?.level || 1)}</Text>
               </View>
               

@@ -137,12 +137,6 @@ export default function DashboardScreen() {
     if (hour >= 15 && hour < 18) return "Selamat sore";
     return "Selamat malam";
   };
-
-  const getRankTitle = (level: number) => {
-    if (level >= 8) return "Sultan Hidroponik 👑";
-    if (level >= 4) return "Juragan Panen 🌾";
-    return "Petani Balkon 🌱";
-  };
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [weather, setWeather] = useState<any>(null);
@@ -294,24 +288,11 @@ export default function DashboardScreen() {
               <MaterialIcons name="person" size={24} color="#5C5A4F" />
             )}
           </View>
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <Text style={[styles.greeting, { marginBottom: 0 }]} numberOfLines={1}>
-                {getGreeting()}, {userData?.nama || "Petani"}
-              </Text>
-              <View style={{ backgroundColor: '#FFB627', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, borderWidth: 1, borderColor: '#123924' }}>
-                <Text style={{ fontSize: 9, fontFamily: 'Nunito_800ExtraBold', color: '#123924' }}>Lv.{userData?.level || 1}</Text>
-              </View>
-            </View>
-            
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 11, fontFamily: 'Nunito_700Bold', color: '#5C5A4F' }}>
-                {getRankTitle(userData?.level || 1)}
-              </Text>
-              <View style={{ flex: 1, maxWidth: 100, height: 8, backgroundColor: '#E8E5DA', borderRadius: 4, borderWidth: 1, borderColor: '#123924', overflow: 'hidden' }}>
-                <View style={{ width: `${Math.min(100, Math.max(5, (((userData?.streak || 0) % 10) / 10) * 100))}%`, height: '100%', backgroundColor: '#3FA86B', borderRightWidth: 1, borderColor: '#123924' }} />
-              </View>
-            </View>
+          <View>
+            <Text style={styles.greeting}>
+              {getGreeting()}, {userData?.nama || "Petani"}
+            </Text>
+            <Text style={styles.subtitle}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>
       </View>

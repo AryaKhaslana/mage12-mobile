@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import React, { useState, useCallback, useMemo } from 'react';
 import { Share, View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -74,6 +75,8 @@ export default function DetailTanamanModal() {
   const [logs, setLogs] = useState<LogAktivitas[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPlayingMemory, setIsPlayingMemory] = useState(false);
+  const [memoryIndex, setMemoryIndex] = useState(0);
   const [isHarvesting, setIsHarvesting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -133,6 +136,26 @@ export default function DetailTanamanModal() {
     const photoLog = logs.find(l => l.fotoUrl);
     return photoLog?.fotoUrl || FALLBACK_HERO;
   }, [logs]);
+
+  const photoLogsAsc = useMemo(() => {
+    return logs.filter(l => !!l.fotoUrl).map(l => l.fotoUrl as string).reverse();
+  }, [logs]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isPlayingMemory && photoLogsAsc.length > 1) {
+      interval = setInterval(() => {
+        setMemoryIndex(prev => {
+          if (prev >= photoLogsAsc.length - 1) {
+            setIsPlayingMemory(false);
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 300);
+    }
+    return () => clearInterval(interval);
+  }, [isPlayingMemory, photoLogsAsc]);
 
   const sudahValidasiHariIni = useMemo(() => {
     const today = new Date().toDateString();
@@ -335,11 +358,38 @@ export default function DetailTanamanModal() {
         {/* HERO SECTION */}
         <View style={styles.heroSection}>
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: latestPhotoUrl }} style={styles.heroImage} />
+            <Image source={{ uri: isPlayingMemory ? photoLogsAsc[memoryIndex] : latestPhotoUrl }} style={styles.heroImage} />
+            
+            {/* Memory overlay text */}
+            {isPlayingMemory && (
+              <View style={{ position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(18, 57, 36, 0.7)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16 }}>
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Nunito_700Bold', fontSize: 12 }}>
+                  Memori {memoryIndex + 1}/{photoLogsAsc.length}
+                </Text>
+              </View>
+            )}
           </View>
+          
           <TouchableOpacity style={styles.floatingCamButton} onPress={handleValidasiPhoto} disabled={isSubmitting}>
             <MaterialIcons name="photo-camera" size={24} color="#123924" />
           </TouchableOpacity>
+          
+          {photoLogsAsc.length > 1 && (
+            <TouchableOpacity 
+              style={[styles.floatingCamButton, { right: undefined, left: 24, backgroundColor: isPlayingMemory ? '#FF6B5C' : '#3FA86B' }]} 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (!isPlayingMemory) {
+                  setMemoryIndex(0);
+                  setIsPlayingMemory(true);
+                } else {
+                  setIsPlayingMemory(false);
+                }
+              }}
+            >
+              <MaterialIcons name={isPlayingMemory ? "stop" : "play-arrow"} size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* TITLE SECTION */}

@@ -4,6 +4,7 @@ import { View, Modal, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import api, { getAchievements, AchievementResponse, Achievement } from '../../services/api';
 import { Image } from "expo-image"; // use expo-image for avatars if they have it, or react-native Image
@@ -74,6 +75,11 @@ export default function ProfilScreen() {
               styles.settingsButton,
               pressed && styles.pressedShadow2,
             ]}
+            onPress={async () => {
+              // DEV MODE: Reset onboarding state and go there
+              await AsyncStorage.removeItem("hasSeenOnboarding");
+              router.replace("/onboarding");
+            }}
           >
             <MaterialIcons name="settings" size={24} color="#123924" />
           </Pressable>

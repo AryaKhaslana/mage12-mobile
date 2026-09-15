@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -10,21 +11,17 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false, 
-        tabBarActiveTintColor: '#3FA86B', 
-        tabBarInactiveTintColor: '#5C5A4F', 
+        tabBarActiveTintColor: '#123924', 
+        tabBarInactiveTintColor: '#8A887D',
+        tabBarShowLabel: false, // Kita sembunyikan label bawaan, bikin custom UI
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 2,
           borderTopColor: '#123924',
-          // Tinggi dasar 64 ditambah dengan tinggi tombol navigasi bawaan HP
-          height: 64 + insets.bottom, 
-          // Padding bawah didorong minimal 8px atau seukuran tombol navigasi HP
-          paddingBottom: Math.max(insets.bottom, 8), 
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontFamily: 'Nunito_700Bold', // Memakai font Nunito dari root layout
-          fontSize: 10,
+          height: 72 + insets.bottom, 
+          paddingBottom: insets.bottom, 
+          paddingTop: 12,
+          boxShadow: '0px -4px 0px rgba(18,57,36,0.05)',
         }
       }}>
       
@@ -32,64 +29,89 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="home" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ padding: 8, borderRadius: 16, backgroundColor: focused ? '#E8F5E9' : 'transparent', borderWidth: focused ? 2 : 0, borderColor: '#123924' }}>
+                <MaterialIcons size={24} name="home" color={focused ? '#3FA86B' : color} />
+              </View>
+              {focused && <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#123924', marginTop: 4 }}>Beranda</Text>}
+            </View>
+          ),
         }}
+        listeners={{ tabPress: () => Haptics.selectionAsync() }}
       />
       
       <Tabs.Screen
         name="tanaman"
         options={{
           title: 'Tanaman',
-          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="yard" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ padding: 8, borderRadius: 16, backgroundColor: focused ? '#E8F5E9' : 'transparent', borderWidth: focused ? 2 : 0, borderColor: '#123924' }}>
+                <MaterialIcons size={24} name="yard" color={focused ? '#3FA86B' : color} />
+              </View>
+              {focused && <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#123924', marginTop: 4 }}>Kebun</Text>}
+            </View>
+          ),
         }}
+        listeners={{ tabPress: () => Haptics.selectionAsync() }}
       />
 
       <Tabs.Screen
         name="tanibot"
         options={{
           title: 'Tanibot',
-          tabBarIcon: ({ color }) => (
+          tabBarIcon: ({ focused }) => (
             <View style={{
-              width: 88,
-              height: 88,
-              borderRadius: 40,
-              backgroundColor: '#b1f1c8',
-              borderWidth: 2,
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: '#FFB627',
+              borderWidth: 3,
               borderColor: '#123924',
               alignItems: 'center',
               justifyContent: 'center',
-              // top: -12, // Move up so it pops out of the tab bar
+              top: -24, // Floating ke atas!
+              boxShadow: '4px 4px 0px #123924', // Neobrutalism shadow
+              transform: [{ scale: focused ? 1.1 : 1 }]
             }}>
               <MaterialIcons name="smart-toy" size={32} color="#123924" />
             </View>
           ),
-          tabBarLabel: ({ focused }) => (
-            <Text style={{ 
-              fontFamily: 'Nunito_700Bold', 
-              fontSize: 10, 
-              color: focused ? '#3FA86B' : '#5C5A4F',
-              // marginTop: -12, 
-            }}>
-              Tanibot
-            </Text>
-          ),
         }}
+        listeners={{ tabPress: () => Haptics.selectionAsync() }}
       />
 
       <Tabs.Screen
         name="komunitas"
         options={{
           title: 'Komunitas',
-          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="forum" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ padding: 8, borderRadius: 16, backgroundColor: focused ? '#E8F5E9' : 'transparent', borderWidth: focused ? 2 : 0, borderColor: '#123924' }}>
+                <MaterialIcons size={24} name="forum" color={focused ? '#3FA86B' : color} />
+              </View>
+              {focused && <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#123924', marginTop: 4 }}>Sosial</Text>}
+            </View>
+          ),
         }}
+        listeners={{ tabPress: () => Haptics.selectionAsync() }}
       />
 
       <Tabs.Screen
         name="profil"
         options={{
           title: 'Profil',
-          tabBarIcon: ({ color }) => <MaterialIcons size={24} name="person" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ padding: 8, borderRadius: 16, backgroundColor: focused ? '#E8F5E9' : 'transparent', borderWidth: focused ? 2 : 0, borderColor: '#123924' }}>
+                <MaterialIcons size={24} name="person" color={focused ? '#3FA86B' : color} />
+              </View>
+              {focused && <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#123924', marginTop: 4 }}>Profil</Text>}
+            </View>
+          ),
         }}
+        listeners={{ tabPress: () => Haptics.selectionAsync() }}
       />
     </Tabs>
   );

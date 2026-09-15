@@ -143,7 +143,7 @@ export default function TanibotScreen() {
       setMessages(prev => [...prev, botMsg]);
     } catch (e: any) {
       if (e.response?.status === 429) {
-        Alert.alert("Santai Dulu Broskie", "TaniBot butuh istirahat sebentar 🌱 Coba lagi dalam beberapa menit.");
+        Alert.alert("Santai Dulu Broskie", "TaniBot butuh istirahat sebentar  Coba lagi dalam beberapa menit.");
       } else {
         Alert.alert("Gagal", e.response?.data?.message || "Gagal mengirim pesan.");
       }
@@ -178,7 +178,7 @@ export default function TanibotScreen() {
         <View style={styles.header}>
           
           <View>
-            <Text style={styles.headerTitle}>TaniBot 🤖</Text>
+            <Text style={styles.headerTitle}>TaniBot </Text>
             <Text style={styles.headerSubtitle}>Asisten tanamanmu</Text>
           </View>
         </View>
@@ -202,7 +202,7 @@ export default function TanibotScreen() {
                     <View style={styles.welcomeIconWrapper}>
                       <MaterialIcons name="smart-toy" size={48} color="#FFFFFF" />
                     </View>
-                    <Text style={styles.welcomeTitle}>Halo! Aku TaniBot 🌱</Text>
+                    <Text style={styles.welcomeTitle}>Halo! Aku TaniBot </Text>
                     <Text style={styles.welcomeSubtitle}>
                       Asisten pintar pertanianmu. Tanya apa aja seputar perawatan, panen, atau cuaca hari ini!
                     </Text>

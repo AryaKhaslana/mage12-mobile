@@ -255,11 +255,11 @@ export default function DetailKomunitasScreen() {
     let badgeBg = "";
     let badgeColor = "";
     if (post.tipePost === "progress_update") {
-      badgeText = "Progress 🌱";
+      badgeText = "Progress ";
       badgeBg = "#E8F5E9";
       badgeColor = "#3FA86B";
     } else if (post.tipePost === "panen_surplus") {
-      badgeText = "Panen Surplus 🌾";
+      badgeText = "Panen Surplus ";
       badgeBg = "#FFF9E6";
       badgeColor = "#B8860B";
     } else if (post.tipePost === "pertanyaan") {

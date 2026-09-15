@@ -424,6 +424,7 @@ export default function DashboardScreen() {
             styles.heroCard,
             pressed && styles.pressedShadow4,
           ]}
+          onPress={() => setShowGamification(true)}
         >
           <View style={styles.fireIconContainer}>
             <MaterialIcons
@@ -858,6 +859,62 @@ export default function DashboardScreen() {
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                 {Array.from({ length: 28 }).map((_, i) => {
                   // If index is within the last 'streak' days, it's green. Else grey.
+                  const isStreak = (27 - i) < (userData?.streak || 0);
+                  return (
+                    <View 
+                      key={i} 
+                      style={{ 
+                        width: 24, height: 24, borderRadius: 6, 
+                        backgroundColor: isStreak ? '#3FA86B' : 'rgba(28,57,36,0.1)',
+                        borderWidth: isStreak ? 2 : 0,
+                        borderColor: '#123924'
+                      }} 
+                    />
+                  );
+                })}
+              </View>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
+
+    
+      <Modal visible={showGamification} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.9)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 48, borderWidth: 4, borderColor: '#123924', borderBottomWidth: 0 }}>
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <View>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Rapor Tani</Text>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#5C5A4F' }}>Lv.{userData?.level || 1} • {userData?.streak || 0} Streak</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowGamification(false)} style={{ backgroundColor: '#FFECEB', padding: 8, borderRadius: 100, borderWidth: 2, borderColor: '#123924' }}>
+                <MaterialIcons name="close" size={24} color="#123924" />
+              </TouchableOpacity>
+            </View>
+
+            {/* LEVEL PROGRESS */}
+            <View style={{ backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', boxShadow: '4px 4px 0px #123924', marginBottom: 24 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Level Progress</Text>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#3FA86B' }}>
+                  {Math.min(100, (userData?.streak || 0) * 15)} / 100 EXP
+                </Text>
+              </View>
+              <View style={{ height: 16, backgroundColor: '#E8F5E9', borderRadius: 8, borderWidth: 2, borderColor: '#123924', overflow: 'hidden' }}>
+                <View style={{ width: `${Math.min(100, (userData?.streak || 0) * 15)}%`, height: '100%', backgroundColor: '#3FA86B', borderRightWidth: 2, borderColor: '#123924' }} />
+              </View>
+              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: '#5C5A4F', marginTop: 8, textAlign: 'center' }}>
+                Naikin level dengan rajin panen dan jaga streak harian!
+              </Text>
+            </View>
+
+            {/* HEATMAP STREAK */}
+            <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924' }}>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924', marginBottom: 12 }}>Aktivitas 28 Hari Terakhir</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+                {Array.from({ length: 28 }).map((_, i) => {
                   const isStreak = (27 - i) < (userData?.streak || 0);
                   return (
                     <View 

@@ -47,7 +47,7 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
   // Clear any existing notifications to avoid duplicates
   await cancelAllPlantReminders();
 
-  let body = "Cek kebunmu hari ini ya 🌱";
+  let body = "Cek kebunmu hari ini ya ";
 
   try {
     // Fetch user plants
@@ -80,7 +80,7 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Waktunya merawat tanaman! 💧",
+      title: "Waktunya merawat tanaman! ",
       body: body,
       sound: true,
     },

@@ -260,7 +260,7 @@ export default function KomunitasScreen() {
         <View style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Komunitas</Text>
-            <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital 🌱</Text>
+            <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital </Text>
           </View>
           <View style={styles.scrollContent}>
             <PostSkeleton />
@@ -277,14 +277,14 @@ export default function KomunitasScreen() {
       <View style={styles.container}>
                 <View style={styles.header}>
           <Text style={styles.headerTitle}>Komunitas</Text>
-          <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital 🌱</Text>
+          <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital </Text>
         </View>
 
         {!coords ? (
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <EmptyHint
               icon="location-off"
-              title="Lokasimu belum disetel 📍"
+              title="Lokasimu belum disetel "
               subtitle="Komunitas butuh lokasimu buat nampilin postingan petani di sekitar."
               ctaText="Set Lokasi Sekarang"
               onCtaPress={() => router.push('/(auth)/location-setup')}
@@ -307,7 +307,7 @@ export default function KomunitasScreen() {
                 ) : (
                   <EmptyHint
                     icon="groups"
-                    title="Belum ada postingan di sekitarmu 🌾"
+                    title="Belum ada postingan di sekitarmu "
                     subtitle="Jadilah petani pertama yang berbagi di sini!"
                   />
                 )
@@ -321,11 +321,11 @@ export default function KomunitasScreen() {
               let badgeBg = "";
               let badgeColor = "";
               if (item.tipePost === "progress_update") {
-                badgeText = "Progress 🌱";
+                badgeText = "Progress ";
                 badgeBg = "#E8F5E9";
                 badgeColor = "#3FA86B";
               } else if (item.tipePost === "panen_surplus") {
-                badgeText = "Panen Surplus 🌾";
+                badgeText = "Panen Surplus ";
                 badgeBg = "#FFF9E6";
                 badgeColor = "#B8860B";
               } else if (item.tipePost === "pertanyaan") {
@@ -413,7 +413,7 @@ export default function KomunitasScreen() {
               <View style={styles.modalDragIndicator} />
               <View style={styles.modalHeader}>
                 <View>
-                  <Text style={styles.modalTitle}>Mau bahas apa? 💬</Text>
+                  <Text style={styles.modalTitle}>Mau bahas apa? </Text>
                   <Text style={styles.modalSubtitle}>Bagikan ceritamu ke petani lain!</Text>
                 </View>
                 <Pressable 
@@ -426,8 +426,8 @@ export default function KomunitasScreen() {
 
               <View style={styles.chipRow}>
                 {[
-                  { label: "Progress 🌱", value: "progress_update" },
-                  { label: "Panen Surplus 🌾", value: "panen_surplus" },
+                  { label: "Progress ", value: "progress_update" },
+                  { label: "Panen Surplus ", value: "panen_surplus" },
                   { label: "Pertanyaan ❓", value: "pertanyaan" }
                 ].map(chip => (
                   <Pressable
@@ -485,7 +485,7 @@ export default function KomunitasScreen() {
                 {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Kirim Sekarang 🚀</Text>
+                  <Text style={styles.submitButtonText}>Kirim Sekarang </Text>
                 )}
               </Pressable>
             </View>

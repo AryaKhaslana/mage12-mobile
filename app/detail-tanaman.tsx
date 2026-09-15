@@ -636,7 +636,7 @@ export default function DetailTanamanModal() {
                 disabled={isPosting}
               >
                 <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>
-                  {isPosting ? "Menerbitkan..." : "Pamer ke Komunitas 📣"}
+                  {isPosting ? "Menerbitkan..." : "Pamer ke Komunitas "}
                 </Text>
               </TouchableOpacity>
               

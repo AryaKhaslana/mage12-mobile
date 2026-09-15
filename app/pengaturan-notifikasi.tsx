@@ -71,7 +71,7 @@ export default function PengaturanNotifikasiScreen() {
         const granted = await registerForPushNotificationsAsync();
         if (granted) {
           await scheduleDailyPlantReminder(selectedTime.hour, selectedTime.minute);
-          showNotification("Sukses", "Reminder aktif! 🌱");
+          showNotification("Sukses", "Reminder aktif! ");
         } else {
           Alert.alert("Izin Ditolak", "Izin notifikasi ditolak — aktifkan dari pengaturan HP");
           setIsEnabled(false);
@@ -165,7 +165,7 @@ export default function PengaturanNotifikasiScreen() {
           )}
 
           <Text style={styles.descriptionText}>
-            TaniSync akan mengingatkanmu setiap hari untuk merawat tanamanmu 🌱
+            TaniSync akan mengingatkanmu setiap hari untuk merawat tanamanmu 
           </Text>
         </View>
 

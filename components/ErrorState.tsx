@@ -11,7 +11,7 @@ interface ErrorStateProps {
 
 export default function ErrorState({ 
   onRetry, 
-  title = "Sinyal Ilang, Seedling Tidur Dulu 😴", 
+  title = "Sinyal Ilang, Seedling Tidur Dulu ", 
   subtitle = "Koneksi internetmu lagi ngambek nih broskie. Cek kuota atau nyalain WiFi lagi biar Seedling bangun!",
   icon = "wifi-off"
 }: ErrorStateProps) {

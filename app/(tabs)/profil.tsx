@@ -11,9 +11,9 @@ import { Image } from "expo-image"; // use expo-image for avatars if they have i
 
 export default function ProfilScreen() {
   const getRankTitle = (level: number) => {
-    if (level >= 8) return "Sultan Hidroponik 👑";
-    if (level >= 4) return "Juragan Panen 🌾";
-    return "Petani Balkon 🌱";
+    if (level >= 8) return "Sultan Hidroponik ";
+    if (level >= 4) return "Juragan Panen ";
+    return "Petani Balkon ";
   };
   const [showAbout, setShowAbout] = React.useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -152,7 +152,7 @@ export default function ProfilScreen() {
                   onPress={() => {
                     Alert.alert(
                       ach.judul,
-                      `${ach.deskripsi}\n\nProgress: ${ach.tercapai ? "Tercapai! 🎉" : `${ach.progress}/${ach.target}`}`
+                      `${ach.deskripsi}\n\nProgress: ${ach.tercapai ? "Tercapai! " : `${ach.progress}/${ach.target}`}`
                     );
                   }}
                   style={({ pressed }) => [
@@ -313,7 +313,7 @@ export default function ProfilScreen() {
               <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', marginBottom: 16 }}>Versi 1.0.0</Text>
               
               <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#123924', textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
-                Aplikasi teman bertani kaum urban. TaniSync membantumu merawat tanaman dengan mudah dan menyenangkan. Dibuat untuk Project MAGE 🌱.
+                Aplikasi teman bertani kaum urban. TaniSync membantumu merawat tanaman dengan mudah dan menyenangkan. Dibuat untuk Project MAGE .
               </Text>
               
               <Pressable 

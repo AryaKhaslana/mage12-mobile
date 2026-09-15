@@ -253,7 +253,7 @@ export default function TanamanScreen() {
                 }
                 
                 const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-                if (sudahValidasiHariIni && tanaman.sisaHariPanen > 0&& tanaman.sisaHariPanen > 0 (tanaman.sisaHariPanen ?? 999) > 0) {
+                if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
                   bgColor = "#E8F5E9";
                   borderColor = "#3FA86B";
                   textColor = "#123924";

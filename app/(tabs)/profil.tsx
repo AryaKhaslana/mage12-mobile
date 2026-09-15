@@ -70,19 +70,7 @@ export default function ProfilScreen() {
         
         {/* HEADER */}
         <View style={styles.headerBackground}>
-          <Pressable 
-            style={({ pressed }) => [
-              styles.settingsButton,
-              pressed && styles.pressedShadow2,
-            ]}
-            onPress={async () => {
-              // DEV MODE: Reset onboarding state and go there
-              await AsyncStorage.removeItem("hasSeenOnboarding");
-              router.replace("/onboarding");
-            }}
-          >
-            <MaterialIcons name="settings" size={24} color="#123924" />
-          </Pressable>
+
 
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarContainer}>
@@ -379,25 +367,6 @@ const styles = StyleSheet.create({
     paddingBottom: 72,
     paddingHorizontal: 20,
     position: 'relative',
-  },
-  settingsButton: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '2px 2px 0px #123924',
-    shadowColor: '#123924',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
   },
   avatarWrapper: {
     position: 'relative',

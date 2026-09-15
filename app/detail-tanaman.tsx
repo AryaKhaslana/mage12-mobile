@@ -177,9 +177,9 @@ export default function DetailTanamanModal() {
             setIsHarvesting(true);
             try {
               const res = await harvestTanaman(tanamanId);
-              Alert.alert("Panen berhasil! 🌾", `${res.data?.namaTanaman || tanaman?.jenisTanaman} masuk riwayat.`, [
-                { text: "OK", onPress: () => router.back() }
-              ]);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setShowCertificate(true);
+              setIsHarvesting(false);
             } catch (e: any) {
               setIsHarvesting(false);
               Alert.alert("Gagal", e.response?.data?.message || "Gagal memanen.");

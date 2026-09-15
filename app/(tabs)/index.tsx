@@ -23,12 +23,14 @@ const FALLBACK_THUMB =
 
 const EmptyHint = ({
   icon,
+  imageSource,
   title,
   subtitle,
   ctaText,
   onCtaPress,
 }: {
-  icon: any;
+  icon?: any;
+  imageSource?: any;
   title: string;
   subtitle: string;
   ctaText?: string;
@@ -42,12 +44,19 @@ const EmptyHint = ({
       paddingHorizontal: 16,
     }}
   >
-    <MaterialIcons
-      name={icon}
-      size={40}
-      color="#bdcabd"
-      style={{ marginBottom: 12 }}
-    />
+    {imageSource ? (
+      <Image 
+        source={imageSource} 
+        style={{ width: 120, height: 120, marginBottom: 12, resizeMode: 'contain' }} 
+      />
+    ) : (
+      <MaterialIcons
+        name={icon}
+        size={40}
+        color="#bdcabd"
+        style={{ marginBottom: 12 }}
+      />
+    )}
     <Text
       style={{
         fontSize: 14,
@@ -719,7 +728,7 @@ export default function DashboardScreen() {
           >
             {tanamanList.length === 0 ? (
               <EmptyHint
-                icon="local-florist"
+                imageSource={require("../../assets/images/icontampilanawal/seedling-menanam.png")}
                 title="Kebunmu masih kosong nih 🌱"
                 subtitle="Yuk mulai tanam tanaman pertamamu!"
                 ctaText="Tanam Sekarang"

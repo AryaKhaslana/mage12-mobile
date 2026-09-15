@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface ErrorStateProps {
@@ -11,15 +11,16 @@ interface ErrorStateProps {
 
 export default function ErrorState({ 
   onRetry, 
-  title = "Sinyal Hilang Ditelan Bumi 🌍", 
-  subtitle = "Koneksi internetmu lagi ngambek nih broskie. Cek kuota atau WiFi, trus coba lagi ya!",
+  title = "Sinyal Ilang, Seedling Tidur Dulu 😴", 
+  subtitle = "Koneksi internetmu lagi ngambek nih broskie. Cek kuota atau nyalain WiFi lagi biar Seedling bangun!",
   icon = "wifi-off"
 }: ErrorStateProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.iconWrapper}>
-        <MaterialIcons name={icon} size={64} color="#FF6B5C" />
-      </View>
+      <Image 
+        source={require('../assets/images/icontampilanawal/seedling-ngantuk.png')} 
+        style={{ width: 140, height: 140, marginBottom: 24, resizeMode: 'contain' }} 
+      />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
       

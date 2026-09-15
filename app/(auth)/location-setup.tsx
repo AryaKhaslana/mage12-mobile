@@ -2,7 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,11 +12,44 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
 export default function LocationSetupScreen() {
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Animation values
+  const breathingScale = useSharedValue(1);
+  const floatingTranslateY = useSharedValue(0);
+
+  useEffect(() => {
+    breathingScale.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 1500 }),
+        withTiming(1, { duration: 1500 })
+      ),
+      -1,
+      true
+    );
+    floatingTranslateY.value = withRepeat(
+      withSequence(
+        withTiming(-10, { duration: 2000 }),
+        withTiming(0, { duration: 2000 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedImageStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: breathingScale.value },
+        { translateY: floatingTranslateY.value }
+      ],
+    };
+  });
   const [locationStr, setLocationStr] = useState<string | null>(null);
   const [locationData, setLocationData] = useState<{lat: string, lon: string} | null>(null);
 
@@ -78,9 +111,9 @@ export default function LocationSetupScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Image 
-            source={require("../../assets/images/icontampilanawal/seedling-halo.png")} 
-            style={{ width: 340, height: 340 }} 
+          <Animated.Image 
+            source={require("../../assets/images/icontampilanawal/seedling-meneropong.png")} 
+            style={[{ width: 340, height: 340 }, animatedImageStyle]} 
             resizeMode="contain" 
           />
         </View>

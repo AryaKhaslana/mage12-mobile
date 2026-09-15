@@ -4,7 +4,7 @@ import { Share, View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOp
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman, updateTanaman, harvestTanaman } from '../services/api';
+import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman, updateTanaman, harvestTanaman, createCommunityPost } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useNotification } from '../components/NotificationContext';
 
@@ -80,6 +80,8 @@ export default function DetailTanamanModal() {
   const [isHarvesting, setIsHarvesting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   
   const handleOpenEdit = () => {
@@ -186,6 +188,26 @@ export default function DetailTanamanModal() {
         }
       ]
     );
+  };
+
+  
+  const handleShareCertificate = async () => {
+    setIsPosting(true);
+    try {
+      const localHariKe = tanaman ? Math.floor((Date.now() - new Date(tanaman.tanggalTanam || Date.now()).getTime()) / 86400000) + 1 : 0;
+      const formData = new FormData();
+      formData.append("tipePost", "panen_surplus");
+      formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya nih bosku! 🌾`);
+      
+      await createCommunityPost(formData);
+      Alert.alert("Mantap!", "Raport panen lu udah mejeng di Komunitas radius 2km! 🌾");
+      setShowCertificate(false);
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Gagal Pamer", e.response?.data?.message || "Koneksi lagi ngambek.");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const handleDeleteTanaman = () => {
@@ -550,7 +572,72 @@ export default function DetailTanamanModal() {
           </View>
         </View>
       </Modal>
-</SafeAreaView>
+
+      <Modal visible={showCertificate} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.95)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, overflow: 'hidden', borderWidth: 4, borderColor: '#FFB627', paddingBottom: 24, boxShadow: '8px 8px 0px #FFB627' }}>
+            
+            <View style={{ backgroundColor: '#FFB627', paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', borderBottomWidth: 4, borderColor: '#123924' }}>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>Sertifikat Lulus Panen 🏆</Text>
+            </View>
+
+            <View style={{ padding: 24, alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', marginBottom: 8, textAlign: 'center' }}>
+                {tanaman?.nickname || tanaman?.jenisTanaman} Resmi Dipanen!
+              </Text>
+              
+              <View style={{ flexDirection: 'row', gap: 16, marginTop: 16, width: '100%' }}>
+                <View style={{ flex: 1, backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#3FA86B', alignItems: 'center' }}>
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#3FA86B' }}>{hariKe}</Text>
+                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924', marginTop: 4 }}>Hari Dirawat</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: '#FFE5E3', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#FF6B5C', alignItems: 'center' }}>
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#FF6B5C' }}>{tanaman?.predictiveScore || 0}</Text>
+                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924', marginTop: 4 }}>Total Skor</Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 24 }}>
+                {photoLogsAsc.slice(0, 3).map((url, i) => (
+                  <View key={i} style={{ width: 80, height: 80, borderRadius: 12, borderWidth: 2, borderColor: '#123924', overflow: 'hidden', transform: [{ rotate: i === 1 ? '5deg' : '-5deg' }] }}>
+                    <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
+                  </View>
+                ))}
+                {photoLogsAsc.length === 0 && (
+                  <View style={{ padding: 12, alignItems: 'center', opacity: 0.6 }}>
+                    <MaterialIcons name="camera-alt" size={32} color="#123924" />
+                    <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924' }}>Gak ada foto memori</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <View style={{ paddingHorizontal: 24, gap: 12 }}>
+              <TouchableOpacity 
+                style={{ backgroundColor: '#123924', padding: 16, borderRadius: 16, alignItems: 'center', borderWidth: 2, borderColor: '#123924', boxShadow: '4px 4px 0px #3FA86B' }}
+                onPress={handleShareCertificate}
+                disabled={isPosting}
+              >
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>
+                  {isPosting ? "Menerbitkan..." : "Pamer ke Komunitas 📣"}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={{ backgroundColor: 'transparent', padding: 16, borderRadius: 16, alignItems: 'center' }}
+                onPress={() => {
+                  setShowCertificate(false);
+                  router.back();
+                }}
+              >
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#5C5A4F' }}>Kembali ke Kebun</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+    </SafeAreaView>
   );
 }
 

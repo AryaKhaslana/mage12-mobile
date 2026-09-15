@@ -205,6 +205,15 @@ export interface CommunityPost {
   isLiked?: boolean;
 }
 
+export const createCommunityPost = async (formData: FormData): Promise<any> => {
+  const response = await api.post("/community", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};
+
 export const getCommunityPosts = async (latitude: number, longitude: number, page: number = 1, limit: number = 10) => {
   const response = await api.get("/community", { params: { latitude, longitude, page, limit } });
   return response.data;

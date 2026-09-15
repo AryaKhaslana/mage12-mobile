@@ -573,7 +573,7 @@ export default function DetailTanamanModal() {
       <Modal visible={showHarvestConfirm} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
-            <Image source={require("../../assets/images/icontampilanawal/seedling-lompat.png")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
+            <Image source={require("../assets/images/icontampilanawal/seedling-lompat.png")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini? 🌾</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Perjuanganmu merawat {tanaman?.nickname || tanaman?.jenisTanaman} sudah selesai! Tanaman ini akan dicatat di riwayat panenmu.

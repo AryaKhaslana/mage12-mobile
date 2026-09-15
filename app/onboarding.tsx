@@ -118,7 +118,7 @@ export default function OnboardingScreen() {
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
   const handleComplete = async () => {
     await AsyncStorage.setItem("hasSeenOnboarding", "true");
-    router.replace("/(auth)/login");
+    router.replace("/");
   };
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {

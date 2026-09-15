@@ -38,21 +38,21 @@ const slides = [
     title: "TaniSync itu apa sih?",
     description:
       "Aplikasi asisten urban farming yang bantu kamu nanem sayur sendiri di rumah — walau cuma punya balkon kecil sekalipun.",
-    image: require("../assets/images/icontampilanawal/seedling-diam.png"),
+    image: require("../assets/images/icontampilanawal/seedling-menanam.png"),
   },
   {
     id: "3",
     title: "Gak akan lupa lagi",
     description:
       "Reminder otomatis kapan harus nyiram & mupuk, plus kumpulin streak tiap kali kamu rajin ngerawat tanaman.",
-    image: require("../assets/images/icontampilanawal/seedling-diam.png"),
+    image: require("../assets/images/icontampilanawal/seedling-lompat.png"),
   },
   {
     id: "4",
     title: "Kecil tapi berdampak",
     description:
       "Setiap tanaman yang kamu rawat bantu ketahanan pangan mandiri di kotamu — kecil tapi nyata.",
-    image: require("../assets/images/icontampilanawal/seedling-diam.png"),
+    image: require("../assets/images/icontampilanawal/seedling-meneropong.png"),
   },
 ];
 export default function OnboardingScreen() {

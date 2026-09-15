@@ -233,7 +233,12 @@ export default function TanamanScreen() {
                 let textColor = "#123924";
                 let statusText = "Aman";
                 
-                if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+                if (tanaman.sisaHariPanen <= 0) {
+                  bgColor = "#FFF9E6";
+                  borderColor = "#FFB627";
+                  textColor = "#FFB627";
+                  statusText = "Siap Panen 🌾";
+                } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
                   bgColor = "#FFECEB";
                   borderColor = "#FF6B5C";
                   textColor = "#FF6B5C";
@@ -248,7 +253,7 @@ export default function TanamanScreen() {
                 }
                 
                 const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-                if (sudahValidasiHariIni) {
+                if (sudahValidasiHariIni && tanaman.sisaHariPanen > 0) {
                   bgColor = "#E8F5E9";
                   borderColor = "#3FA86B";
                   textColor = "#123924";

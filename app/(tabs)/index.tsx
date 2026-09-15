@@ -740,17 +740,24 @@ export default function DashboardScreen() {
                   tanaman.logTerakhir &&
                   new Date(tanaman.logTerakhir.createdAt).toDateString() ===
                     new Date().toDateString();
-                const badgeBg = sudahValidasiHariIni
+                const isSiapPanen = (tanaman.sisaHariPanen ?? 999) <= 0;
+                const badgeBg = isSiapPanen
+                  ? "#FFB627"
+                  : sudahValidasiHariIni
                   ? "#3FA86B"
                   : tanaman.statusPenyiraman === "PERLU_SIRAM"
                     ? "#FFB627"
                     : "#3FA86B";
-                const badgeTextCol = sudahValidasiHariIni
+                const badgeTextCol = isSiapPanen
+                  ? "#123924"
+                  : sudahValidasiHariIni
                   ? "#FFFFFF"
                   : tanaman.statusPenyiraman === "PERLU_SIRAM"
                     ? "#123924"
                     : "#FFFFFF";
-                const badgeText = sudahValidasiHariIni
+                const badgeText = isSiapPanen
+                  ? "Siap Panen 🌾"
+                  : sudahValidasiHariIni
                   ? "Sudah Disiram ✅"
                   : `${tanaman.sisaHariPanen ?? 999} hari lagi`;
 

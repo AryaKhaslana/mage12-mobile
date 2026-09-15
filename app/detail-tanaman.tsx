@@ -81,6 +81,7 @@ export default function DetailTanamanModal() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
+  const [showHarvestConfirm, setShowHarvestConfirm] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
 
   
@@ -166,28 +167,21 @@ export default function DetailTanamanModal() {
 
 
   const handleHarvest = () => {
-    Alert.alert(
-      "Panen tanaman ini? 🌾",
-      "Tanaman akan ditandai selesai dan dicatat di riwayat panenmu.",
-      [
-        { text: "Batal", style: "cancel" },
-        { 
-          text: "Panen!", 
-          onPress: async () => {
-            setIsHarvesting(true);
-            try {
-              const res = await harvestTanaman(tanamanId);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setShowCertificate(true);
-              setIsHarvesting(false);
-            } catch (e: any) {
-              setIsHarvesting(false);
-              Alert.alert("Gagal", e.response?.data?.message || "Gagal memanen.");
-            }
-          }
-        }
-      ]
-    );
+    setShowHarvestConfirm(true);
+  };
+
+  const confirmHarvest = async () => {
+    setShowHarvestConfirm(false);
+    setIsHarvesting(true);
+    try {
+      const res = await harvestTanaman(tanamanId);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowCertificate(true);
+      setIsHarvesting(false);
+    } catch (e: any) {
+      setIsHarvesting(false);
+      Alert.alert("Gagal", e.response?.data?.message || "Gagal memanen.");
+    }
   };
 
   
@@ -453,20 +447,22 @@ export default function DetailTanamanModal() {
         )}
 
         {/* ACTION BUTTONS (Sesuai mockup tapi dimodif buat Konfirmasi Disiram) */}
-        {sudahValidasiHariIni ? (
-          <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
-            Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 🌱
-          </Text>
-        ) : (
-          tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={[styles.actionBtn, styles.btnWhite]} onPress={handleValidasiButton} disabled={isSubmitting}>
-                {isSubmitting ? <ActivityIndicator color="#123924" /> : <Text style={styles.btnWhiteText}>Konfirmasi{`\n`}Disiram</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionBtn, styles.btnGreen]} onPress={handleValidasiPhoto} disabled={isSubmitting}>
-                {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnGreenText}>Foto &{`\n`}Validasi</Text>}
-              </TouchableOpacity>
-            </View>
+        {(tanaman.sisaHariPanen ?? 999) > 0 && (
+          sudahValidasiHariIni ? (
+            <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
+              Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 🌱
+            </Text>
+          ) : (
+            tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={[styles.actionBtn, styles.btnWhite]} onPress={handleValidasiButton} disabled={isSubmitting}>
+                  {isSubmitting ? <ActivityIndicator color="#123924" /> : <Text style={styles.btnWhiteText}>Konfirmasi{`\n`}Disiram</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.actionBtn, styles.btnGreen]} onPress={handleValidasiPhoto} disabled={isSubmitting}>
+                  {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnGreenText}>Foto &{`\n`}Validasi</Text>}
+                </TouchableOpacity>
+              </View>
+            )
           )
         )}
 
@@ -569,6 +565,27 @@ export default function DetailTanamanModal() {
                 <Text style={styles.submitButtonText}>Simpan Perubahan</Text>
               )}
             </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      
+      <Modal visible={showHarvestConfirm} animationType="fade" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+            <Image source={require("../../assets/images/icontampilanawal/seedling-lompat.png")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini? 🌾</Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
+              Perjuanganmu merawat {tanaman?.nickname || tanaman?.jenisTanaman} sudah selesai! Tanaman ini akan dicatat di riwayat panenmu.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setShowHarvestConfirm(false)}>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FFB627', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmHarvest}>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Panen!</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

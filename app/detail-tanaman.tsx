@@ -191,10 +191,10 @@ export default function DetailTanamanModal() {
       const localHariKe = tanaman ? Math.floor((Date.now() - new Date(tanaman.tanggalTanam || Date.now()).getTime()) / 86400000) + 1 : 0;
       const formData = new FormData();
       formData.append("tipePost", "panen_surplus");
-      formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya nih bosku! 🌾`);
+      formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya nih bosku! `);
       
       await createCommunityPost(formData);
-      Alert.alert("Mantap!", "Raport panen lu udah mejeng di Komunitas radius 2km! 🌾");
+      Alert.alert("Mantap!", "Raport panen lu udah mejeng di Komunitas radius 2km! ");
       setShowCertificate(false);
       router.back();
     } catch (e: any) {
@@ -235,7 +235,7 @@ export default function DetailTanamanModal() {
     setIsSubmitting(true);
     try {
       const res = await createLog({ tanamanId, tipeValidasi: "button_only" });
-      setToastMessage(`Tanaman dapet +1 poin! Streak: ${res.streak} hari 🔥`);
+      setToastMessage(`Tanaman dapet +1 poin! Streak: ${res.streak} hari `);
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (e: any) {
@@ -269,7 +269,7 @@ export default function DetailTanamanModal() {
               setIsSubmitting(true);
               try {
                 const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uri });
-                setToastMessage(`Keren! +5 poin! Streak: ${res.streak} hari 🔥`);
+                setToastMessage(`Keren! +5 poin! Streak: ${res.streak} hari `);
                 setTimeout(() => setToastMessage(null), 4000);
                 fetchData();
               } catch (e: any) {
@@ -308,7 +308,7 @@ export default function DetailTanamanModal() {
 
   const handleShare = async () => {
     try {
-      const shareMessage = `🌱 Pamer Progres TaniSync! 🌱\n\nGue udah ngerawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari!\nStatus kesehatannya dapet skor ${tanaman?.predictiveScore}/100! ✨\n\nSisa ${tanaman?.sisaHariPanen} hari lagi menuju panen! Yuk buruan mulai kebun lu sendiri di TaniSync! 🚜💨`;
+      const shareMessage = ` Pamer Progres TaniSync! \n\nGue udah ngerawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari!\nStatus kesehatannya dapet skor ${tanaman?.predictiveScore}/100! \n\nSisa ${tanaman?.sisaHariPanen} hari lagi menuju panen! Yuk buruan mulai kebun lu sendiri di TaniSync! `;
       await Share.share({
         message: shareMessage,
         title: "Pamer Progres TaniSync",
@@ -340,7 +340,7 @@ export default function DetailTanamanModal() {
     badgeBgColor = "#E8F5E9";
     badgeBorderColor = "#3FA86B";
     badgeTextColor = "#123924";
-    badgeText = "Sudah Disiram Hari Ini ✅";
+    badgeText = "Sudah Disiram Hari Ini ";
   }
 
   return (
@@ -440,7 +440,7 @@ export default function DetailTanamanModal() {
               {isHarvesting ? (
                 <ActivityIndicator color="#123924" />
               ) : (
-                <Text style={styles.harvestActionBtnText}>Panen! 🌾</Text>
+                <Text style={styles.harvestActionBtnText}>Panen! </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -450,7 +450,7 @@ export default function DetailTanamanModal() {
         {(tanaman.sisaHariPanen ?? 999) > 0 && (
           sudahValidasiHariIni ? (
             <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
-              Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 🌱
+              Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 
             </Text>
           ) : (
             tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
@@ -574,7 +574,7 @@ export default function DetailTanamanModal() {
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
             <Image source={require("../assets/images/icontampilanawal/seedling-lompat.png")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini? 🌾</Text>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini? </Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Perjuanganmu merawat {tanaman?.nickname || tanaman?.jenisTanaman} sudah selesai! Tanaman ini akan dicatat di riwayat panenmu.
             </Text>
@@ -595,7 +595,7 @@ export default function DetailTanamanModal() {
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, overflow: 'hidden', borderWidth: 4, borderColor: '#FFB627', paddingBottom: 24, boxShadow: '8px 8px 0px #FFB627' }}>
             
             <View style={{ backgroundColor: '#FFB627', paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', borderBottomWidth: 4, borderColor: '#123924' }}>
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>Sertifikat Lulus Panen 🏆</Text>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>Sertifikat Lulus Panen </Text>
             </View>
 
             <View style={{ padding: 24, alignItems: 'center' }}>

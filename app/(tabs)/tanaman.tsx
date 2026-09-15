@@ -237,7 +237,7 @@ export default function TanamanScreen() {
                   bgColor = "#FFF9E6";
                   borderColor = "#FFB627";
                   textColor = "#FFB627";
-                  statusText = "Siap Panen 🌾";
+                  statusText = "Siap Panen ";
                 } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
                   bgColor = "#FFECEB";
                   borderColor = "#FF6B5C";
@@ -257,7 +257,7 @@ export default function TanamanScreen() {
                   bgColor = "#E8F5E9";
                   borderColor = "#3FA86B";
                   textColor = "#123924";
-                  statusText = "Sudah Disiram Hari Ini ✅";
+                  statusText = "Sudah Disiram Hari Ini ";
                 }
 
                 return (

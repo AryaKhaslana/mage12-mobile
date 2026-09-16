@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Animated, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
 import { useNotification } from '../../components/NotificationContext';
-import api, { CommunityPost, deleteCommunityPost, getCommunityPosts } from '../../services/api';
+import api, { CommunityPost, getCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>

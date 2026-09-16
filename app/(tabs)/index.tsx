@@ -1,42 +1,49 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Animated,
+  Animated,
+  Dimensions,
   Image,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View, Modal, TouchableOpacity,
+  TouchableOpacity,
+  View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import CoachMarkOverlay, { CoachMarkStep } from "../../components/CoachMarkOverlay";
+import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import api from "../../services/api";
-import ErrorState from "../../components/ErrorState";
-
+import { checkTutorialFinished, markTutorialFinished } from "../../utils/tutorial";
 const FALLBACK_THUMB =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
 
-const EmptyHint = ({
-  icon,
-  imageSource,
-  title,
-  subtitle,
-  ctaText,
-  onCtaPress,
-}: {
+import { forwardRef } from 'react';
+
+const EmptyHint = forwardRef<View, {
   icon?: any;
   imageSource?: any;
   title: string;
   subtitle: string;
   ctaText?: string;
   onCtaPress?: () => void;
-}) => (
+}>(({
+  icon,
+  imageSource,
+  title,
+  subtitle,
+  ctaText,
+  onCtaPress,
+}, ref) => (
   <View
+    ref={ref}
     style={{
       alignItems: "center",
       justifyContent: "center",
@@ -103,7 +110,7 @@ const EmptyHint = ({
       </Pressable>
     )}
   </View>
-);
+));
 
 
 
@@ -148,12 +155,102 @@ export default function DashboardScreen() {
   };
   const [userData, setUserData] = useState<any>(null);
   const [showGamification, setShowGamification] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialSteps, setTutorialSteps] = useState<CoachMarkStep[]>([]);
+  const [needsTutorial, setNeedsTutorial] = useState(false);
+
+  const step1Ref = useRef<View>(null);
+  const step2Ref = useRef<View>(null);
+  const step3Ref = useRef<View>(null);
+  const step4Ref = useRef<View>(null);
+  
+  const insets = useSafeAreaInsets();
+  
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [weather, setWeather] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { showNotification } = useNotification();
+
+  useEffect(() => {
+    checkTutorialFinished().then((finished) => {
+      if (!finished) {
+        setNeedsTutorial(true);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (needsTutorial && !isLoading) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (attempts > 10) {
+          clearInterval(interval);
+          return;
+        }
+
+        const measurePromises = [
+          new Promise<any>((resolve) => step1Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
+          new Promise<any>((resolve) => step2Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
+          new Promise<any>((resolve) => step3Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
+          new Promise<any>((resolve) => step4Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
+        ];
+
+        Promise.all(measurePromises).then((results) => {
+          if (results.every(r => r !== null)) {
+            clearInterval(interval);
+            const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
+            const tabBarHeight = 64 + insets.bottom;
+
+            const steps: CoachMarkStep[] = [
+              {
+                rect: { x: results[0].x, y: results[0].y, width: results[0].w, height: results[0].h },
+                title: "Streak Belajar",
+                description: "Lihat seberapa konsisten kamu merawat tanaman tiap harinya. Pertahankan streak-mu!",
+                borderRadius: 24,
+              },
+              {
+                rect: { x: results[1].x, y: results[1].y, width: results[1].w, height: results[1].h },
+                title: "Tugas Hari Ini",
+                description: "Semua tanaman yang butuh perhatianmu hari ini akan muncul di sini.",
+                borderRadius: 24,
+              },
+              {
+                rect: { x: results[2].x, y: results[2].y, width: results[2].w, height: results[2].h },
+                title: "Tandai Selesai",
+                description: "Tekan tombol ini setelah menyiram tanaman untuk mencatat log dan dapatkan EXP!",
+                borderRadius: 16, // Or whatever the checkbox radius is
+              },
+              {
+                rect: { x: results[3].x, y: results[3].y, width: results[3].w, height: results[3].h },
+                title: "Kebunku",
+                description: "Lihat koleksi semua tanamanmu dan pantau statusnya di sini.",
+                borderRadius: 24,
+              },
+              {
+                rect: { 
+                  x: 0, 
+                  y: windowHeight - tabBarHeight, 
+                  width: windowWidth, 
+                  height: tabBarHeight 
+                },
+                title: "Navigasi Utama",
+                description: "Pindah ke halaman lain seperti Tanaman, ChatBot, atau Komunitas lewat menu ini.",
+                borderRadius: 0,
+              },
+            ];
+            setTutorialSteps(steps);
+            setShowTutorial(true);
+            setNeedsTutorial(false); // Stop trying
+          }
+        });
+      }, 500);
+
+      return () => clearInterval(interval);
+    }
+  }, [needsTutorial, isLoading]);
 
   // SWR Cache Loader - Only runs ONCE on mount
   useEffect(() => {
@@ -459,6 +556,7 @@ export default function DashboardScreen() {
 
         {/* STREAK HERO CARD */}
         <Pressable
+          ref={step1Ref}
           style={({ pressed }) => [
             styles.heroCard,
             pressed && styles.pressedShadow4,
@@ -593,7 +691,7 @@ export default function DashboardScreen() {
         })()}
 
         {/* REMINDER LIST */}
-        <View style={styles.section}>
+        <View style={styles.section} ref={step2Ref}>
           <Text style={styles.sectionTitle}>Hari ini</Text>
 
           {/* WEATHER CARD */}
@@ -682,12 +780,13 @@ export default function DashboardScreen() {
 
           {reminders.length === 0 ? (
             <EmptyHint
+              ref={step3Ref}
               icon="emoji-emotions"
               title="Mantap! Semua tanaman aman hari ini"
               subtitle="Belum ada yang perlu disiram. Nikmati harimu, petani hebat!"
             />
           ) : (
-            reminders.map((tanaman) => {
+            reminders.map((tanaman, index) => {
               const sudahValidasiHariIni =
                 tanaman.logTerakhir &&
                 new Date(tanaman.logTerakhir.createdAt).toDateString() ===
@@ -742,6 +841,7 @@ export default function DashboardScreen() {
                     </Text>
                   </View>
                   <View
+                    ref={index === 0 ? step3Ref : undefined}
                     style={[
                       styles.checkbox,
                       !isPenyiraman && styles.checkboxDoneAmber,
@@ -758,7 +858,7 @@ export default function DashboardScreen() {
         </View>
 
         {/* YOUR PLANTS SECTION */}
-        <View style={styles.section}>
+        <View style={styles.section} ref={step4Ref}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Tanaman kamu</Text>
           </View>
@@ -986,10 +1086,23 @@ export default function DashboardScreen() {
           styles.tanibotFab,
           pressed && styles.pressedFab,
         ]}
-        onPress={() => router.push({ pathname: "/(tabs)/tanaman", params: { openModal: 'true' } })}
+        onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
       >
         <MaterialIcons name="add" size={32} color="#FFFFFF" />
       </Pressable>
+
+      <CoachMarkOverlay
+        visible={showTutorial}
+        steps={tutorialSteps}
+        onFinish={() => {
+          setShowTutorial(false);
+          markTutorialFinished();
+        }}
+        onSkip={() => {
+          setShowTutorial(false);
+          markTutorialFinished();
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -333,13 +333,7 @@ export default function KomunitasScreen() {
               }
 
               return (
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.postCard,
-                    pressed && { opacity: 0.9 } // slight feedback
-                  ]}
-                  onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: item.id } } as any)}
-                >
+                <View style={styles.postCard}>
                   <View style={styles.postHeader}>
                     <View style={styles.avatarContainer}>
                       <Text style={styles.avatarInitials}>{item.user_nama.charAt(0).toUpperCase()}</Text>
@@ -354,21 +348,27 @@ export default function KomunitasScreen() {
                       </View>
                     ) : null}
                     {item.userId === currentUserId && (
-                      <TouchableOpacity 
-                        hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
-                        style={{ padding: 8, marginLeft: 8, zIndex: 10, elevation: 10 }}
-                        disabled={isDeletingId === item.id}
-                        onPress={() => handleDeletePost(item.id)}
-                      >
-                        {isDeletingId === item.id ? (
-                          <ActivityIndicator size="small" color="#FF6B5C" />
-                        ) : (
-                          <MaterialIcons name="delete" size={20} color="#FF4C4C" />
-                        )}
-                      </TouchableOpacity>
+                      <View onStartShouldSetResponder={() => true} style={{ zIndex: 99, elevation: 99 }}>
+                        <TouchableOpacity 
+                          hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+                          style={{ padding: 8, marginLeft: 8 }}
+                          disabled={isDeletingId === item.id}
+                          onPress={() => handleDeletePost(item.id)}
+                        >
+                          {isDeletingId === item.id ? (
+                            <ActivityIndicator size="small" color="#FF6B5C" />
+                          ) : (
+                            <MaterialIcons name="delete" size={20} color="#FF4C4C" />
+                          )}
+                        </TouchableOpacity>
+                      </View>
                     )}
                   </View>
 
+                  <Pressable 
+                    onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: item.id } } as any)}
+                    style={({pressed}) => [pressed && {opacity: 0.8}]}
+                  >
                   <Text style={styles.postCaption}>{item.deskripsi}</Text>
 
                   {item.fotoUrl && (
@@ -381,7 +381,8 @@ export default function KomunitasScreen() {
                     <MaterialIcons name="place" size={12} color="#5C5A4F" />
                     <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
                   </View>
-                </Pressable>
+                  </Pressable>
+                </View>
               );
             }}
           />

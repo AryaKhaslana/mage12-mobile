@@ -134,6 +134,10 @@ export interface CreateLogResponse {
   log: LogAktivitas;
   skorSaatIni: number;
   streak: number;
+  expDidapat: number;
+  expSekarang: number;
+  level: number;
+  levelUp: boolean;
 }
 
 export const getTanamanById = async (id: number): Promise<TanamanDetail> => {

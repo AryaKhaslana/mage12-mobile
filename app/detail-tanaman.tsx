@@ -176,6 +176,14 @@ export default function DetailTanamanModal() {
     try {
       const res = await harvestTanaman(tanamanId);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      const d = res.data || res;
+      if (d.levelUp) {
+        showNotification("Berhasil", `LEVEL UP! Tanaman berhasil dipanen!`, "success");
+      } else {
+        showNotification("Berhasil", `Panen berhasil! +${d.expDidapat} EXP`, "success");
+      }
+      
       setShowCertificate(true);
       setIsHarvesting(false);
     } catch (e: any) {
@@ -235,7 +243,11 @@ export default function DetailTanamanModal() {
     setIsSubmitting(true);
     try {
       const res = await createLog({ tanamanId, tipeValidasi: "button_only" });
-      setToastMessage(`Tanaman dapet +1 poin! Streak: ${res.streak} hari `);
+      if (res.levelUp) {
+        setToastMessage(`LEVEL UP! Level ${res.level}`);
+      } else {
+        setToastMessage(`Mantap! +${res.expDidapat} EXP! Streak: ${res.streak} hari`);
+      }
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (e: any) {
@@ -269,7 +281,11 @@ export default function DetailTanamanModal() {
               setIsSubmitting(true);
               try {
                 const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uri });
-                setToastMessage(`Keren! +5 poin! Streak: ${res.streak} hari `);
+                if (res.levelUp) {
+                  setToastMessage(`LEVEL UP! Level ${res.level}`);
+                } else {
+                  setToastMessage(`Mantap! +${res.expDidapat} EXP! Streak: ${res.streak} hari`);
+                }
                 setTimeout(() => setToastMessage(null), 4000);
                 fetchData();
               } catch (e: any) {

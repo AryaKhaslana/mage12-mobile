@@ -242,11 +242,20 @@ export default function DashboardScreen() {
         tipeValidasi: "button_only",
       });
       if (response.data?.status === "success") {
-        showNotification(
-          "Mantap!",
-          `+${response.data.data.skorSaatIni} poin! Streak: ${response.data.data.streak} hari`,
-          "success",
-        );
+        const d = response.data.data;
+        if (d.levelUp) {
+          showNotification(
+            "Mantap!",
+            `LEVEL UP! Level ${d.level}`,
+            "success",
+          );
+        } else {
+          showNotification(
+            "Mantap!",
+            `+${d.expDidapat} EXP! Streak: ${d.streak} hari`,
+            "success",
+          );
+        }
         fetchDashboardData();
       }
     } catch (error: any) {
@@ -844,11 +853,11 @@ export default function DashboardScreen() {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                 <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Level Progress</Text>
                 <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#3FA86B' }}>
-                  {Math.min(100, (userData?.streak || 0) * 15)} / 100 EXP
+                  {(userData?.exp || 0) % 100} / 100 EXP
                 </Text>
               </View>
               <View style={{ height: 16, backgroundColor: '#E8F5E9', borderRadius: 8, borderWidth: 2, borderColor: '#123924', overflow: 'hidden' }}>
-                <View style={{ width: `${Math.min(100, (userData?.streak || 0) * 15)}%`, height: '100%', backgroundColor: '#3FA86B', borderRightWidth: 2, borderColor: '#123924' }} />
+                <View style={{ width: `${(userData?.exp || 0) % 100}%`, height: '100%', backgroundColor: '#3FA86B', borderRightWidth: 2, borderColor: '#123924' }} />
               </View>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: '#5C5A4F', marginTop: 8, textAlign: 'center' }}>
                 Naikin level dengan rajin panen dan jaga streak harian!

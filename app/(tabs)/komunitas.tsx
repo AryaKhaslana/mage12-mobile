@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -354,18 +354,18 @@ export default function KomunitasScreen() {
                       </View>
                     ) : null}
                     {item.userId === currentUserId && (
-                      <Pressable 
-                        hitSlop={10}
-                        style={{ marginLeft: 8 }}
+                      <TouchableOpacity 
+                        hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+                        style={{ padding: 8, marginLeft: 8, zIndex: 10, elevation: 10 }}
                         disabled={isDeletingId === item.id}
                         onPress={() => handleDeletePost(item.id)}
                       >
                         {isDeletingId === item.id ? (
                           <ActivityIndicator size="small" color="#FF6B5C" />
                         ) : (
-                          <MaterialIcons name="delete" size={18} color="#5C5A4F" />
+                          <MaterialIcons name="delete" size={20} color="#FF4C4C" />
                         )}
-                      </Pressable>
+                      </TouchableOpacity>
                     )}
                   </View>
 

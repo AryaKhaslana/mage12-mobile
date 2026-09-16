@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, Animated, FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, Animated, FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard, Modal, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import api, { getCommunityPostDetail, getCommunityComments, addCommunityComment, deleteCommunityComment, toggleCommunityLike, deleteCommunityPost, CommunityPostDetail, CommunityComment } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
+import { useNotification } from '../components/NotificationContext';
 
 const getRelativeTime = (isoString: string) => {
   const date = new Date(isoString);
@@ -78,6 +79,9 @@ const DetailKomunitasSkeleton = () => {
 };
 
 export default function DetailKomunitasScreen() {
+  const { showNotification } = useNotification();
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
   const { id } = useLocalSearchParams();
   const postId = Number(id);
 
@@ -176,7 +180,7 @@ export default function DetailKomunitasScreen() {
     } catch (e: any) {
       // Revert
       setPost(prev => prev ? { ...prev, isLiked: oldLiked, jumlahLike: oldJumlah } : null);
-      Alert.alert("Gagal", e.response?.data?.message || "Gagal menyukai postingan.");
+      showNotification("Gagal", e.response?.data?.message || "Gagal menyukai postingan.", "error");
     } finally {
       setIsLiking(false);
     }
@@ -192,60 +196,49 @@ export default function DetailKomunitasScreen() {
       setPost(prev => prev ? { ...prev, jumlahKomentar: prev.jumlahKomentar + 1 } : null);
       Keyboard.dismiss();
     } catch(e: any) {
-      Alert.alert("Gagal", e.response?.data?.message || "Gagal mengirim komentar.");
+      showNotification("Gagal", e.response?.data?.message || "Gagal mengirim komentar.", "error");
     } finally {
       setIsSending(false);
     }
   };
 
   const handleDeletePost = () => {
-    Alert.alert(
-      "Hapus postingan ini?",
-      "Postingan yang dihapus tidak bisa dikembalikan.",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteCommunityPost(postId);
-              Alert.alert("Terhapus", "Postingan berhasil dihapus.", [
-                { text: "OK", onPress: () => router.back() }
-              ]);
-            } catch (e: any) {
-              Alert.alert("Gagal", e.response?.data?.message || "Gagal menghapus postingan.");
-            }
-          }
-        }
-      ]
-    );
+    if (!post) return;
+    setPostToDelete(post.id);
+  };
+
+  const confirmDeletePost = async () => {
+    if (!postToDelete) return;
+    try {
+      await deleteCommunityPost(postToDelete);
+      setPostToDelete(null);
+      showNotification("Terhapus", "Postingan berhasil dihapus permanen!", "success");
+      setTimeout(() => router.back(), 300);
+    } catch (e: any) {
+      setPostToDelete(null);
+      showNotification("Gagal", e.response?.data?.message || "Gagal menghapus postingan.", "error");
+    }
   };
 
   const handleDeleteComment = (commentId: number) => {
-    Alert.alert(
-      "Hapus komentar?",
-      "Komentar yang dihapus tidak bisa dikembalikan.",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus",
-          style: "destructive",
-          onPress: async () => {
-            setIsDeletingId(commentId);
-            try {
-              await deleteCommunityComment(commentId);
-              setComments(prev => prev.filter(c => c.id !== commentId));
-              setPost(prev => prev ? { ...prev, jumlahKomentar: Math.max(0, prev.jumlahKomentar - 1) } : null);
-            } catch (e: any) {
-              Alert.alert("Gagal", e.response?.data?.message || "Gagal menghapus komentar.");
-            } finally {
-              setIsDeletingId(null);
-            }
-          }
-        }
-      ]
-    );
+    setCommentToDelete(commentId);
+  };
+
+  const confirmDeleteComment = async () => {
+    if (!commentToDelete) return;
+    setIsDeletingId(commentToDelete);
+    try {
+      await deleteCommunityComment(commentToDelete);
+      setComments(prev => prev.filter(c => c.id !== commentToDelete));
+      setPost(prev => prev ? { ...prev, jumlahKomentar: Math.max(0, prev.jumlahKomentar - 1) } : null);
+      setCommentToDelete(null);
+      showNotification("Terhapus", "Komentar berhasil dihapus!", "success");
+    } catch (e: any) {
+      setCommentToDelete(null);
+      showNotification("Gagal", e.response?.data?.message || "Gagal menghapus komentar.", "error");
+    } finally {
+      setIsDeletingId(null);
+    }
   };
 
   const renderHeader = () => {
@@ -285,9 +278,9 @@ export default function DetailKomunitasScreen() {
               </View>
             ) : null}
             {post.isOwner && (
-              <Pressable hitSlop={10} style={{ marginLeft: 8 }} onPress={handleDeletePost}>
-                <MaterialIcons name="more-vert" size={18} color="#5C5A4F" />
-              </Pressable>
+              <TouchableOpacity hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} style={{ padding: 8, marginLeft: 8, zIndex: 10, elevation: 10 }} onPress={handleDeletePost}>
+                <MaterialIcons name="delete" size={20} color="#FF4C4C" />
+              </TouchableOpacity>
             )}
           </View>
 
@@ -439,7 +432,44 @@ export default function DetailKomunitasScreen() {
             {isSending ? <ActivityIndicator color="#FFFFFF" size="small" /> : <MaterialIcons name="send" size={20} color="#FFFFFF" />}
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+        <Modal visible={!!postToDelete} animationType="fade" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Postingan?</Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
+              Postingan ini beserta semua komentarnya akan hilang permanen!
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setPostToDelete(null)}>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
+              </Pressable>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmDeletePost} disabled={isDeletingId !== null}>
+                {isDeletingId !== null ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Hapus</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={!!commentToDelete} animationType="fade" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Komentar?</Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
+              Komentar ini akan dihapus permanen broskie.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setCommentToDelete(null)}>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
+              </Pressable>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmDeleteComment} disabled={isDeletingId !== null}>
+                {isDeletingId !== null ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Hapus</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

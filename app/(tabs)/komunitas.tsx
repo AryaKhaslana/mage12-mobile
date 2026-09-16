@@ -315,7 +315,7 @@ export default function KomunitasScreen() {
                       <Text style={styles.avatarInitials}>{item.user_nama.charAt(0).toUpperCase()}</Text>
                     </View>
                     <View style={styles.postMeta}>
-                      <Text style={styles.authorName}>{item.user_nama}</Text>
+                      <Text style={styles.authorName} numberOfLines={1}>{item.user_nama}</Text>
                       <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
                     </View>
                     {badgeText ? (

@@ -1,8 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   ActivityIndicator, Animated,
   Image,
@@ -155,8 +155,9 @@ export default function DashboardScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { showNotification } = useNotification();
 
-  useEffect(() => {
-    const checkAuthAndFetch = async () => {
+  useFocusEffect(
+    useCallback(() => {
+      const checkAuthAndFetch = async () => {
       const token = await SecureStore.getItemAsync("userToken");
       if (!token) {
         router.replace("/(auth)/login");
@@ -192,7 +193,8 @@ export default function DashboardScreen() {
       fetchDashboardData();
     };
     checkAuthAndFetch();
-  }, []);
+  }, [])
+  );
 
   const fetchDashboardData = async () => {
     if (tanamanList.length === 0 && !userData) {
@@ -243,6 +245,7 @@ export default function DashboardScreen() {
       });
       if (response.data?.status === "success") {
         const d = response.data.data;
+        setUserData((prev: any) => prev ? { ...prev, exp: d.expSekarang, level: d.level, streak: d.streak } : prev);
         if (d.levelUp) {
           showNotification(
             "Mantap!",

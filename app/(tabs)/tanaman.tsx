@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api, { TanamanDetail } from "../../services/api";
+import { useNotification } from "../../components/NotificationContext";
 import ErrorState from "../../components/ErrorState";
 
 const FALLBACK_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
@@ -74,6 +75,7 @@ const PlantGridSkeleton = () => {
 };
 
 export default function TanamanScreen() {
+  const { showNotification } = useNotification();
   const [activeFilter, setActiveFilter] = useState("Semua");
   const filters = ["Semua", "Perlu Disiram"];
   const [tanamanList, setTanamanList] = useState<TanamanDetail[]>([]);
@@ -131,18 +133,20 @@ export default function TanamanScreen() {
         nickname: nickname || undefined,
       });
       if (response.data?.status === "success") {
-        Alert.alert(
+        showNotification(
           "Sukses",
           response.data.message || "Tanaman berhasil ditambahkan!",
+          "success"
         );
         setModalVisible(false);
         fetchTanaman();
       }
     } catch (error: any) {
       console.error("Error tambah tanaman:", error);
-      Alert.alert(
+      showNotification(
         "Gagal",
         error.response?.data?.message || "Terjadi kesalahan.",
+        "error"
       );
     } finally {
       setIsSubmitting(false);

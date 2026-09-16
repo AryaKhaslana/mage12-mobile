@@ -783,21 +783,21 @@ export default function DashboardScreen() {
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Tanaman kamu</Text>
           </View>
+          {tanamanList.length === 0 ? (
+            <EmptyHint
+              imageSource={require("../../assets/images/icontampilanawal/seedling-menanam.png")}
+              title="Kebunmu masih kosong nih"
+              subtitle="Yuk mulai tanam tanaman pertamamu!"
+              ctaText="Tanam Sekarang"
+              onCtaPress={() => router.push("/(tabs)/tanaman")}
+            />
+          ) : (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.horizontalScroll}
           >
-            {tanamanList.length === 0 ? (
-              <EmptyHint
-                imageSource={require("../../assets/images/icontampilanawal/seedling-menanam.png")}
-                title="Kebunmu masih kosong nih"
-                subtitle="Yuk mulai tanam tanaman pertamamu!"
-                ctaText="Tanam Sekarang"
-                onCtaPress={() => router.push("/(tabs)/tanaman")}
-              />
-            ) : (
-              tanamanList.map((tanaman) => {
+            {tanamanList.map((tanaman) => {
                 const sudahValidasiHariIni =
                   tanaman.logTerakhir &&
                   new Date(tanaman.logTerakhir.createdAt).toDateString() ===
@@ -880,8 +880,9 @@ export default function DashboardScreen() {
                   </Pressable>
                 );
               })
-            )}
+            }
           </ScrollView>
+          )}
         
       <Modal visible={showGamification} animationType="slide" transparent={false}>
         <View style={{ flex: 1, backgroundColor: '#FBF8F0', paddingTop: 48 }}>

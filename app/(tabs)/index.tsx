@@ -155,16 +155,11 @@ export default function DashboardScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { showNotification } = useNotification();
 
-  useFocusEffect(
-    useCallback(() => {
-      const checkAuthAndFetch = async () => {
+  // SWR Cache Loader - Only runs ONCE on mount
+  useEffect(() => {
+    const initApp = async () => {
       const token = await SecureStore.getItemAsync("userToken");
-      if (!token) {
-        router.replace("/(auth)/login");
-        return;
-      }
-      
-      // OPTIMIZATION: Load from cache instantly (Stale-While-Revalidate)
+      if (!token) return;
       try {
         const cachedUser = await SecureStore.getItemAsync("userData");
         const cachedTanaman = await AsyncStorage.getItem("dashboard_tanaman");
@@ -175,25 +170,40 @@ export default function DashboardScreen() {
         if (cachedTanaman) { setTanamanList(JSON.parse(cachedTanaman)); hasCache = true; }
         if (cachedWeather) {
           const parsed = JSON.parse(cachedWeather);
-          // Only use cache if it's less than 3 hours old
           if (parsed.savedAt && Date.now() - parsed.savedAt < 3 * 60 * 60 * 1000) {
             setWeather(parsed.data);
             hasCache = true;
           }
         }
-        
-        // If we have cache, dismiss skeleton immediately!
-        if (hasCache) {
-          setIsLoading(false);
-        }
+        if (hasCache) setIsLoading(false);
       } catch (e) {
         console.log("Cache read error:", e);
       }
-
-      fetchDashboardData();
     };
-    checkAuthAndFetch();
-  }, [])
+    initApp();
+  }, []);
+
+  // Data Fetcher - Runs on focus
+  useFocusEffect(
+    useCallback(() => {
+      const checkAuthAndFetch = async () => {
+        const token = await SecureStore.getItemAsync("userToken");
+        if (!token) {
+          router.replace("/(auth)/login");
+          return;
+        }
+        
+        // Sync local cache first (in case detail screen updated EXP/Level)
+        const cachedUser = await SecureStore.getItemAsync("userData");
+        if (cachedUser) {
+          const parsed = JSON.parse(cachedUser);
+          setUserData((prev: any) => prev ? { ...prev, exp: parsed.exp, level: parsed.level, streak: parsed.streak } : parsed);
+        }
+
+        fetchDashboardData();
+      };
+      checkAuthAndFetch();
+    }, [])
   );
 
   const fetchDashboardData = async () => {

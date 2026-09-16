@@ -4,6 +4,7 @@ import { Share, View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOp
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as SecureStore from "expo-secure-store";
 import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman, updateTanaman, harvestTanaman, createCommunityPost } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useNotification } from '../components/NotificationContext';
@@ -183,6 +184,14 @@ export default function DetailTanamanModal() {
       } else {
         showNotification("Berhasil", `Panen berhasil! +${d.expDidapat} EXP`, "success");
       }
+      // Update global cache manually so Dashboard gets the new EXP
+      const cached = await SecureStore.getItemAsync("userData");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        parsed.exp = d.expSekarang;
+        parsed.level = d.level;
+        await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
+      }
       
       setShowCertificate(true);
       setIsHarvesting(false);
@@ -248,6 +257,14 @@ export default function DetailTanamanModal() {
       } else {
         setToastMessage(`Mantap! +${res.expDidapat} EXP! Streak: ${res.streak} hari`);
       }
+      const cached = await SecureStore.getItemAsync("userData");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        parsed.exp = res.expSekarang;
+        parsed.level = res.level;
+        parsed.streak = res.streak;
+        await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
+      }
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (e: any) {
@@ -285,6 +302,14 @@ export default function DetailTanamanModal() {
                   setToastMessage(`LEVEL UP! Level ${res.level}`);
                 } else {
                   setToastMessage(`Mantap! +${res.expDidapat} EXP! Streak: ${res.streak} hari`);
+                }
+                const cached = await SecureStore.getItemAsync("userData");
+                if (cached) {
+                  const parsed = JSON.parse(cached);
+                  parsed.exp = res.expSekarang;
+                  parsed.level = res.level;
+                  parsed.streak = res.streak;
+                  await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
                 }
                 setTimeout(() => setToastMessage(null), 4000);
                 fetchData();

@@ -297,6 +297,8 @@ export default function ProfilScreen() {
           onPress={async () => {
             await SecureStore.deleteItemAsync("userToken");
             await SecureStore.deleteItemAsync("userData");
+            await AsyncStorage.removeItem("dashboard_weather");
+            await AsyncStorage.removeItem("dashboard_tanaman");
             router.replace("/(auth)/login");
           }}
         >

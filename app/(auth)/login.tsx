@@ -21,11 +21,13 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api, { googleSignIn } from "../../services/api";
+import { useNotification } from "../../components/NotificationContext";
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { showNotification } = useNotification();
   // Animasi Mascot
   const scale = useSharedValue(1);
   React.useEffect(() => {
@@ -45,7 +47,7 @@ export default function LoginScreen() {
   });
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Perhatian", "Email dan password wajib diisi");
+      showNotification("Perhatian", "Email dan password wajib diisi", "error");
       return;
     }
     setIsLoading(true);
@@ -63,13 +65,13 @@ export default function LoginScreen() {
         }
         router.replace("/");
       } else {
-        Alert.alert("Login Gagal", "Login sukses tapi token tidak ditemukan di response.");
+        showNotification("Login Gagal", "Login sukses tapi token tidak ditemukan di response.", "error");
       }
     } catch (error: any) {
       const msg =
         error.response?.data?.message ||
         "Tidak bisa terhubung ke server. Cek koneksi internetmu.";
-      Alert.alert("Login Gagal", msg);
+      showNotification("Login Gagal", msg, "error");
     } finally {
       setIsLoading(false);
     }
@@ -143,6 +145,7 @@ export default function LoginScreen() {
               await googleSignIn();
             } catch (error) {
               console.error("Google sign in error", error);
+              showNotification("Gagal", "Google Sign In bermasalah. Coba lagi broskie.", "error");
             } finally {
               setIsLoading(false);
             }

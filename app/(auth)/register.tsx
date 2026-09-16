@@ -21,6 +21,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
+import { useNotification } from "../../components/NotificationContext";
 export default function RegisterScreen() {
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +31,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTnc, setAgreeTnc] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { showNotification } = useNotification();
   // Animasi Mascot
   const scale = useSharedValue(1);
   React.useEffect(() => {
@@ -50,13 +52,13 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     // Validasi
     if (!nama || !email || !password || !confirmPassword) {
-      return Alert.alert("Oops", "Semua data wajib diisi.");
+      return showNotification("Oops", "Semua data wajib diisi.", "error");
     }
     if (password.length < 8) {
-      return Alert.alert("Oops", "Kata sandi minimal 8 karakter.");
+      return showNotification("Oops", "Kata sandi minimal 8 karakter.", "error");
     }
     if (password !== confirmPassword) {
-      return Alert.alert("Oops", "Konfirmasi kata sandi tidak sama.");
+      return showNotification("Oops", "Konfirmasi kata sandi tidak sama.", "error");
     }
     if (!agreeTnc) {
       return Alert.alert(
@@ -86,14 +88,13 @@ export default function RegisterScreen() {
         longitude,
       });
       // Kembali ke login jika sukses
-      Alert.alert("Berhasil!", "Akun kamu sudah dibuat. Silakan masuk.", [
-        { text: "OK", onPress: () => router.replace("/(auth)/login") },
-      ]);
+      showNotification("Berhasil!", "Akun kamu sudah dibuat. Silakan masuk.", "success");
+      setTimeout(() => router.replace("/(auth)/login"), 1500);
     } catch (error: any) {
       const msg =
         error.response?.data?.message ||
         "Tidak bisa terhubung ke server. Cek koneksi internetmu.";
-      Alert.alert("Register Gagal", msg);
+      showNotification("Register Gagal", msg, "error");
     } finally {
       setIsLoading(false);
     }

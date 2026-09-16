@@ -83,7 +83,6 @@ export default function KomunitasScreen() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isError, setIsError] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
   const [coords, setCoords] = useState<{ latitude: number, longitude: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -96,8 +95,7 @@ export default function KomunitasScreen() {
   const [deskripsi, setDeskripsi] = useState("");
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<number | null>(null);
-  const [showLocationModal, setShowLocationModal] = useState(false);
+    const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationErrorMsg, setLocationErrorMsg] = useState("");
 
   const handlePickImage = async () => {
@@ -228,29 +226,7 @@ export default function KomunitasScreen() {
   };
 
 
-  const handleDeletePost = (id: number) => {
-    setPostToDelete(id);
-  };
 
-  const confirmDelete = async () => {
-    if (!postToDelete) return;
-    setIsDeletingId(postToDelete);
-    try {
-      await deleteCommunityPost(postToDelete);
-      setPosts(prev => prev.filter(p => p.id !== postToDelete));
-      setPostToDelete(null);
-      showNotification("Terhapus", "Postingan berhasil dihapus!", "success");
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        setPosts(prev => prev.filter(p => p.id !== postToDelete));
-        setPostToDelete(null);
-      } else {
-        showNotification("Gagal", error.response?.data?.message || "Gagal menghapus postingan.", "error");
-      }
-    } finally {
-      setIsDeletingId(null);
-    }
-  };
 
   if (isLoading && !isRefreshing && posts.length === 0) {
     return (
@@ -347,22 +323,7 @@ export default function KomunitasScreen() {
                         <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
                       </View>
                     ) : null}
-                    {item.userId === currentUserId && (
-                      <View onStartShouldSetResponder={() => true} style={{ zIndex: 99, elevation: 99 }}>
-                        <TouchableOpacity 
-                          hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
-                          style={{ padding: 8, marginLeft: 8 }}
-                          disabled={isDeletingId === item.id}
-                          onPress={() => handleDeletePost(item.id)}
-                        >
-                          {isDeletingId === item.id ? (
-                            <ActivityIndicator size="small" color="#FF6B5C" />
-                          ) : (
-                            <MaterialIcons name="delete" size={20} color="#FF4C4C" />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    )}
+
                   </View>
 
                   <Pressable 

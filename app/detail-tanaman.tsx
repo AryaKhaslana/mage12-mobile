@@ -81,6 +81,7 @@ export default function DetailTanamanModal() {
   const [isHarvesting, setIsHarvesting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
   const [showHarvestConfirm, setShowHarvestConfirm] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
@@ -222,29 +223,21 @@ export default function DetailTanamanModal() {
   };
 
   const handleDeleteTanaman = () => {
-    Alert.alert(
-      "Hapus Tanaman?",
-      "Tanaman ini beserta seluruh riwayat jurnalnya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!",
-      [
-        { text: "Batal", style: "cancel" },
-        { 
-          text: "Hapus", 
-          style: "destructive",
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await deleteTanaman(tanamanId);
-              Alert.alert("Terhapus", "Tanaman berhasil dihapus!", [
-                { text: "OK", onPress: () => router.back() }
-              ]);
-            } catch (e: any) {
-              setIsDeleting(false);
-              Alert.alert("Gagal", e.response?.data?.message || "Gagal menghapus tanaman");
-            }
-          }
-        }
-      ]
-    );
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteTanaman(tanamanId);
+      setShowDeleteConfirm(false);
+      showNotification("Terhapus", "Tanaman berhasil dihapus permanen!", "success");
+      setTimeout(() => router.back(), 300);
+    } catch (e: any) {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      showNotification("Gagal", e.response?.data?.message || "Gagal menghapus tanaman", "error");
+    }
   };
 
   const handleValidasiButton = async () => {
@@ -611,6 +604,26 @@ export default function DetailTanamanModal() {
       </Modal>
 
       
+      <Modal visible={showDeleteConfirm} animationType="fade" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+            <Image source={require("../assets/images/icontampilanawal/seedling-ngantuk.png")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Tanaman?</Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
+              Tanaman ini beserta seluruh riwayat jurnalnya akan dihapus permanen dan tidak bisa dikembalikan.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setShowDeleteConfirm(false)}>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmDelete} disabled={isDeleting}>
+                {isDeleting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Hapus</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showHarvestConfirm} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>

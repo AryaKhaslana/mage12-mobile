@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
+import { useNotification } from '../../components/NotificationContext';
 import api, { CommunityPost, deleteCommunityPost, getCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
@@ -78,6 +79,7 @@ const PostSkeleton = () => {
 };
 
 export default function KomunitasScreen() {
+  const { showNotification } = useNotification();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isError, setIsError] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -94,6 +96,9 @@ export default function KomunitasScreen() {
   const [deskripsi, setDeskripsi] = useState("");
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationErrorMsg, setLocationErrorMsg] = useState("");
 
   const handlePickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -108,7 +113,7 @@ export default function KomunitasScreen() {
 
   const handleSubmitPost = async () => {
     if (!deskripsi.trim()) {
-      Alert.alert("Error", "Deskripsi belum diisi");
+      showNotification("Error", "Deskripsi belum diisi broskie", "error");
       return;
     }
     setIsSubmitting(true);
@@ -130,7 +135,7 @@ export default function KomunitasScreen() {
         },
       });
 
-      Alert.alert("Sukses", "Berhasil posting broskie!");
+      showNotification("Mantap!", "Berhasil posting broskie!", "success");
       setIsModalVisible(false);
       setDeskripsi("");
       setFoto(null);
@@ -139,11 +144,10 @@ export default function KomunitasScreen() {
     } catch (error: any) {
       const msg = error.response?.data?.message || "Gagal memposting.";
       if (msg.toLowerCase().includes("lokasi")) {
-        Alert.alert("Lokasi belum lengkap", msg, [
-          { text: "OK", onPress: () => router.push("/(auth)/location-setup") }
-        ]);
+        setLocationErrorMsg(msg);
+        setShowLocationModal(true);
       } else {
-        Alert.alert("Gagal", msg);
+        showNotification("Gagal", msg, "error");
       }
     } finally {
       setIsSubmitting(false);
@@ -225,33 +229,27 @@ export default function KomunitasScreen() {
 
 
   const handleDeletePost = (id: number) => {
-    Alert.alert(
-      "Hapus postingan ini?",
-      "Postingan yang dihapus tidak bisa dikembalikan.",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus",
-          style: "destructive",
-          onPress: async () => {
-            setIsDeletingId(id);
-            try {
-              await deleteCommunityPost(id);
-              setPosts(prev => prev.filter(p => p.id !== id));
-            } catch (error: any) {
-              if (error.response?.status === 404) {
-                // Already deleted
-                setPosts(prev => prev.filter(p => p.id !== id));
-              } else {
-                Alert.alert("Gagal", error.response?.data?.message || "Gagal menghapus postingan.");
-              }
-            } finally {
-              setIsDeletingId(null);
-            }
-          }
-        }
-      ]
-    );
+    setPostToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
+    setIsDeletingId(postToDelete);
+    try {
+      await deleteCommunityPost(postToDelete);
+      setPosts(prev => prev.filter(p => p.id !== postToDelete));
+      setPostToDelete(null);
+      showNotification("Terhapus", "Postingan berhasil dihapus!", "success");
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        setPosts(prev => prev.filter(p => p.id !== postToDelete));
+        setPostToDelete(null);
+      } else {
+        showNotification("Gagal", error.response?.data?.message || "Gagal menghapus postingan.", "error");
+      }
+    } finally {
+      setIsDeletingId(null);
+    }
   };
 
   if (isLoading && !isRefreshing && posts.length === 0) {
@@ -365,7 +363,7 @@ export default function KomunitasScreen() {
                         {isDeletingId === item.id ? (
                           <ActivityIndicator size="small" color="#FF6B5C" />
                         ) : (
-                          <MaterialIcons name="more-vert" size={18} color="#5C5A4F" />
+                          <MaterialIcons name="delete" size={18} color="#5C5A4F" />
                         )}
                       </Pressable>
                     )}

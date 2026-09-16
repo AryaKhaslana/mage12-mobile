@@ -239,10 +239,12 @@ export default function DashboardScreen() {
       }
       if (tanamanRes?.data?.data) {
         setTanamanList(tanamanRes.data.data);
+        AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(tanamanRes.data.data)).catch(() => {});
       }
       if (weatherRes?.data?.data) {
         const weatherData = weatherRes.data.data;
         setWeather(weatherData);
+        AsyncStorage.setItem("dashboard_weather", JSON.stringify({ data: weatherData, savedAt: Date.now() })).catch(() => {});
 
         // Check rain notification
         if (weatherData.kondisi === "HUJAN" && weatherData.prediksiHujanHariIni) {

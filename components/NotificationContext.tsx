@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type NotificationType = "success" | "error";
+type NotificationType = "success" | "error" | "info";
 
 interface NotificationData {
   title: string;
@@ -43,14 +43,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
               style={[
                 styles.notifIconBox,
                 {
-                  backgroundColor: notification.type === "success" ? "#FFB627" : "#FF6B5C",
+                  backgroundColor: notification.type === "success" ? "#FFB627" : notification.type === "info" ? "#4DB8FF" : "#FF6B5C",
                 },
               ]}
             >
               <MaterialIcons
-                name={notification.type === "success" ? "check" : "error-outline"}
+                name={notification.type === "success" ? "check" : notification.type === "info" ? "info-outline" : "error-outline"}
                 size={24}
-                color={notification.type === "success" ? "#123924" : "#FFFFFF"}
+                color={notification.type === "error" ? "#FFFFFF" : "#123924"}
               />
             </View>
             <View style={{ marginLeft: 12, flex: 1 }}>

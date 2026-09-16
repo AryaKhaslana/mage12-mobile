@@ -241,7 +241,26 @@ export default function DashboardScreen() {
         setTanamanList(tanamanRes.data.data);
       }
       if (weatherRes?.data?.data) {
-        setWeather(weatherRes.data.data);
+        const weatherData = weatherRes.data.data;
+        setWeather(weatherData);
+
+        // Check rain notification
+        if (weatherData.kondisi === "HUJAN" && weatherData.prediksiHujanHariIni) {
+          try {
+            const todayStr = new Date().toDateString();
+            const lastNotified = await AsyncStorage.getItem("last_rain_notified");
+            if (lastNotified !== todayStr) {
+              showNotification(
+                "☔ Hujan Diprediksi!",
+                "Penyiraman tanaman ditunda sistem hari ini. Nikmati hujannya, petani! 🌧️",
+                "info"
+              );
+              await AsyncStorage.setItem("last_rain_notified", todayStr);
+            }
+          } catch (err) {
+            console.error("Failed to check or set rain notif flag", err);
+          }
+        }
       } else {
         setWeather(null);
       }

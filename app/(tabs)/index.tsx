@@ -213,7 +213,15 @@ export default function DashboardScreen() {
         api.get("/weather/today").catch(() => null),
       ]);
       if (meRes?.data?.data) {
-        setUserData(meRes.data.data);
+        setUserData((prev: any) => {
+          if (!prev) return meRes.data.data;
+          return {
+            ...prev,
+            ...meRes.data.data,
+            exp: meRes.data.data.exp !== undefined ? meRes.data.data.exp : prev.exp,
+            level: meRes.data.data.level !== undefined ? meRes.data.data.level : prev.level
+          };
+        });
       }
       if (tanamanRes?.data?.data) {
         setTanamanList(tanamanRes.data.data);
@@ -245,7 +253,12 @@ export default function DashboardScreen() {
       });
       if (response.data?.status === "success") {
         const d = response.data.data;
-        setUserData((prev: any) => prev ? { ...prev, exp: d.expSekarang, level: d.level, streak: d.streak } : prev);
+        setUserData((prev: any) => prev ? { 
+          ...prev, 
+          exp: d.expSekarang !== undefined ? d.expSekarang : (prev.exp || 0) + (d.expDidapat || 0), 
+          level: d.level !== undefined ? d.level : prev.level, 
+          streak: d.streak !== undefined ? d.streak : prev.streak 
+        } : prev);
         if (d.levelUp) {
           showNotification(
             "Mantap!",

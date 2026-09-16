@@ -214,13 +214,17 @@ export default function DashboardScreen() {
       ]);
       if (meRes?.data?.data) {
         setUserData((prev: any) => {
-          if (!prev) return meRes.data.data;
-          return {
-            ...prev,
-            ...meRes.data.data,
-            exp: meRes.data.data.exp !== undefined ? meRes.data.data.exp : prev.exp,
-            level: meRes.data.data.level !== undefined ? meRes.data.data.level : prev.level
-          };
+          let merged = meRes.data.data;
+          if (prev) {
+            merged = {
+              ...prev,
+              ...meRes.data.data,
+              exp: meRes.data.data.exp !== undefined ? meRes.data.data.exp : prev.exp,
+              level: meRes.data.data.level !== undefined ? meRes.data.data.level : prev.level
+            };
+          }
+          SecureStore.setItemAsync("userData", JSON.stringify(merged)).catch(console.error);
+          return merged;
         });
       }
       if (tanamanRes?.data?.data) {

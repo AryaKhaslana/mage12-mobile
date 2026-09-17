@@ -32,6 +32,7 @@ const BUBBLE_WIDTH = SCREEN_WIDTH - 48; // 24px padding on sides
 
 export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: CoachMarkOverlayProps) {
   const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
+  const [showConfirmSkip, setShowConfirmSkip] = React.useState(false);
 
   const currentX = useSharedValue(0);
   const currentY = useSharedValue(0);
@@ -69,22 +70,27 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
     }
   }, [currentStepIndex, visible, steps]);
 
-  const animatedMaskProps = useAnimatedProps(() => ({
-    x: currentX.value,
-    y: currentY.value,
-    width: currentW.value,
-    height: currentH.value,
-    rx: currentR.value,
-    ry: currentR.value,
+  const topMaskStyle = useAnimatedStyle(() => ({
+    position: 'absolute', top: 0, left: 0, right: 0, height: currentY.value, backgroundColor: 'rgba(18,57,36,0.75)'
   }));
-
-  const animatedBorderProps = useAnimatedProps(() => ({
-    x: currentX.value - 2,
-    y: currentY.value - 2,
+  const bottomMaskStyle = useAnimatedStyle(() => ({
+    position: 'absolute', top: currentY.value + currentH.value, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,57,36,0.75)'
+  }));
+  const leftMaskStyle = useAnimatedStyle(() => ({
+    position: 'absolute', top: currentY.value, height: currentH.value, left: 0, width: currentX.value, backgroundColor: 'rgba(18,57,36,0.75)'
+  }));
+  const rightMaskStyle = useAnimatedStyle(() => ({
+    position: 'absolute', top: currentY.value, height: currentH.value, left: currentX.value + currentW.value, right: 0, backgroundColor: 'rgba(18,57,36,0.75)'
+  }));
+  const borderHighlightStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: currentX.value - 2,
+    top: currentY.value - 2,
     width: currentW.value + 4,
     height: currentH.value + 4,
-    rx: currentR.value + 2,
-    ry: currentR.value + 2,
+    borderRadius: currentR.value + 2,
+    borderWidth: 2,
+    borderColor: '#3FA86B'
   }));
 
   const bubbleStyle = useAnimatedStyle(() => {
@@ -134,21 +140,12 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
   return (
     <Modal transparent visible={visible} animationType="none" statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]}>
-        <Svg style={StyleSheet.absoluteFill}>
-          <Defs>
-            <Mask id="hole-mask">
-              <Rect x="0" y="0" width="100%" height="100%" fill="white" />
-              <AnimatedRect animatedProps={animatedMaskProps} fill="black" />
-            </Mask>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="rgba(18,57,36,0.75)" mask="url(#hole-mask)" />
-          <AnimatedRect 
-            animatedProps={animatedBorderProps} 
-            stroke="#3FA86B" 
-            strokeWidth="2" 
-            fill="none" 
-          />
-        </Svg>
+        {/* PURE VIEW OVERLAY FOR BETTER PERFORMANCE */}
+        <Animated.View style={topMaskStyle} />
+        <Animated.View style={bottomMaskStyle} />
+        <Animated.View style={leftMaskStyle} />
+        <Animated.View style={rightMaskStyle} />
+        <Animated.View style={borderHighlightStyle} />
 
         <Animated.View style={bubbleStyle}>
           {/* Hard shadow layer */}
@@ -166,7 +163,7 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
             <Text style={styles.bubbleDesc}>{currentStep?.description}</Text>
 
             <View style={styles.footerRow}>
-              <Pressable onPress={onSkip} style={styles.skipButton}>
+              <Pressable onPress={() => setShowConfirmSkip(true)} style={styles.skipButton}>
                 <Text style={styles.skipText}>Lewati Tutorial</Text>
               </Pressable>
               
@@ -184,6 +181,39 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
             </View>
           </View>
         </Animated.View>
+
+        {/* NEOBRUTALISM SKIP CONFIRMATION MODAL */}
+        <Modal transparent visible={showConfirmSkip} animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+            <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 3, borderColor: '#123924', padding: 24 }}>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 8 }}>
+                Yakin mau skip broskie? 🥺
+              </Text>
+              <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
+                Nanti kamu kebingungan lho pas ngurus tanaman. Bentar doang kok tutorialnya!
+              </Text>
+              
+              <View style={{ gap: 12 }}>
+                <Pressable
+                  onPress={() => setShowConfirmSkip(false)}
+                  style={({ pressed }) => [{
+                    backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center'
+                  }, pressed && { transform: [{ translateY: 2 }] }]}
+                >
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Lanjut Belajar</Text>
+                </Pressable>
+                
+                <Pressable
+                  onPress={() => { setShowConfirmSkip(false); onSkip(); }}
+                  style={{ paddingVertical: 14, alignItems: 'center' }}
+                >
+                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#FF6B5C' }}>Ya, Lewati Aja</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
       </Animated.View>
     </Modal>
   );

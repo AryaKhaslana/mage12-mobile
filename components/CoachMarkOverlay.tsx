@@ -62,25 +62,25 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
     if (visible && steps[currentStepIndex]) {
       const step = steps[currentStepIndex];
       const config = { damping: 15, stiffness: 120 };
-      currentX.value = withSpring(step.rect.x, config);
-      currentY.value = withSpring(step.rect.y, config);
-      currentW.value = withSpring(step.rect.width, config);
-      currentH.value = withSpring(step.rect.height, config);
+      // Tambah padding 8px biar ujungnya (border-radius) nggak motong teks/konten
+      currentX.value = withSpring(step.rect.x - 8, config);
+      currentY.value = withSpring(step.rect.y - 8, config);
+      currentW.value = withSpring(step.rect.width + 16, config);
+      currentH.value = withSpring(step.rect.height + 16, config);
       currentR.value = withSpring(step.borderRadius || 12, config);
     }
   }, [currentStepIndex, visible, steps]);
 
-  const topMaskStyle = useAnimatedStyle(() => ({
-    position: 'absolute', top: 0, left: 0, right: 0, height: currentY.value, backgroundColor: 'rgba(18,57,36,0.75)'
-  }));
-  const bottomMaskStyle = useAnimatedStyle(() => ({
-    position: 'absolute', top: currentY.value + currentH.value, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,57,36,0.75)'
-  }));
-  const leftMaskStyle = useAnimatedStyle(() => ({
-    position: 'absolute', top: currentY.value, height: currentH.value, left: 0, width: currentX.value, backgroundColor: 'rgba(18,57,36,0.75)'
-  }));
-  const rightMaskStyle = useAnimatedStyle(() => ({
-    position: 'absolute', top: currentY.value, height: currentH.value, left: currentX.value + currentW.value, right: 0, backgroundColor: 'rgba(18,57,36,0.75)'
+  const B = 2000; // Huge border thickness
+  const maskStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    top: currentY.value - B,
+    left: currentX.value - B,
+    width: currentW.value + 2 * B,
+    height: currentH.value + 2 * B,
+    borderWidth: B,
+    borderColor: 'rgba(18,57,36,0.75)',
+    borderRadius: currentR.value + B,
   }));
   const borderHighlightStyle = useAnimatedStyle(() => ({
     position: 'absolute',
@@ -140,11 +140,8 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
   return (
     <Modal transparent visible={visible} animationType="none" statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]}>
-        {/* PURE VIEW OVERLAY FOR BETTER PERFORMANCE */}
-        <Animated.View style={topMaskStyle} />
-        <Animated.View style={bottomMaskStyle} />
-        <Animated.View style={leftMaskStyle} />
-        <Animated.View style={rightMaskStyle} />
+        {/* PURE VIEW OVERLAY FOR BETTER PERFORMANCE (HUGE BORDER TRICK) */}
+        <Animated.View style={maskStyle} />
         <Animated.View style={borderHighlightStyle} />
 
         <Animated.View style={bubbleStyle}>

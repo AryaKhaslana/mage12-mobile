@@ -192,10 +192,22 @@ export default function DashboardScreen() {
         }
 
         const measurePromises = [
-          new Promise<any>((resolve) => step1Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
-          new Promise<any>((resolve) => step2Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
-          new Promise<any>((resolve) => step3Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
-          new Promise<any>((resolve) => step4Ref.current?.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null))),
+          new Promise<any>((resolve) => {
+            if (!step1Ref.current) return resolve(null);
+            step1Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
+          }),
+          new Promise<any>((resolve) => {
+            if (!step2Ref.current) return resolve(null);
+            step2Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
+          }),
+          new Promise<any>((resolve) => {
+            if (!step3Ref.current) return resolve(null);
+            step3Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
+          }),
+          new Promise<any>((resolve) => {
+            if (!step4Ref.current) return resolve(null);
+            step4Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
+          }),
         ];
 
         Promise.all(measurePromises).then((results) => {

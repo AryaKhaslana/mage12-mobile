@@ -468,15 +468,9 @@ export default function DashboardScreen() {
             )}
           </View>
           <View>
-            <Pressable onLongPress={async () => {
-              const { resetTutorial } = require('../../utils/tutorial');
-              await resetTutorial();
-              showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
-            }}>
-              <Text style={styles.greeting}>
-                {getGreeting()}, {userData?.nama || "Petani"}
-              </Text>
-            </Pressable>
+            <Text style={styles.greeting}>
+              {getGreeting()}, {userData?.nama || "Petani"}
+            </Text>
             <Text style={styles.subtitle}>Yuk, rawat kebunmu hari ini!</Text>
           </View>
         </View>

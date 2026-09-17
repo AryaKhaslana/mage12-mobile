@@ -153,6 +153,7 @@ export default function KomunitasScreen() {
   };
 
   const fetchUserLocationAndPosts = async () => {
+    if (posts.length > 0) return; // Prevent destructive reset of scroll position & paginated data
     setIsLoading(true);
     setIsError(false);
     try {

@@ -25,7 +25,9 @@ export default function ProfilScreen() {
     useCallback(() => {
       let isActive = true;
       const fetchData = async () => {
-        setIsLoading(true);
+        if (!userData) {
+          setIsLoading(true);
+        }
         try {
           const [userRes, tanamanRes, achRes] = await Promise.all([
             api.get("/user/me").catch(() => null),

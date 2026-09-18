@@ -1,9 +1,10 @@
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   Image,
@@ -171,6 +172,9 @@ export default function DashboardScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showBadgeInfo, setShowBadgeInfo] = useState(false);
+  const [showRestorePopup, setShowRestorePopup] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const { showNotification } = useNotification();
 
   useEffect(() => {
@@ -263,6 +267,64 @@ export default function DashboardScreen() {
       return () => clearInterval(interval);
     }
   }, [needsTutorial, isLoading]);
+
+  // Check Pelindung Streak Pop-up
+  useEffect(() => {
+    const checkPopup = async () => {
+      if (userData && userData.streak === 0 && userData.pelindung_streak && userData.pelindung_streak >= 1) {
+        try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const key = `pelindung_popup_shown_${todayStr}`;
+          const hasShown = await AsyncStorage.getItem(key);
+          if (!hasShown) {
+            setShowRestorePopup(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    checkPopup();
+  }, [userData]);
+
+  const handleRestoreStreak = async () => {
+    setIsRestoring(true);
+    try {
+      const response = await api.post("/user/restore-streak");
+      if (response.data) {
+        const { pelindung_streak, streak } = response.data;
+        setUserData((prev: any) => {
+          if (!prev) return prev;
+          const updated = { ...prev, pelindung_streak, streak };
+          SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
+          return updated;
+        });
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        const key = `pelindung_popup_shown_${todayStr}`;
+        await AsyncStorage.setItem(key, 'true');
+        
+        setShowRestorePopup(false);
+        showNotification("Apinya Nyala Lagi! 🔥", "Jangan lupa siram hari ini ya!", "success");
+      }
+    } catch (e: any) {
+      const msg = e.response?.data?.message || "Gagal memulihkan streak, coba lagi nanti.";
+      showNotification("Error", msg, "error");
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handleIgnoreRestore = async () => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const key = `pelindung_popup_shown_${todayStr}`;
+      await AsyncStorage.setItem(key, 'true');
+    } catch (e) {
+      console.error(e);
+    }
+    setShowRestorePopup(false);
+  };
 
   // SWR Cache Loader - Only runs ONCE on mount
   useEffect(() => {
@@ -622,6 +684,41 @@ export default function DashboardScreen() {
             size={28}
             color="rgba(255,255,255,0.8)"
           />
+
+          {userData?.pelindung_streak !== undefined && (
+            <Pressable 
+              style={({ pressed }) => [
+                {
+                  position: 'absolute',
+                  top: -8,
+                  right: -8,
+                  backgroundColor: '#FFB627',
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 999,
+                  borderWidth: 2,
+                  borderColor: '#123924',
+                  boxShadow: pressed ? '0px 0px 0px #123924' : '2px 2px 0px #123924',
+                  transform: [{ rotate: '5deg' }, { translateX: pressed ? 2 : 0 }, { translateY: pressed ? 2 : 0 }],
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  opacity: userData.pelindung_streak === 0 ? 0.5 : 1
+                }
+              ]}
+              disabled={userData.pelindung_streak === 0}
+              onPress={(e) => {
+                e.stopPropagation();
+                setShowBadgeInfo(true);
+              }}
+            >
+              <Ionicons name="umbrella" size={14} color="#123924" />
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#123924' }}>
+                x{userData.pelindung_streak}
+              </Text>
+            </Pressable>
+          )}
+
         </Pressable>
 
         {/* PANEN TERDEKAT CARD */}
@@ -1143,6 +1240,65 @@ export default function DashboardScreen() {
           markTutorialFinished();
         }}
       />
+
+      <Modal transparent visible={showBadgeInfo} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 3, borderColor: '#123924', padding: 24 }}>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
+              ☔ Pelindung Streak
+            </Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
+              Nyalain lagi apimu kalau kamu lupa siram sehari. Dapet +1 tiap naik level!
+            </Text>
+            <Pressable
+              onPress={() => setShowBadgeInfo(false)}
+              style={({ pressed }) => [{
+                backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', boxShadow: '3px 3px 0px #123924'
+              }, pressed && { transform: [{ translateY: 3 }, { translateX: 3 }], boxShadow: '0px 0px 0px #123924' }]}
+            >
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Tutup</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal transparent visible={showRestorePopup} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 3, borderColor: '#123924', padding: 24 }}>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
+              Apinya Padam! 😱
+            </Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
+              Kemarin kamu lupa siram tanaman ya? 😢 Tenang, kamu masih punya {userData?.pelindung_streak || 0} ☔ Pelindung. Mau pakai 1 buat nyalain apimu lagi?
+            </Text>
+            
+            <View style={{ gap: 12 }}>
+              <Pressable
+                onPress={handleRestoreStreak}
+                disabled={isRestoring}
+                style={({ pressed }) => [{
+                  backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', boxShadow: '3px 3px 0px #123924'
+                }, pressed && { transform: [{ translateY: 3 }, { translateX: 3 }], boxShadow: '0px 0px 0px #123924' }, isRestoring && { opacity: 0.7 }]}
+              >
+                {isRestoring ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>☔ Pakai Pelindung</Text>
+                )}
+              </Pressable>
+              
+              <Pressable
+                onPress={handleIgnoreRestore}
+                disabled={isRestoring}
+                style={{ paddingVertical: 14, alignItems: 'center' }}
+              >
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#FF6B5C' }}>Ikhlasin Aja</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }

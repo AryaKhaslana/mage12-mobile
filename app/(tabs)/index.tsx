@@ -721,6 +721,38 @@ export default function DashboardScreen() {
 
         </Pressable>
 
+        {/* PETA WABAH HAMA CARD */}
+        <Pressable
+          style={({ pressed }) => [
+            {
+              backgroundColor: '#FFECEB',
+              borderWidth: 2,
+              borderColor: '#123924',
+              borderRadius: 24,
+              padding: 20,
+              marginBottom: 32,
+              flexDirection: 'row',
+              alignItems: 'center',
+              boxShadow: pressed ? '0px 0px 0px #123924' : '4px 4px 0px #123924',
+              transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [{ translateX: 0 }, { translateY: 0 }]
+            }
+          ]}
+          onPress={() => router.push('/peta-hama' as any)}
+        >
+          <View style={{ backgroundColor: '#FF6B5C', padding: 12, borderRadius: 100, borderWidth: 2, borderColor: '#123924', marginRight: 16 }}>
+            <MaterialIcons name="map" size={24} color="#FFFFFF" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924', marginBottom: 4 }}>
+              🗺️ Peta Wabah Hama
+            </Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F' }}>
+              Cek area rawan hama di sekitarmu!
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color="#123924" />
+        </Pressable>
+
         {/* PANEN TERDEKAT CARD */}
         {(() => {
           const panenTerdekat =

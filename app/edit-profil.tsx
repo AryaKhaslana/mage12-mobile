@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
 import api, { updateProfile } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 
@@ -58,13 +57,7 @@ export default function EditProfilScreen() {
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      const manipResult = await ImageManipulator.manipulateAsync(
-        asset.uri,
-        [{ resize: { width: 1080 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-      );
-      setFotoBaru({ ...asset, uri: manipResult.uri, width: manipResult.width, height: manipResult.height });
+      setFotoBaru(result.assets[0]);
     }
   };
 

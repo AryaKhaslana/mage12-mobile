@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
 import { useNotification } from '../../components/NotificationContext';
@@ -106,13 +105,7 @@ export default function KomunitasScreen() {
       quality: 0.7,
     });
     if (!result.canceled) {
-      const asset = result.assets[0];
-      const manipResult = await ImageManipulator.manipulateAsync(
-        asset.uri,
-        [{ resize: { width: 1080 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-      );
-      setFoto({ ...asset, uri: manipResult.uri, width: manipResult.width, height: manipResult.height });
+      setFoto(result.assets[0]);
     }
   };
 

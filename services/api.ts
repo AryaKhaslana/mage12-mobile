@@ -16,6 +16,18 @@ const api = axios.create({
 });
 
 // Request Interceptor untuk mengirim Token
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response && error.response.status === 404) {
+      throw new Error("TANI_404_URL: " + error.config.baseURL + error.config.url);
+    }
+    return Promise.reject(error);
+  }
+);
+
+// fix token request interceptor...
+
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -43,7 +55,7 @@ api.interceptors.response.use(
       await SecureStore.deleteItemAsync("userToken");
       router.replace("/");
     }
-    return Promise.reject(error);
+    console.error("AXIOS ERROR URL:", error.config?.url); return Promise.reject(error);
   },
 );
 

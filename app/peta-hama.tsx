@@ -34,7 +34,8 @@ export default function PetaHamaScreen() {
   const fetchHeatmap = async (selectedFilter: string) => {
     setIsLoading(true);
     try {
-      const response = await api.get(`/heatmap?hama=${selectedFilter}`);
+      // Kirim parameter bbox sekalian biar sesuai kontrak backend secara eksplisit
+      const response = await api.get(`/heatmap?hama=${selectedFilter}&bbox=-7.45,112.60,-7.20,112.80`);
       if (response.data && response.data.status === 'success') {
         setData(response.data.data);
       }

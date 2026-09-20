@@ -118,7 +118,6 @@ export default function PetaHamaScreen() {
         <MapView 
           style={styles.map} 
           initialRegion={defaultRegion}
-          provider="google"
         >
           {cells.map((cell, index) => {
             const colors = getHeatColor(cell.weight);

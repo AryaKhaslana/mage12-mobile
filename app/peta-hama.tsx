@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Alert } from 'react-native';
 // import MapView, { Circle } from 'react-native-maps';
 import { WebView } from 'react-native-webview';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,7 +30,9 @@ export default function PetaHamaScreen() {
     setIsError(false);
     try {
       // Endpoint sesuai kontrak, bbox opsional di sini (kalau required bisa ditambah seperti patch sebelumnya, tapi fallback aman)
-      const response = await api.get(`/heatmap?hama=${selectedFilter}&bbox=-7.45,112.60,-7.20,112.80`);
+      // Workaround: Kalau filter "semua", kita kirim hama kosong atau tetap "semua" (kita coba hapus hama param kalau dia "semua" buat nge-trigger default backend)
+      const hamaParam = selectedFilter === 'semua' ? '' : selectedFilter;
+      const response = await api.get(`/heatmap?hama=${hamaParam}&bbox=-7.45,112.60,-7.20,112.80`);
       if (response.data && response.data.status === 'success') {
         setData(response.data.data);
       }
@@ -140,6 +142,7 @@ export default function PetaHamaScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       {/* HEADER */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={({pressed}) => [styles.backBtn, pressed && styles.btnPressed]}>

@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Alert } from 'react-native';
-import MapView, { Circle } from 'react-native-maps';
+// import MapView, { Circle } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import { router, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../services/api';
@@ -21,27 +22,21 @@ interface HeatmapResponse {
 export default function PetaHamaScreen() {
   const [filter, setFilter] = useState("semua");
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [data, setData] = useState<HeatmapResponse | null>(null);
-  
-  // Default Region: Surabaya - Sidoarjo
-  const defaultRegion = {
-    latitude: -7.35,
-    longitude: 112.73,
-    latitudeDelta: 0.4,
-    longitudeDelta: 0.4,
-  };
 
   const fetchHeatmap = async (selectedFilter: string) => {
     setIsLoading(true);
+    setIsError(false);
     try {
-      // Kirim parameter bbox sekalian biar sesuai kontrak backend secara eksplisit
+      // Endpoint sesuai kontrak, bbox opsional di sini (kalau required bisa ditambah seperti patch sebelumnya, tapi fallback aman)
       const response = await api.get(`/heatmap?hama=${selectedFilter}&bbox=-7.45,112.60,-7.20,112.80`);
       if (response.data && response.data.status === 'success') {
         setData(response.data.data);
       }
     } catch (error: any) {
       console.error(error);
-      Alert.alert("Gagal Memuat Peta", "Terjadi kesalahan saat mengambil data wabah hama.");
+      setIsError(true);
     } finally {
       setIsLoading(false);
     }
@@ -59,12 +54,6 @@ export default function PetaHamaScreen() {
     fetchHeatmap(newFilter);
   };
 
-  const getHeatColor = (weight: number) => {
-    if (weight >= 5) return { fill: 'rgba(220, 38, 38, 0.45)', stroke: 'rgba(220, 38, 38, 0.8)' }; // Red
-    if (weight >= 3) return { fill: 'rgba(249, 115, 22, 0.45)', stroke: 'rgba(249, 115, 22, 0.8)' }; // Orange
-    return { fill: 'rgba(250, 204, 21, 0.45)', stroke: 'rgba(250, 204, 21, 0.8)' }; // Yellow
-  };
-
   const filters = ["semua", "kutu-putih", "wereng", "ulat"];
   const filterLabels: Record<string, string> = {
     "semua": "Semua Hama",
@@ -74,6 +63,80 @@ export default function PetaHamaScreen() {
   };
 
   const cells = data?.cells || [];
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <style>
+        body { margin: 0; padding: 0; background: #FBF8F0; }
+        #map { width: 100vw; height: 100vh; }
+        .legend {
+          background: white;
+          padding: 10px;
+          border-radius: 12px;
+          box-shadow: 4px 4px 0px #123924;
+          position: absolute;
+          bottom: 20px;
+          right: 20px;
+          z-index: 1000;
+          font-family: 'Arial', sans-serif;
+          font-size: 12px;
+          border: 3px solid #123924;
+        }
+        .gradient-bar {
+          width: 120px;
+          height: 12px;
+          background: linear-gradient(to right, blue, lime, yellow, orange, red);
+          margin: 6px 0;
+          border-radius: 4px;
+          border: 1px solid #123924;
+        }
+        .legend-labels {
+          display: flex;
+          justify-content: space-between;
+          font-weight: 800;
+          color: #123924;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="map"></div>
+      
+      <div class="legend">
+        <div style="font-weight: 800; color: #123924; margin-bottom: 4px;">Intensitas Hama</div>
+        <div class="gradient-bar"></div>
+        <div class="legend-labels">
+          <span>Sedikit</span>
+          <span>Parah</span>
+        </div>
+      </div>
+
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+      <script>
+        const map = L.map('map', { zoomControl: false }).setView([-7.35, 112.73], 11);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        const dataPoints = ${JSON.stringify(cells.map(c => [c.lat, c.lng, c.weight]))};
+        
+        if (dataPoints.length > 0) {
+          L.heatLayer(dataPoints, {
+            radius: 30,
+            blur: 20,
+            maxZoom: 15,
+            max: 10,
+            gradient: { 0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1.0: 'red' }
+          }).addTo(map);
+        }
+      </script>
+    </body>
+    </html>
+  `;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -115,24 +178,22 @@ export default function PetaHamaScreen() {
 
       {/* MAP VIEW */}
       <View style={styles.mapContainer}>
-        <MapView 
-          style={styles.map} 
-          initialRegion={defaultRegion}
-        >
-          {cells.map((cell, index) => {
-            const colors = getHeatColor(cell.weight);
-            return (
-              <Circle
-                key={index}
-                center={{ latitude: cell.lat, longitude: cell.lng }}
-                radius={1500 + (cell.weight * 500)}
-                fillColor={colors.fill}
-                strokeColor={colors.stroke}
-                strokeWidth={2}
-              />
-            );
-          })}
-        </MapView>
+        {isError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Gagal memuat peta wabah 😢</Text>
+            <Pressable onPress={() => fetchHeatmap(filter)} style={styles.retryBtn}>
+              <Text style={styles.retryText}>Coba Lagi</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <WebView 
+            source={{ html: htmlContent }} 
+            originWhitelist={['*']}
+            style={styles.map}
+            scrollEnabled={false}
+            bounces={false}
+          />
+        )}
         
         {isLoading && (
           <View style={styles.loadingOverlay}>
@@ -140,7 +201,7 @@ export default function PetaHamaScreen() {
           </View>
         )}
         
-        {!isLoading && cells.length === 0 && (
+        {!isLoading && !isError && cells.length === 0 && (
           <View style={styles.emptyOverlay}>
             <Text style={styles.emptyText}>Belum ada laporan di area ini 🌱</Text>
           </View>
@@ -235,7 +296,7 @@ const styles = StyleSheet.create({
   },
   emptyOverlay: {
     position: 'absolute',
-    bottom: 40,
+    top: 24,
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 24,
@@ -246,6 +307,32 @@ const styles = StyleSheet.create({
     boxShadow: '4px 4px 0px #123924',
   },
   emptyText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 14,
+    color: '#123924'
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24
+  },
+  errorText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 16,
+    color: '#123924',
+    marginBottom: 16
+  },
+  retryBtn: {
+    backgroundColor: '#FFB627',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: '#123924',
+    boxShadow: '2px 2px 0px #123924',
+  },
+  retryText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 14,
     color: '#123924'

@@ -83,11 +83,11 @@ export default function LoginScreen() {
 
             {/* Folder Tab (Green Trapezoid) */}
             <View style={styles.tabContainer}>
-              <Svg height="48" width="160">
+              <Svg height="48" width="220">
                 {/* Shadow */}
-                <Polygon points="0,48 20,4 140,4 160,48" fill="#123924" transform="translate(6, 6)" />
-                {/* Green Tab */}
-                <Polygon points="0,48 20,4 140,4 160,48" fill="#3FA86B" stroke="#123924" strokeWidth="3" />
+                <Polygon points="20,48 0,4 220,4 200,48" fill="#123924" transform="translate(6, 6)" />
+                {/* Green Tab (Trapesium Kebalik) */}
+                <Polygon points="20,48 0,4 220,4 200,48" fill="#3FA86B" stroke="#123924" strokeWidth="3" />
               </Svg>
             </View>
 
@@ -219,16 +219,16 @@ const styles = StyleSheet.create({
   tabContainer: {
     position: 'absolute',
     top: -45,
-    left: 20, // Tab is on the left
-    zIndex: 1, // Tab sits behind the main white card
+    alignSelf: 'center', // Centered!
+    zIndex: 1, 
   },
   peekingMascot: {
-    width: 110,
-    height: 110,
+    width: 180,
+    height: 180,
     position: "absolute",
-    top: -95, // Sitting right on top of the green tab's edge
-    left: 45, // Centered inside the green tab
-    zIndex: 0, // Behind the green tab!
+    top: -210, // Mascot dipull jauh ke atas biar badannya utuh dan tangannya pas di garis atas tab
+    alignSelf: 'center', // Centered exactly with the tab
+    zIndex: 3, // In front of the green tab so hands can hold it
   },
   wallCard: {
     backgroundColor: "#FFFFFF",

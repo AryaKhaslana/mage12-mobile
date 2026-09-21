@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24
   },
   headerContainer: {
-    marginBottom: 100,
+    marginBottom: 140,
     marginTop: 48,
   },
   title: {
@@ -223,12 +223,12 @@ const styles = StyleSheet.create({
     zIndex: 1, 
   },
   peekingMascot: {
-    width: 180,
-    height: 180,
+    width: 160,
+    height: 160,
     position: "absolute",
-    top: -210, // Mascot dipull jauh ke atas biar badannya utuh dan tangannya pas di garis atas tab
-    alignSelf: 'center', // Centered exactly with the tab
-    zIndex: 3, // In front of the green tab so hands can hold it
+    top: -115, // Disesuaikan biar tangannya beneran mentok ke tab hijau dan kepalanya gak nabrak teks
+    alignSelf: 'center', 
+    zIndex: 3, 
   },
   wallCard: {
     backgroundColor: "#FFFFFF",

@@ -14,6 +14,7 @@ import {
     Platform,
     ScrollView
 } from "react-native";
+import Svg, { Polygon } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api, { googleSignIn } from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
@@ -70,8 +71,9 @@ export default function LoginScreen() {
             <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu 🌱</Text>
           </View>
 
-          {/* Form Card (The Wall) */}
-          <View style={styles.wallCard}>
+          {/* Form Wrapper */}
+          <View style={styles.formWrapper}>
+            
             {/* Peeking Mascot */}
             <Image
               source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
@@ -79,98 +81,107 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
 
-            {/* Inputs */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#5C5A4F"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            {/* Folder Tab (Green Trapezoid) */}
+            <View style={styles.tabContainer}>
+              <Svg height="48" width="160">
+                {/* Shadow */}
+                <Polygon points="0,48 20,4 140,4 160,48" fill="#123924" transform="translate(6, 6)" />
+                {/* Green Tab */}
+                <Polygon points="0,48 20,4 140,4 160,48" fill="#3FA86B" stroke="#123924" strokeWidth="3" />
+              </Svg>
             </View>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Kata sandi"
-                placeholderTextColor="#5C5A4F"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <MaterialIcons
-                  name={showPassword ? "visibility" : "visibility-off"}
-                  size={24}
-                  color="#123924"
+
+            {/* Main Form Card (The Wall) */}
+            <View style={styles.wallCard}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="#5C5A4F"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Kata sandi"
+                  placeholderTextColor="#5C5A4F"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <MaterialIcons
+                    name={showPassword ? "visibility" : "visibility-off"}
+                    size={24}
+                    color="#123924"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleLogin}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Masuk</Text>
+                )}
+              </TouchableOpacity>
+              
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>ATAU</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={async () => {
+                  try {
+                    setIsLoading(true);
+                    await googleSignIn();
+                  } catch (error) {
+                    console.error("Google sign in error", error);
+                    showNotification("Gagal", "Google Sign In bermasalah. Coba lagi broskie.", "error");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#123924" />
+                ) : (
+                  <>
+                    <Image 
+                      source={require("../../assets/images/google-logo.png")} 
+                      style={styles.googleLogo} 
+                      resizeMode="contain" 
+                    />
+                    <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.footerLink}
+                onPress={() => router.replace("/(auth)/register")}
+              >
+                <Text style={styles.footerText}>
+                  Belum punya akun?{" "}
+                  <Text style={styles.footerTextBold}>Daftar di sini</Text>
+                </Text>
               </TouchableOpacity>
             </View>
-
-            {/* Submit Button */}
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Masuk</Text>
-              )}
-            </TouchableOpacity>
-            
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>ATAU</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Sign In Button */}
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={async () => {
-                try {
-                  setIsLoading(true);
-                  await googleSignIn();
-                } catch (error) {
-                  console.error("Google sign in error", error);
-                  showNotification("Gagal", "Google Sign In bermasalah. Coba lagi broskie.", "error");
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#123924" />
-              ) : (
-                <>
-                  <Image 
-                    source={require("../../assets/images/google-logo.png")} 
-                    style={styles.googleLogo} 
-                    resizeMode="contain" 
-                  />
-                  <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Footer */}
-            <TouchableOpacity
-              style={styles.footerLink}
-              onPress={() => router.replace("/(auth)/register")}
-            >
-              <Text style={styles.footerText}>
-                Belum punya akun?{" "}
-                <Text style={styles.footerTextBold}>Daftar di sini</Text>
-              </Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -187,7 +198,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24
   },
   headerContainer: {
-    marginBottom: 100, // Space for the mascot to peek out
+    marginBottom: 100,
     marginTop: 48,
   },
   title: {
@@ -201,6 +212,24 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_500Medium",
     color: "#5C5A4F",
   },
+  formWrapper: {
+    position: 'relative',
+    marginTop: 48,
+  },
+  tabContainer: {
+    position: 'absolute',
+    top: -45,
+    left: 20, // Tab is on the left
+    zIndex: 1, // Tab sits behind the main white card
+  },
+  peekingMascot: {
+    width: 110,
+    height: 110,
+    position: "absolute",
+    top: -95, // Sitting right on top of the green tab's edge
+    left: 45, // Centered inside the green tab
+    zIndex: 0, // Behind the green tab!
+  },
   wallCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
@@ -208,16 +237,9 @@ const styles = StyleSheet.create({
     borderColor: "#123924",
     boxShadow: "6px 6px 0px #123924",
     padding: 24,
-    paddingTop: 32, // extra padding top for inputs
+    paddingTop: 32,
     position: "relative",
-  },
-  peekingMascot: {
-    width: 140,
-    height: 140,
-    position: "absolute",
-    top: -75, // Pull the mascot up precisely so its hands grip the border
-    alignSelf: "center",
-    zIndex: 10,
+    zIndex: 2, // Covers the bottom of the tab perfectly
   },
   inputContainer: { marginBottom: 16, position: "relative" },
   input: {

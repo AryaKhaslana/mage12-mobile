@@ -10,6 +10,7 @@ import {
     Platform,
     Alert,
     ScrollView,
+    Modal,
     StyleSheet,
     Text,
     TextInput,
@@ -36,6 +37,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTnc, setAgreeTnc] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const { showNotification } = useNotification();
   // Animasi Mascot
   const scale = useSharedValue(1);
@@ -129,10 +131,10 @@ export default function RegisterScreen() {
       </TouchableOpacity>
 
       {/* MASCOT: In the middle of the green trapezoid */}
-      <View style={{ position: 'absolute', top: 80, width: '100%', alignItems: 'center', zIndex: 1 }}>
+      <View style={{ position: 'absolute', top: 60, width: '100%', alignItems: 'center', zIndex: 1 }}>
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
-          style={{ width: 180, height: 180 }}
+          style={{ width: 400, height: 400 }}
           resizeMode="contain"
         />
       </View>
@@ -147,7 +149,7 @@ export default function RegisterScreen() {
             {/* Header Title */}
             <View style={styles.headerContainer}>
               <Text style={styles.title}>Bikin akun baru</Text>
-              <Text style={styles.subtitle}>Mulai perjalanan berkebunmu 🌱</Text>
+              <Text style={styles.subtitle}>Mulai perjalanan berkebunmu </Text>
             </View>
 
             {/* Main Form Card */}
@@ -216,20 +218,24 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Checkbox */}
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setAgreeTnc(!agreeTnc)}
-              >
-                <View style={[styles.checkbox, agreeTnc && styles.checkboxChecked]}>
-                  {agreeTnc && (
-                    <MaterialIcons name="check" size={16} color="#FFFFFF" />
-                  )}
-                </View>
-                <Text style={styles.checkboxText}>
-                  Saya setuju dengan Syarat & Ketentuan serta Kebijakan Privasi
+              {/* Checkbox & Privacy Policy */}
+              <View style={styles.checkboxContainer}>
+                <TouchableOpacity 
+                  style={{ marginRight: 12 }} 
+                  onPress={() => setAgreeTnc(!agreeTnc)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkbox, { marginRight: 0 }, agreeTnc && styles.checkboxChecked]}>
+                    {agreeTnc && (
+                      <MaterialIcons name="check" size={16} color="#FFFFFF" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+                <Text style={[styles.checkboxText, { flex: 1, lineHeight: 18 }]}>
+                  <Text onPress={() => setAgreeTnc(!agreeTnc)}>Saya setuju dengan </Text>
+                  <Text style={styles.privacyLinkText} onPress={() => setModalVisible(true)}>Syarat & Ketentuan serta Kebijakan Privasi</Text>
                 </Text>
-              </TouchableOpacity>
+              </View>
 
               <TouchableOpacity
                 style={styles.primaryButton}
@@ -255,7 +261,35 @@ export default function RegisterScreen() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+        <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Kebijakan Privasi 🛡️</Text>
+            <ScrollView style={styles.modalScroll}>
+              <Text style={styles.modalText}>
+                Data pribadi dan lokasi lahan kamu dijamin <Text style={{ fontFamily: 'Nunito_800ExtraBold' }}>100% AMAN</Text> bersama TaniSync!{"\n\n"}
+                • Kami tidak menjual datamu ke pihak ketiga.{"\n"}
+                • Izin lokasi murni dipakai buat fitur Peta Wabah Hama & Cuaca Lokal.{"\n"}
+                • Password dilindungi enkripsi kelas militer.{"\n\n"}
+                Lanjutin daftar tanpa khawatir, lahanmu jadi subur, privasimu nggak hancur!
+              </Text>
+            </ScrollView>
+            <TouchableOpacity 
+              style={styles.primaryButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.primaryButtonText}>Sip, Paham!</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+    </SafeAreaView>
     </View>
   );
 }
@@ -344,11 +378,48 @@ const styles = StyleSheet.create({
   },
   checkboxChecked: { backgroundColor: "#3FA86B" },
   checkboxText: {
-    flex: 1,
     fontSize: 12,
     color: "#5C5A4F",
-    lineHeight: 18,
     fontFamily: "Nunito_700Bold",
+  },
+  privacyLinkText: {
+    fontSize: 12,
+    color: "#3FA86B",
+    fontFamily: "Nunito_800ExtraBold",
+    textDecorationLine: "underline",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(18, 57, 36, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: "#FBF8F0",
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: "#123924",
+    boxShadow: "8px 8px 0px #123924",
+    padding: 24,
+    width: '100%',
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#123924",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  modalScroll: {
+    marginBottom: 24,
+  },
+  modalText: {
+    fontSize: 14,
+    fontFamily: "Nunito_500Medium",
+    color: "#123924",
+    lineHeight: 22,
   },
   primaryButton: {
     backgroundColor: "#3FA86B",

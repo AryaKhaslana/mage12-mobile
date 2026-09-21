@@ -15,7 +15,7 @@ import {
     Platform,
     ScrollView
 } from "react-native";
-import Svg, { Polygon } from "react-native-svg";
+import Svg, { Polygon, Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api, { googleSignIn } from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
@@ -65,11 +65,11 @@ export default function LoginScreen() {
       {/* BACKGROUND: Giant Green Inverted Trapezoid filling the top half */}
       <View style={{ position: 'absolute', top: 0, width: '100%', height: 300, zIndex: 0 }}>
         <Svg height="100%" width="100%">
-          <Polygon 
-            points={`0,0 ${width},0 ${width - 40},300 40,300`} 
+          <Path 
+            d={`M 0,0 L ${width},0 L ${width - 33},250 Q ${width - 40},300 ${width - 90},300 L 90,300 Q 40,300 33,250 Z`} 
             fill="#3FA86B" 
             stroke="#123924" 
-            strokeWidth="8" strokeLinejoin="round" 
+            strokeWidth="4" 
           />
         </Svg>
       </View>
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     marginTop: 220, // Ditarik ke atas biar ga LDR
-    marginBottom: 32,
+    marginBottom: 52,
     alignItems: 'center', // Biar textnya di tengah, elegan
   },
   title: {

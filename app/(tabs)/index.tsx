@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import CoachMarkOverlay, { CoachMarkStep } from "../../components/CoachMarkOverlay";
 import ErrorState from "../../components/ErrorState";
@@ -114,6 +115,46 @@ const EmptyHint = forwardRef<View, {
 ));
 
 
+
+const FadeInSlideUp = ({ children, delay = 0, style }: any) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, delay, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, delay, useNativeDriver: true })
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
+  return (
+    <Animated.View style={[style, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const BouncingFAB = ({ onPress, style, children }: any) => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, { toValue: -8, duration: 1500, useNativeDriver: true }),
+        Animated.timing(bounceAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={[style, { transform: [{ translateY: bounceAnim }] }]}>
+      <Pressable onPress={onPress} style={({ pressed }) => [
+        { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+        pressed && { opacity: 0.8 }
+      ]}>
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+};
 
 const HomeSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
@@ -517,16 +558,29 @@ export default function DashboardScreen() {
       return (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999);
     });
 
+  const { width } = Dimensions.get('window');
+  
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* HEADER BACKGROUND: Matching Curved Green Trapezoid */}
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 160, zIndex: 0 }}>
+        <Svg height="100%" width="100%">
+          <Path 
+            d={`M 0,0 L ${width},0 L ${width - 25},110 Q ${width - 30},140 ${width - 60},140 L 60,140 Q 30,140 25,110 Z`} 
+            fill="#3FA86B" 
+            stroke="#123924" 
+            strokeWidth="4" 
+          />
+        </Svg>
+      </View>
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: 'transparent' }]}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
             {userData?.avatarUrl ? (
               <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
             ) : (
-              <MaterialIcons name="person" size={24} color="#5C5A4F" />
+              <MaterialIcons name="person" size={24} color="#123924" />
             )}
           </View>
           <View>
@@ -535,11 +589,11 @@ export default function DashboardScreen() {
               await resetTutorial();
               showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
             }}>
-              <Text style={styles.greeting}>
+              <Text style={[styles.greeting, { color: '#123924' }]}>
                 {getGreeting()}, {userData?.nama || "Petani"}
               </Text>
             </Pressable>
-            <Text style={styles.subtitle}>Yuk, rawat kebunmu hari ini!</Text>
+            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>
       </View>
@@ -563,6 +617,7 @@ export default function DashboardScreen() {
         ) : (
           <>
         {/* STAT STRIP */}
+        <FadeInSlideUp delay={0}>
         <View
           style={{
             flexDirection: "row",
@@ -654,8 +709,10 @@ export default function DashboardScreen() {
             </Text>
           </View>
         </View>
+        </FadeInSlideUp>
 
         {/* STREAK HERO CARD */}
+        <FadeInSlideUp delay={100}>
         <Pressable
           ref={step1Ref}
           style={({ pressed }) => [
@@ -664,6 +721,8 @@ export default function DashboardScreen() {
           ]}
           onPress={() => setShowGamification(true)}
         >
+          {/* Faint Background Icon */}
+          <MaterialIcons name="local-fire-department" size={120} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', right: -20, top: -20, transform: [{ rotate: '15deg' }] }} />
           <View style={styles.fireIconContainer}>
             <MaterialIcons
               name="local-fire-department"
@@ -782,7 +841,7 @@ export default function DashboardScreen() {
                   borderRadius: 24,
                   padding: 16,
                   marginBottom: 16,
-                  boxShadow: "4px 4px 0px #123924",
+                  boxShadow: "4px 4px 0px #123924", overflow: "hidden",
                 },
                 pressed && styles.pressedShadow4,
               ]}
@@ -891,7 +950,7 @@ export default function DashboardScreen() {
                     borderRadius: 24,
                     padding: 16,
                     marginBottom: 16,
-                    boxShadow: "4px 4px 0px #123924",
+                    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
                   }}
                 >
                   <View
@@ -1245,6 +1304,7 @@ export default function DashboardScreen() {
 
 
     </View>
+          </FadeInSlideUp>
           </>
         )}
       </ScrollView>
@@ -1403,7 +1463,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
+    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
     elevation: 8,
     zIndex: 50,
   },
@@ -1420,7 +1480,7 @@ const styles = StyleSheet.create({
     borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "4px 4px 0px #123924",
+    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
   },
   heroCard: {
     backgroundColor: "#1F5C3D",
@@ -1429,7 +1489,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 32,
-    boxShadow: "4px 4px 0px #123924",
+    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
   },
   fireIconContainer: {
     width: 48,
@@ -1478,7 +1538,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
-    boxShadow: "4px 4px 0px #123924",
+    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
   },
   taskIconBox: {
     width: 48,
@@ -1533,7 +1593,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: "hidden",
     marginRight: 16,
-    boxShadow: "4px 4px 0px #123924",
+    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
   },
   plantImagePlaceholder: {
     width: "100%",

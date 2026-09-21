@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     position: "absolute",
-    top: -128, // Pull the mascot up precisely so its hands grip the border
+    top: -75, // Pull the mascot up precisely so its hands grip the border
     alignSelf: "center",
     zIndex: 10,
   },

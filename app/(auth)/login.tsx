@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
+    Dimensions,
     StyleSheet,
     Text,
     TextInput,
@@ -57,41 +58,45 @@ export default function LoginScreen() {
     }
   };
 
+  const { width } = Dimensions.get('window');
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
-          
-          {/* Header Title */}
-          <View style={styles.headerContainer}>
-            <Text style={styles.title}>Selamat datang balik!</Text>
-            <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu 🌱</Text>
-          </View>
+    <View style={{ flex: 1, backgroundColor: "#FBF8F0" }}>
+      {/* BACKGROUND: Giant Green Inverted Trapezoid filling the top half */}
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 350, zIndex: 0 }}>
+        <Svg height="100%" width="100%">
+          <Polygon 
+            points={`0,0 ${width},0 ${width - 40},350 40,350`} 
+            fill="#3FA86B" 
+            stroke="#123924" 
+            strokeWidth="4" 
+          />
+        </Svg>
+      </View>
 
-          {/* Form Wrapper */}
-          <View style={styles.formWrapper}>
+      {/* MASCOT: In the middle of the green trapezoid */}
+      <View style={{ position: 'absolute', top: 120, width: '100%', alignItems: 'center', zIndex: 1 }}>
+        <Image
+          source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
+          style={{ width: 180, height: 180 }}
+          resizeMode="contain"
+        />
+      </View>
+
+      <SafeAreaView style={{ flex: 1, zIndex: 2 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
             
-            {/* Peeking Mascot */}
-            <Image
-              source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
-              style={styles.peekingMascot}
-              resizeMode="contain"
-            />
-
-            {/* Folder Tab (Green Trapezoid) */}
-            <View style={styles.tabContainer}>
-              <Svg height="48" width="220">
-                {/* Shadow */}
-                <Polygon points="20,48 0,4 220,4 200,48" fill="#123924" transform="translate(6, 6)" />
-                {/* Green Tab (Trapesium Kebalik) */}
-                <Polygon points="20,48 0,4 220,4 200,48" fill="#3FA86B" stroke="#123924" strokeWidth="3" />
-              </Svg>
+            {/* Header Title moved down so it sits nicely below or inside the card */}
+            <View style={styles.headerContainer}>
+              <Text style={styles.title}>Selamat datang balik!</Text>
+              <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu 🌱</Text>
             </View>
 
-            {/* Main Form Card (The Wall) */}
+            {/* Main Form Card */}
             <View style={styles.wallCard}>
               <View style={styles.inputContainer}>
                 <TextInput
@@ -182,10 +187,10 @@ export default function LoginScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -198,8 +203,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24
   },
   headerContainer: {
-    marginBottom: 140,
-    marginTop: 48,
+    marginTop: 280,
+    marginBottom: 24,
   },
   title: {
     fontSize: 32,
@@ -212,24 +217,6 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_500Medium",
     color: "#5C5A4F",
   },
-  formWrapper: {
-    position: 'relative',
-    marginTop: 48,
-  },
-  tabContainer: {
-    position: 'absolute',
-    top: -45,
-    alignSelf: 'center', // Centered!
-    zIndex: 1, 
-  },
-  peekingMascot: {
-    width: 160,
-    height: 160,
-    position: "absolute",
-    top: -115, // Disesuaikan biar tangannya beneran mentok ke tab hijau dan kepalanya gak nabrak teks
-    alignSelf: 'center', 
-    zIndex: 3, 
-  },
   wallCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
@@ -239,7 +226,7 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 32,
     position: "relative",
-    zIndex: 2, // Covers the bottom of the tab perfectly
+    zIndex: 2,
   },
   inputContainer: { marginBottom: 16, position: "relative" },
   input: {

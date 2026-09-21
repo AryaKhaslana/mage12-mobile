@@ -63,22 +63,22 @@ export default function LoginScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#FBF8F0" }}>
       {/* BACKGROUND: Giant Green Inverted Trapezoid filling the top half */}
-      <View style={{ position: 'absolute', top: 0, width: '100%', height: 350, zIndex: 0 }}>
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 300, zIndex: 0 }}>
         <Svg height="100%" width="100%">
           <Polygon 
-            points={`0,0 ${width},0 ${width - 40},350 40,350`} 
+            points={`0,0 ${width},0 ${width - 40},300 40,300`} 
             fill="#3FA86B" 
             stroke="#123924" 
-            strokeWidth="4" 
+            strokeWidth="8" strokeLinejoin="round" 
           />
         </Svg>
       </View>
 
       {/* MASCOT: In the middle of the green trapezoid */}
-      <View style={{ position: 'absolute', top: 120, width: '100%', alignItems: 'center', zIndex: 1 }}>
+      <View style={{ position: 'absolute', top: 80, width: '100%', alignItems: 'center', zIndex: 1 }}>
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
-          style={{ width: 180, height: 180 }}
+          style={{ width: 380, height: 380 }}
           resizeMode="contain"
         />
       </View>
@@ -93,7 +93,7 @@ export default function LoginScreen() {
             {/* Header Title moved down so it sits nicely below or inside the card */}
             <View style={styles.headerContainer}>
               <Text style={styles.title}>Selamat datang balik!</Text>
-              <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu 🌱</Text>
+              <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu </Text>
             </View>
 
             {/* Main Form Card */}
@@ -203,14 +203,15 @@ const styles = StyleSheet.create({
     paddingBottom: 24
   },
   headerContainer: {
-    marginTop: 280,
-    marginBottom: 24,
+    marginTop: 220, // Ditarik ke atas biar ga LDR
+    marginBottom: 32,
+    alignItems: 'center', // Biar textnya di tengah, elegan
   },
   title: {
     fontSize: 32,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,

@@ -134,27 +134,7 @@ const FadeInSlideUp = ({ children, delay = 0, style }: any) => {
   );
 };
 
-const BouncingFAB = ({ onPress, style, children }: any) => {
-  const bounceAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: -8, duration: 1500, useNativeDriver: true }),
-        Animated.timing(bounceAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
-      ])
-    ).start();
-  }, []);
-  return (
-    <Animated.View style={[style, { transform: [{ translateY: bounceAnim }] }]}>
-      <Pressable onPress={onPress} style={({ pressed }) => [
-        { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-        pressed && { opacity: 0.8 }
-      ]}>
-        {children}
-      </Pressable>
-    </Animated.View>
-  );
-};
+
 
 const HomeSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
@@ -620,7 +600,7 @@ export default function DashboardScreen() {
                 {getGreeting()}, {userData?.nama || "Petani"}
               </Text>
             </Pressable>
-            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
+            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini!</Text>
           </View>
         </View>
       </View>
@@ -1326,13 +1306,7 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
-      {/* FAB TAMBAH TANAMAN BOUNCING */}
-      <BouncingFAB
-        style={styles.tanibotFab}
-        onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
-      >
-        <MaterialIcons name="add" size={32} color="#FFFFFF" />
-      </BouncingFAB>
+
 
       <CoachMarkOverlay
         visible={showTutorial}

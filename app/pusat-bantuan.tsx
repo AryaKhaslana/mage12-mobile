@@ -58,16 +58,10 @@ export default function PusatBantuanScreen() {
             <MaterialIcons name="arrow-back" size={20} color="#123924" />
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
-            <Image 
-              source={require('../assets/images/icontampilanawal/seedling-halo.png')} 
-              style={styles.headerLogo} 
-            />
             <Text style={styles.headerTitle}>Pusat Bantuan</Text>
           </View>
         </View>
-        <View style={[styles.profileImage, { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center' }]}>
-          <MaterialIcons name="person" size={20} color="#123924" />
-        </View>
+
       </View>
 
       <ScrollView 
@@ -119,7 +113,7 @@ export default function PusatBantuanScreen() {
           </View>
           
           <View style={styles.gridContainer}>
-            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8} onPress={() => setSearchQuery('hama')}>
               <View style={[styles.categoryIconBox, { backgroundColor: '#b1f1c8' }]}>
                 <MaterialIcons name="eco" size={24} color="#123924" />
               </View>
@@ -127,7 +121,7 @@ export default function PusatBantuanScreen() {
               <Text style={styles.categoryDesc}>Nutrisi, jadwal siram & hama</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8} onPress={() => setSearchQuery('streak')}>
               <View style={[styles.categoryIconBox, { backgroundColor: 'rgba(255, 182, 39, 0.3)' }]}>
                 <MaterialIcons name="notifications-active" size={24} color="#123924" />
               </View>
@@ -135,7 +129,7 @@ export default function PusatBantuanScreen() {
               <Text style={styles.categoryDesc}>Pengingat siram & panen</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8} onPress={() => setSearchQuery('smart watering')}>
               <View style={[styles.categoryIconBox, { backgroundColor: 'rgba(46, 158, 140, 0.2)' }]}>
                 <MaterialIcons name="sensors" size={24} color="#123924" />
               </View>
@@ -143,7 +137,7 @@ export default function PusatBantuanScreen() {
               <Text style={styles.categoryDesc}>Pairing wifi & kalibrasi</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8} onPress={() => setSearchQuery('level')}>
               <View style={[styles.categoryIconBox, { backgroundColor: '#ffd9dc' }]}>
                 <MaterialIcons name="group" size={24} color="#123924" />
               </View>

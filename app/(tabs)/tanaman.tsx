@@ -13,7 +13,7 @@ import {
     TextInput,
     View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import api, { TanamanDetail } from "../../services/api";
@@ -73,6 +73,44 @@ const PlantGridSkeleton = () => {
   );
 };
 
+const FadeInSlideUp = ({ children, delay = 0, style }: any) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, delay, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, delay, useNativeDriver: true })
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+  return (
+    <Animated.View style={[style, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const BouncingFAB = ({ onPress, style, children }: any) => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, { toValue: -8, duration: 1500, useNativeDriver: true }),
+        Animated.timing(bounceAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={[style, { transform: [{ translateY: bounceAnim }] }]}>
+      <Pressable onPress={onPress} style={({ pressed }) => [
+        { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 100 },
+        pressed && { opacity: 0.8 }
+      ]}>
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+};
+
 export default function TanamanScreen() {
   const { showNotification } = useNotification();
   const [activeFilter, setActiveFilter] = useState("Semua");
@@ -86,6 +124,7 @@ export default function TanamanScreen() {
   const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (params.openModal === 'true') {
@@ -161,11 +200,11 @@ export default function TanamanScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
       <View style={styles.container}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
           refreshControl={
             <RefreshControl
               colors={["#3FA86B"]}
@@ -174,12 +213,16 @@ export default function TanamanScreen() {
             />
           }
         >
+          {/* HEADER BACKGROUND: Mentok Atas */}
+          <View style={{ position: 'absolute', top: 0, width: '100%', height: 120 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
+          
           {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Tanaman Kamu</Text>
+          <View style={[styles.header, { paddingTop: 20 + insets.top, zIndex: 1 }]}>
+            <Text style={[styles.headerTitle, { color: '#FFFFFF', textShadowColor: '#123924', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }]}>Tanaman Kamu</Text>
           </View>
 
           {/* FILTERS */}
+          <FadeInSlideUp delay={0}>
           <View style={styles.filterSection}>
             <ScrollView
               horizontal
@@ -213,6 +256,7 @@ export default function TanamanScreen() {
               ))}
             </ScrollView>
           </View>
+          </FadeInSlideUp>
 
           {/* PLANT GRID */}
           {isLoading ? (
@@ -228,6 +272,7 @@ export default function TanamanScreen() {
               </Text>
             </View>
           ) : (
+            <FadeInSlideUp delay={100}>
             <View style={styles.gridContainer}>
               {filteredList.map((tanaman) => {
                 const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam).getTime()) / 86400000) + 1;
@@ -309,6 +354,7 @@ export default function TanamanScreen() {
                 );
               })}
             </View>
+            </FadeInSlideUp>
           )}
         </ScrollView>
       </View>

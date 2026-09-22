@@ -220,15 +220,19 @@ export default function PusatBantuanScreen() {
             <TouchableOpacity 
               style={styles.waButton} 
               activeOpacity={0.8}
-              onPress={() => Linking.openURL('https://wa.me/')}
+              onPress={() => Linking.openURL('https://wa.me/6281234567890?text=Halo%20TaniCare,%20saya%20butuh%20bantuan%20seputar%20TaniSync.')}
             >
               <MaterialIcons name="chat" size={20} color="#FFFFFF" />
               <Text style={styles.waButtonText}>Chat via WhatsApp</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.ticketButton} activeOpacity={0.8}>
+            <TouchableOpacity 
+              style={styles.ticketButton} 
+              activeOpacity={0.8}
+              onPress={() => Linking.openURL('mailto:support@tanisync.id?subject=Tiket Pengaduan TaniSync&body=Halo tim TaniCare, saya ingin melaporkan masalah:')}
+            >
               <MaterialIcons name="mail" size={20} color="#123924" />
-              <Text style={styles.ticketButtonText}>Kirim Tiket Pengaduan</Text>
+              <Text style={styles.ticketButtonText}>Kirim Email Pengaduan</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -250,17 +250,6 @@ export default function ProfilScreen() {
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
           </Pressable>
 
-          <Pressable 
-            style={({ pressed }) => [
-              styles.menuItem, 
-              pressed && styles.menuItemPressed,
-            ]}
-            onPress={() => router.push("/pusat-bantuan")}
-          >
-            <MaterialIcons name="help-outline" size={24} color="#123924" />
-            <Text style={styles.menuText}>Pusat Bantuan</Text>
-            <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
-          </Pressable>
 
           <Pressable 
             style={({ pressed }) => [
@@ -291,12 +280,24 @@ export default function ProfilScreen() {
             style={({ pressed }) => [
               styles.menuItem, 
               pressed && styles.menuItemPressed,
-              { borderBottomWidth: 0 } // Last item has no border
             ]}
             onPress={() => router.push("/ketentuan-layanan" as any)}
           >
             <MaterialIcons name="gavel" size={24} color="#123924" />
             <Text style={styles.menuText}>Ketentuan Layanan</Text>
+            <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem, 
+              pressed && styles.menuItemPressed,
+              { borderBottomWidth: 0 } // Last item has no border
+            ]}
+            onPress={() => router.push("/pusat-bantuan")}
+          >
+            <MaterialIcons name="help-outline" size={24} color="#123924" />
+            <Text style={styles.menuText}>Pusat Bantuan</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
           </Pressable>
         </View>

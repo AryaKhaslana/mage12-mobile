@@ -583,13 +583,24 @@ export default function DashboardScreen() {
       {/* HEADER */}
       <View style={[styles.header, { backgroundColor: 'transparent', paddingTop: 16 + insets.top }]}>
         <View style={styles.profileSection}>
-          <View style={styles.avatar}>
+          <Pressable 
+            onLongPress={() => {
+              setUserData(prev => ({
+                ...prev,
+                level: 99,
+                streak: 365,
+                poin: 9999,
+              }));
+              showNotification("GOD MODE ACTIVATED 🚀", "Level 99, Streak 365! Siap bantai presentasi!", "success");
+            }}
+            style={({pressed}) => [styles.avatar, pressed && {opacity: 0.7}]}
+          >
             {userData?.avatarUrl ? (
               <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
             ) : (
               <MaterialIcons name="person" size={24} color="#123924" />
             )}
-          </View>
+          </Pressable>
           <View>
             <Pressable onLongPress={async () => {
               const { resetTutorial } = require('../../utils/tutorial');

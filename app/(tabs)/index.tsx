@@ -1121,7 +1121,7 @@ export default function DashboardScreen() {
           </View>
           {tanamanList.length === 0 ? (
             <EmptyHint
-              imageSource={require("../../assets/images/icontampilanawal/seedling-menanam.png")}
+              imageSource={require("../../assets/images/icontampilanawal/seedling-menanam.svg")}
               title="Kebunmu masih kosong nih"
               subtitle="Yuk mulai tanam tanaman pertamamu!"
               ctaText="Tanam Sekarang"

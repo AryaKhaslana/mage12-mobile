@@ -58,6 +58,10 @@ export default function PusatBantuanScreen() {
             <MaterialIcons name="arrow-back" size={20} color="#123924" />
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
+            <Image 
+              source={require('../assets/images/icontampilanawal/seedling-halo.svg')} 
+              style={styles.headerLogo} 
+            />
             <Text style={styles.headerTitle}>Pusat Bantuan</Text>
           </View>
         </View>
@@ -81,7 +85,7 @@ export default function PusatBantuanScreen() {
           </View>
           <View style={styles.heroImageContainer}>
             <Image 
-              source={require('../assets/images/icontampilanawal/seedling-halo.png')} 
+              source={require('../assets/images/icontampilanawal/seedling-halo.svg')} 
               style={styles.heroImage} 
             />
           </View>

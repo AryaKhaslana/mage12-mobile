@@ -18,7 +18,7 @@ export default function ErrorState({
   return (
     <View style={styles.container}>
       <Image 
-        source={require('../assets/images/icontampilanawal/seedling-ngantuk.png')} 
+        source={require('../assets/images/icontampilanawal/seedling-ngantuk.svg')} 
         style={{ width: 140, height: 140, marginBottom: 24, resizeMode: 'contain' }} 
       />
       <Text style={styles.title}>{title}</Text>

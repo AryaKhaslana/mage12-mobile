@@ -208,7 +208,9 @@ export interface CommunityComment {
 export interface CommunityPost {
   id: number;
   userId: number;
-  user_nama: string;
+  user_nama?: string;
+  author?: { id?: number, nama?: string, avatarUrl?: string };
+  user?: { nama?: string };
   tipePost: "progress_update" | "panen_surplus" | "pertanyaan";
   deskripsi: string;
   fotoUrl: string | null;

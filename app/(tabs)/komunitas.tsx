@@ -372,10 +372,10 @@ export default function KomunitasScreen() {
                 <View style={styles.postCard}>
                   <View style={styles.postHeader}>
                     <View style={styles.avatarContainer}>
-                      <Text style={styles.avatarInitials}>{item.user_nama.charAt(0).toUpperCase()}</Text>
+                      <Text style={styles.avatarInitials}>{((item.user_nama || (item.author && item.author.nama) || (item.user && item.user.nama) || "P")).charAt(0).toUpperCase()}</Text>
                     </View>
                     <View style={styles.postMeta}>
-                      <Text style={styles.authorName} numberOfLines={1}>{item.user_nama}</Text>
+                      <Text style={styles.authorName} numberOfLines={1}>{item.user_nama || (item.author && item.author.nama) || (item.user && item.user.nama) || "Petani TaniSync"}</Text>
                       <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
                     </View>
                     {badgeText ? (
@@ -400,7 +400,7 @@ export default function KomunitasScreen() {
 
                   <View style={styles.locationRow}>
                     <MaterialIcons name="place" size={12} color="#5C5A4F" />
-                    <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+                    <Text style={styles.distanceText}>{item.distance != null ? item.distance.toFixed(1) + " km" : "Lokasi Anda"}</Text>
                   </View>
                   </Pressable>
                 </View>

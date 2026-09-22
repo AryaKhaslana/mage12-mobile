@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import CoachMarkOverlay, { CoachMarkStep } from "../../components/CoachMarkOverlay";
 import ErrorState from "../../components/ErrorState";
@@ -114,6 +115,46 @@ const EmptyHint = forwardRef<View, {
 ));
 
 
+
+const FadeInSlideUp = ({ children, delay = 0, style }: any) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, delay, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, delay, useNativeDriver: true })
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
+  return (
+    <Animated.View style={[style, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const BouncingFAB = ({ onPress, style, children }: any) => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, { toValue: -8, duration: 1500, useNativeDriver: true }),
+        Animated.timing(bounceAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={[style, { transform: [{ translateY: bounceAnim }] }]}>
+      <Pressable onPress={onPress} style={({ pressed }) => [
+        { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+        pressed && { opacity: 0.8 }
+      ]}>
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+};
 
 const HomeSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
@@ -527,36 +568,13 @@ export default function DashboardScreen() {
       return (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999);
     });
 
+  const { width } = Dimensions.get('window');
+  
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.profileSection}>
-          <View style={styles.avatar}>
-            {userData?.avatarUrl ? (
-              <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
-            ) : (
-              <MaterialIcons name="person" size={24} color="#5C5A4F" />
-            )}
-          </View>
-          <View>
-            <Pressable onLongPress={async () => {
-              const { resetTutorial } = require('../../utils/tutorial');
-              await resetTutorial();
-              showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
-            }}>
-              <Text style={styles.greeting}>
-                {getGreeting()}, {userData?.nama || "Petani"}
-              </Text>
-            </Pressable>
-            <Text style={styles.subtitle}>Yuk, rawat kebunmu hari ini!</Text>
-          </View>
-        </View>
-      </View>
-
+    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.contentContainer, isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
+        contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -566,6 +584,35 @@ export default function DashboardScreen() {
           />
         }
       >
+      {/* HEADER BACKGROUND: Melengkung biasa */}
+      {/* HEADER BACKGROUND: Mentok Atas */}
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
+      {/* HEADER */}
+      <View style={[styles.header, { backgroundColor: 'transparent', paddingTop: 16 + insets.top }]}>
+        <View style={styles.profileSection}>
+          <View style={styles.avatar}>
+            {userData?.avatarUrl ? (
+              <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
+            ) : (
+              <MaterialIcons name="person" size={24} color="#123924" />
+            )}
+          </View>
+          <View>
+            <Pressable onLongPress={async () => {
+              const { resetTutorial } = require('../../utils/tutorial');
+              await resetTutorial();
+              showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
+            }}>
+              <Text style={[styles.greeting, { color: '#123924' }]}>
+                {getGreeting()}, {userData?.nama || "Petani"}
+              </Text>
+            </Pressable>
+            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
+          </View>
+        </View>
+      </View>
+        {/* Pembungkus konten stat & kebunku */}
+        <View style={[styles.contentContainer, { paddingTop: 24 }]}>
         {isLoading ? (
           <HomeSkeleton />
         ) : isError ? (
@@ -573,6 +620,7 @@ export default function DashboardScreen() {
         ) : (
           <>
         {/* STAT STRIP */}
+        <FadeInSlideUp delay={0}>
         <View
           style={{
             flexDirection: "row",
@@ -664,8 +712,10 @@ export default function DashboardScreen() {
             </Text>
           </View>
         </View>
+        </FadeInSlideUp>
 
         {/* STREAK HERO CARD */}
+        <FadeInSlideUp delay={100}>
         <Pressable
           ref={step1Ref}
           style={({ pressed }) => [
@@ -674,6 +724,8 @@ export default function DashboardScreen() {
           ]}
           onPress={() => setShowGamification(true)}
         >
+          {/* Faint Background Icon */}
+          <MaterialIcons name="local-fire-department" size={100} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', right: 0, top: 0, transform: [{ rotate: '15deg' }] }} />
           <View style={styles.fireIconContainer}>
             <MaterialIcons
               name="local-fire-department"
@@ -1255,20 +1307,19 @@ export default function DashboardScreen() {
 
 
     </View>
+          </FadeInSlideUp>
           </>
         )}
+        </View>
       </ScrollView>
 
-      {/* FAB TAMBAH TANAMAN */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.tanibotFab,
-          pressed && styles.pressedFab,
-        ]}
+      {/* FAB TAMBAH TANAMAN BOUNCING */}
+      <BouncingFAB
+        style={styles.tanibotFab}
         onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
       >
         <MaterialIcons name="add" size={32} color="#FFFFFF" />
-      </Pressable>
+      </BouncingFAB>
 
       <CoachMarkOverlay
         visible={showTutorial}
@@ -1381,8 +1432,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
+    width: 58,
+    height: 58,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
@@ -1396,7 +1447,7 @@ const styles = StyleSheet.create({
     color: "#00522c",
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#5C5A4F",
     fontFamily: "Nunito_500Medium",
   },

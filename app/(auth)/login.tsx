@@ -5,22 +5,23 @@ import React, { useState } from "react";
 import {
     ActivityIndicator,
     Image,
+    Dimensions,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View
+    Image,
+    View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView
 } from "react-native";
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming,
-} from "react-native-reanimated";
+import Svg, { Polygon, Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNotification } from "../../components/NotificationContext";
 import api, { googleSignIn } from "../../services/api";
+
 export default function LoginScreen() {
   const params = useLocalSearchParams();
   const [email, setEmail] = useState("");
@@ -28,23 +29,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { showNotification } = useNotification();
-  // Animasi Mascot
-  const scale = useSharedValue(1);
-  React.useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 1500 }),
-        withTiming(1, { duration: 1500 }),
-      ),
-      -1,
-      true,
-    );
-  }, []);
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
+
   const handleLogin = async () => {
     if (!email || !password) {
       showNotification("Perhatian", "Email dan password wajib diisi", "error");
@@ -54,7 +39,6 @@ export default function LoginScreen() {
     try {
       const response = await api.post("/auth/login", { email, password });
       
-      // Fallback: token bisa di response.data.token atau response.data.data.token
       const token = response.data?.token || response.data?.data?.token;
       const userData = response.data?.data;
       
@@ -82,131 +66,177 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   };
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Mascot */}
-        <View style={styles.mascotContainer}>
-          <Animated.Image
-            source={require("../../assets/images/icontampilanawal/seedling-halo.png")}
-            style={[styles.mascot, animatedStyle]}
-            resizeMode="contain"
-          />
-          <Text style={styles.mascotText}>TaniSync</Text>
-        </View>
-        {/* Header */}
-        <Text style={styles.title}>Selamat datang balik!</Text>
-        <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu</Text>
-        {/* Inputs */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#5C5A4F"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Kata sandi"
-            placeholderTextColor="#5C5A4F"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <MaterialIcons
-              name={showPassword ? "visibility" : "visibility-off"}
-              size={24}
-              color="#123924"
-            />
-          </TouchableOpacity>
-        </View>
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Masuk</Text>
-          )}
-        </TouchableOpacity>
-        
-        {/* Google Sign In Button */}
-        <TouchableOpacity
-          style={styles.googleButton}
-          onPress={async () => {
-            try {
-              setIsLoading(true);
-              await googleSignIn();
-            } catch (error) {
-              console.error("Google sign in error", error);
-              showNotification("Gagal", "Google Sign In bermasalah. Coba lagi broskie.", "error");
-            } finally {
-              setIsLoading(false);
-            }
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#123924" />
-          ) : (
-            <>
-              <Image 
-                source={require("../../assets/images/google-logo.png")} 
-                style={styles.googleLogo} 
-                resizeMode="contain" 
-              />
-              <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
-            </>
-          )}
-        </TouchableOpacity>
 
-        {/* Footer */}
-        <TouchableOpacity
-          style={styles.footerLink}
-          onPress={() => router.replace("/(auth)/register")}
-        >
-          <Text style={styles.footerText}>
-            Belum punya akun?{" "}
-            <Text style={styles.footerTextBold}>Daftar di sini</Text>
-          </Text>
-        </TouchableOpacity>
+  const { width } = Dimensions.get('window');
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#FBF8F0" }}>
+      {/* BACKGROUND: Giant Green Inverted Trapezoid filling the top half */}
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 300, zIndex: 0 }}>
+        <Svg height="100%" width="100%">
+          <Path 
+            d={`M 0,0 L ${width},0 L ${width - 33},250 Q ${width - 40},300 ${width - 90},300 L 90,300 Q 40,300 33,250 Z`} 
+            fill="#3FA86B" 
+            stroke="#123924" 
+            strokeWidth="4" 
+          />
+        </Svg>
       </View>
-    </SafeAreaView>
+
+      {/* MASCOT: In the middle of the green trapezoid */}
+      <View style={{ position: 'absolute', top: 15, width: '100%', alignItems: 'center', zIndex: 1 }}>
+        <Image
+          source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
+          style={{ width: 480, height: 480 }}
+          resizeMode="contain"
+        />
+      </View>
+
+      <SafeAreaView style={{ flex: 1, zIndex: 2 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
+            
+            {/* Header Title moved down so it sits nicely below or inside the card */}
+            <View style={styles.headerContainer}>
+              <Text style={styles.title}>Selamat datang balik!</Text>
+              <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu </Text>
+            </View>
+
+            {/* Main Form Card */}
+            <View style={styles.wallCard}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="#5C5A4F"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Kata sandi"
+                  placeholderTextColor="#5C5A4F"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <MaterialIcons
+                    name={showPassword ? "visibility" : "visibility-off"}
+                    size={24}
+                    color="#123924"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleLogin}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Masuk</Text>
+                )}
+              </TouchableOpacity>
+              
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>ATAU</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={async () => {
+                  try {
+                    setIsLoading(true);
+                    await googleSignIn();
+                  } catch (error) {
+                    console.error("Google sign in error", error);
+                    showNotification("Gagal", "Google Sign In bermasalah. Coba lagi broskie.", "error");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#123924" />
+                ) : (
+                  <>
+                    <Image 
+                      source={require("../../assets/images/google-logo.png")} 
+                      style={styles.googleLogo} 
+                      resizeMode="contain" 
+                    />
+                    <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.footerLink}
+                onPress={() => router.replace("/(auth)/register")}
+              >
+                <Text style={styles.footerText}>
+                  Belum punya akun?{" "}
+                  <Text style={styles.footerTextBold}>Daftar di sini</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FBF8F0" },
-  container: { flex: 1, padding: 24, paddingTop: 48 },
-  mascotContainer: { alignItems: "center", marginBottom: 32 },
-  mascot: {
-    width: 100,
-    height: 100,
-    marginBottom: 8,
+  scrollContainer: { 
+    flexGrow: 1, 
+    justifyContent: "flex-end", 
+    paddingHorizontal: 24,
+    paddingBottom: 24
   },
-  mascotText: { fontSize: 16, fontFamily: "Nunito_700Bold", color: "#123924" },
+  headerContainer: {
+    marginTop: 220, // Ditarik ke atas biar ga LDR
+    marginBottom: 52,
+    alignItems: 'center', // Biar textnya di tengah, elegan
+  },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: "Nunito_500Medium",
     color: "#5C5A4F",
-    marginBottom: 32,
+  },
+  wallCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: "#123924",
+    boxShadow: "6px 6px 0px #123924",
+    padding: 24,
+    paddingTop: 32,
+    position: "relative",
+    zIndex: 2,
   },
   inputContainer: { marginBottom: 16, position: "relative" },
   input: {
@@ -215,11 +245,10 @@ const styles = StyleSheet.create({
     borderColor: "#123924",
     borderRadius: 30,
     paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FBF8F0", // slight contrast against the white wall
     fontSize: 16,
     fontFamily: "Nunito_500Medium",
     color: "#123924",
-    boxShadow: "4px 4px 0px #123924",
   },
   eyeIcon: { position: "absolute", right: 16, top: 16 },
   primaryButton: {
@@ -230,23 +259,32 @@ const styles = StyleSheet.create({
     borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
-    marginTop: 16,
-    boxShadow: "4px 4px 0px #123924",
+    marginBottom: 20,
+    marginTop: 8,
+    boxShadow: "3px 3px 0px #123924",
   },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "Nunito_800ExtraBold",
   },
-  footerLink: { alignItems: "center" },
-  footerText: {
-    color: "#5C5A4F",
-    fontSize: 14,
-    fontFamily: "Nunito_500Medium",
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 16,
   },
-  footerTextBold: { color: "#123924", fontFamily: "Nunito_700Bold" },
-
+  dividerLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#123924',
+  },
+  dividerText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 12,
+    color: '#123924',
+    marginHorizontal: 12,
+  },
   googleButton: {
     backgroundColor: "#FFFFFF",
     flexDirection: "row",
@@ -256,8 +294,7 @@ const styles = StyleSheet.create({
     borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
-    boxShadow: "4px 4px 0px #123924",
+    marginBottom: 24,
   },
   googleLogo: {
     width: 24,
@@ -267,6 +304,13 @@ const styles = StyleSheet.create({
   googleButtonText: {
     color: "#123924",
     fontSize: 16,
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "Nunito_800ExtraBold",
   },
+  footerLink: { alignItems: "center" },
+  footerText: {
+    color: "#5C5A4F",
+    fontSize: 14,
+    fontFamily: "Nunito_500Medium",
+  },
+  footerTextBold: { color: "#123924", fontFamily: "Nunito_800ExtraBold" },
 });

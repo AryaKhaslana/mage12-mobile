@@ -16,23 +16,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const faqs = [
   {
     id: 1,
-    question: 'Bagaimana cara menyambungkan sensor kelembapan tanah?',
-    answer: '1. Nyalakan modul TaniSync Box sampai lampu indikator biru berkedip cepat.\n\n2. Buka menu Perangkat > Tambah Sensor di pojok kanan atas aplikasi.\n\n3. Dekatkan ponsel ke sensor (jarak max 1 meter), lalu pilih jaringan WiFi rumah Anda (2.4 GHz).\n\n💡 Pastikan GPS & Bluetooth ponsel aktif saat pairing pertama kali.',
+    question: 'Bagaimana cara mendapatkan dan menaikkan Level?',
+    answer: 'Kamu bisa menaikkan level dengan mengumpulkan EXP. EXP didapatkan setiap kali kamu rajin menyiram tanaman sesuai jadwal dan menyelesaikan tugas harian di Dashboard.',
   },
   {
     id: 2,
-    question: 'Kenapa pengingat siram tidak muncul di notifikasi?',
-    answer: 'Periksa izin notifikasi aplikasi di Pengaturan Sistem HP Anda. Pastikan opsi Battery Saver / Penghemat Baterai tidak membatasi latar belakang TaniSync.',
+    question: 'Apa fungsi dari ☔ Pelindung Streak?',
+    answer: 'Pelindung Streak berfungsi menyelamatkan rekor beruntun (Streak) kamu agar api tidak padam jika kamu lupa menyiram tanaman dalam satu hari. Pelindung ini sangat berharga dan bisa didapatkan saat naik level!',
   },
   {
     id: 3,
-    question: 'Berapa takaran pupuk NPK untuk tanaman cabai hidroponik?',
-    answer: 'Untuk fase vegetatif cabai, gunakan PPM sekitar 600 - 800 PPM (EC 1.2 - 1.6). Masuk fase generatif/berbunga naikkan bertahap hingga 1.200 PPM. Kamu bisa cek panduan lengkap di tab Perawatan.',
+    question: 'Bagaimana cara kerja Smart Watering & Prediksi Cuaca?',
+    answer: 'Sistem TaniSync akan secara otomatis mendeteksi jika akan turun hujan lebat di area lahanmu hari ini. Jika iya, status penyiraman akan berubah menjadi "Ditunda Hujan" untuk menghemat air dan mencegah tanaman kelebihan air (overwatering).',
   },
   {
     id: 4,
-    question: 'Bagaimana cara membagikan foto panen ke feed komunitas?',
-    answer: 'Buka tab Komunitas, tekan ikon tombol hijau bulat + Post Panen, pilih foto hasil panenmu, tambahkan tag varietas sayur, lalu tap Bagikan!',
+    question: 'Bagaimana cara menggunakan Peta Wabah Hama Lokal?',
+    answer: 'Buka menu Peta Hama, aplikasi akan mendeteksi lokasimu menggunakan GPS dan menampilkan potensi risiko serangan hama di sekitar area lahanmu secara real-time. Semakin merah zonanya, semakin waspada kamu harus menjaga tanamanmu!',
   }
 ];
 
@@ -65,10 +65,9 @@ export default function PusatBantuanScreen() {
             <Text style={styles.headerTitle}>Pusat Bantuan</Text>
           </View>
         </View>
-        <Image 
-          source={{ uri: 'https://lh3.googleusercontent.com/aida/AEtjO1VJGWpgvCK4dLT3sSGsbQkF23YQ9qWqL4OtulQiToz7MvLX1XCOJn5QNIHrMfncEKFNIhygrCiE8p4Nn5UNv3E63viewy1ss55kNKLSAyEuhYEo7H7DpJNiBlAuqoY8mixoTFSzYTLtJ2T9nvuAFfYRopq_P7v72GW5BvCSNxP_BZDLWLnTnnCPGbydqwR0gyjaktPJ5avLiMeOU60sOsYVi8VWE_Nr6ZuYKOqYXfkukgGs24rfmR-It7Y' }} 
-          style={styles.profileImage} 
-        />
+        <View style={[styles.profileImage, { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center' }]}>
+          <MaterialIcons name="person" size={20} color="#123924" />
+        </View>
       </View>
 
       <ScrollView 

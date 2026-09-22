@@ -166,7 +166,7 @@ export default function ProfilScreen() {
               <MaterialIcons name="emoji-events" size={24} color="#123924" />
             </View>
             <View>
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Riwayat Panen 🏆</Text>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Riwayat Panen</Text>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5C5A4F' }}>Lihat pencapaian kebunmu</Text>
             </View>
           </View>

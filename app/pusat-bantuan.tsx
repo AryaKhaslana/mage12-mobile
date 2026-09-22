@@ -133,8 +133,8 @@ export default function PusatBantuanScreen() {
               <View style={[styles.categoryIconBox, { backgroundColor: 'rgba(46, 158, 140, 0.2)' }]}>
                 <MaterialIcons name="sensors" size={24} color="#123924" />
               </View>
-              <Text style={styles.categoryTitle}>Sensor IoT</Text>
-              <Text style={styles.categoryDesc}>Pairing wifi & kalibrasi</Text>
+              <Text style={styles.categoryTitle}>Prediksi cuaca</Text>
+              <Text style={styles.categoryDesc}>Pairing lokasi & kalibrasi</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.categoryCard} activeOpacity={0.8} onPress={() => setSearchQuery('level')}>

@@ -562,17 +562,8 @@ export default function DashboardScreen() {
   
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* HEADER BACKGROUND: Matching Curved Green Trapezoid */}
-      <View style={{ position: 'absolute', top: 0, width: '100%', height: 160, zIndex: 0 }}>
-        <Svg height="100%" width="100%">
-          <Path 
-            d={`M 0,0 L ${width},0 L ${width - 25},110 Q ${width - 30},140 ${width - 60},140 L 60,140 Q 30,140 25,110 Z`} 
-            fill="#3FA86B" 
-            stroke="#123924" 
-            strokeWidth="4" 
-          />
-        </Svg>
-      </View>
+      {/* HEADER BACKGROUND: Melengkung biasa */}
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
       {/* HEADER */}
       <View style={[styles.header, { backgroundColor: 'transparent' }]}>
         <View style={styles.profileSection}>
@@ -600,7 +591,7 @@ export default function DashboardScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.contentContainer, isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
+        contentContainerStyle={[styles.contentContainer, { paddingTop: 40 }, isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -722,7 +713,7 @@ export default function DashboardScreen() {
           onPress={() => setShowGamification(true)}
         >
           {/* Faint Background Icon */}
-          <MaterialIcons name="local-fire-department" size={120} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', right: -20, top: -20, transform: [{ rotate: '15deg' }] }} />
+          <MaterialIcons name="local-fire-department" size={100} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', right: 0, top: 0, transform: [{ rotate: '15deg' }] }} />
           <View style={styles.fireIconContainer}>
             <MaterialIcons
               name="local-fire-department"
@@ -841,7 +832,7 @@ export default function DashboardScreen() {
                   borderRadius: 24,
                   padding: 16,
                   marginBottom: 16,
-                  boxShadow: "4px 4px 0px #123924", overflow: "hidden",
+                  boxShadow: "4px 4px 0px #123924",
                 },
                 pressed && styles.pressedShadow4,
               ]}
@@ -950,7 +941,7 @@ export default function DashboardScreen() {
                     borderRadius: 24,
                     padding: 16,
                     marginBottom: 16,
-                    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
+                    boxShadow: "4px 4px 0px #123924",
                   }}
                 >
                   <View
@@ -1309,16 +1300,13 @@ export default function DashboardScreen() {
         )}
       </ScrollView>
 
-      {/* FAB TAMBAH TANAMAN */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.tanibotFab,
-          pressed && styles.pressedFab,
-        ]}
+      {/* FAB TAMBAH TANAMAN BOUNCING */}
+      <BouncingFAB
+        style={styles.tanibotFab}
         onPress={() => router.push({ pathname: "/tanaman", params: { openModal: 'true' } } as any)}
       >
         <MaterialIcons name="add" size={32} color="#FFFFFF" />
-      </Pressable>
+      </BouncingFAB>
 
       <CoachMarkOverlay
         visible={showTutorial}
@@ -1463,7 +1451,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
+    boxShadow: "4px 4px 0px #123924",
     elevation: 8,
     zIndex: 50,
   },
@@ -1480,7 +1468,7 @@ const styles = StyleSheet.create({
     borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
+    boxShadow: "4px 4px 0px #123924",
   },
   heroCard: {
     backgroundColor: "#1F5C3D",
@@ -1489,7 +1477,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 32,
-    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
+    boxShadow: "4px 4px 0px #123924",
   },
   fireIconContainer: {
     width: 48,
@@ -1538,7 +1526,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
-    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
+    boxShadow: "4px 4px 0px #123924",
   },
   taskIconBox: {
     width: 48,
@@ -1593,7 +1581,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: "hidden",
     marginRight: 16,
-    boxShadow: "4px 4px 0px #123924", overflow: "hidden",
+    boxShadow: "4px 4px 0px #123924",
   },
   plantImagePlaceholder: {
     width: "100%",

@@ -486,6 +486,10 @@ export default function DetailTanamanModal() {
             <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
               Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 
             </Text>
+          ) : tanaman.statusPenyiraman === "DITUNDA_HUJAN" ? (
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924', textAlign: 'center', backgroundColor: '#E3F5EC', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#3FA86B' }}>
+              Penyiraman ditunda karena sistem mendeteksi hujan lebat hari ini! 🌧️ Streak kamu aman!
+            </Text>
           ) : (
             tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
               <View style={styles.actionRow}>

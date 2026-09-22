@@ -75,10 +75,10 @@ export default function LoginScreen() {
       </View>
 
       {/* MASCOT: In the middle of the green trapezoid */}
-      <View style={{ position: 'absolute', top: 80, width: '100%', alignItems: 'center', zIndex: 1 }}>
+      <View style={{ position: 'absolute', top: 15, width: '100%', alignItems: 'center', zIndex: 1 }}>
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
-          style={{ width: 380, height: 380 }}
+          style={{ width: 480, height: 480 }}
           resizeMode="contain"
         />
       </View>

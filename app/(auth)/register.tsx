@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_500Medium",
     color: "#123924",
     lineHeight: 22,
-  },
+    },
   primaryButton: {
     backgroundColor: "#3FA86B",
     height: 56,

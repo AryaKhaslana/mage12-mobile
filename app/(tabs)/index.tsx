@@ -588,15 +588,9 @@ export default function DashboardScreen() {
             )}
           </View>
           <View>
-            <Pressable onLongPress={async () => {
-              const { resetTutorial } = require('../../utils/tutorial');
-              await resetTutorial();
-              showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
-            }}>
-              <Text style={[styles.greeting, { color: '#123924' }]}>
-                {getGreeting()}, {userData?.nama || "Petani"}
-              </Text>
-            </Pressable>
+            <Text style={[styles.greeting, { color: '#123924' }]}>
+              {getGreeting()}, {userData?.nama || "Petani"}
+            </Text>
             <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>
@@ -1422,8 +1416,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 68,
-    height: 68,
+    width: 58,
+    height: 58,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
@@ -1432,12 +1426,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   greeting: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Nunito_800ExtraBold",
     color: "#00522c",
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#5C5A4F",
     fontFamily: "Nunito_500Medium",
   },

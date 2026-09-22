@@ -63,6 +63,22 @@ export default function ProfilScreen() {
   const avatarUrl = userData?.avatarUrl;
   const initial = nameFallback.charAt(0).toUpperCase();
 
+    const fetchRiwayatPanen = async () => {
+    setIsLoadingRiwayat(true);
+    try {
+      const res = await api.get("/tanaman/riwayat");
+      if (res.data?.data) {
+        setRiwayatPanen(res.data.data);
+      } else if (res.data) {
+        setRiwayatPanen(res.data);
+      }
+    } catch (err) {
+      console.error("Gagal ambil riwayat panen", err);
+    } finally {
+      setIsLoadingRiwayat(false);
+    }
+  };
+
   const streak = userData?.streak || 0;
   const tanamanCount = tanamanList.length;
   const siapPanenCount = tanamanList.filter(t => t.sisaHariPanen <= 0).length;
@@ -134,6 +150,26 @@ export default function ProfilScreen() {
         </View>
 
         
+
+        <Pressable 
+          style={({pressed}) => [styles.section, { backgroundColor: '#FFECEB', borderColor: '#123924', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 24, marginBottom: 16, width: 'auto', paddingVertical: 16, borderRadius: 24, borderWidth: 2, boxShadow: '4px 4px 0px #123924' }, pressed && {opacity: 0.8}]}
+          onPress={() => {
+            setShowRiwayatPanen(true);
+            fetchRiwayatPanen();
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FF7D6B', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#123924' }}>
+              <MaterialIcons name="emoji-events" size={24} color="#123924" />
+            </View>
+            <View>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Riwayat Panen</Text>
+              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5C5A4F' }}>Lihat pencapaian kebunmu</Text>
+            </View>
+          </View>
+          <MaterialIcons name="chevron-right" size={28} color="#123924" />
+        </Pressable>
+
         {/* PENCAPAIAN */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Pencapaian</Text>
@@ -346,6 +382,49 @@ export default function ProfilScreen() {
 
 
       </ScrollView>
+    
+      {/* MODAL RIWAYAT PANEN */}
+      <Modal visible={showRiwayatPanen} animationType="slide" transparent={false}>
+        <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
+          {/* HEADER */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, borderBottomWidth: 4, borderColor: '#123924', backgroundColor: '#FF7D6B' }}>
+            <View>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Piala Panen 🏆</Text>
+              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Tanaman yang sukses kamu rawat!</Text>
+            </View>
+            <Pressable onPress={() => setShowRiwayatPanen(false)} style={{ backgroundColor: '#FFECEB', padding: 8, borderRadius: 100, borderWidth: 2, borderColor: '#123924', boxShadow: '2px 2px 0px #123924' }}>
+              <MaterialIcons name="close" size={24} color="#123924" />
+            </Pressable>
+          </View>
+
+          {/* LIST */}
+          <ScrollView contentContainerStyle={{ padding: 24 }}>
+            {isLoadingRiwayat ? (
+              <ActivityIndicator size="large" color="#3FA86B" style={{ marginTop: 40 }} />
+            ) : riwayatPanen.length === 0 ? (
+              <View style={{ alignItems: 'center', marginTop: 80 }}>
+                <MaterialIcons name="eco" size={80} color="#E8E5DA" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#5C5A4F', marginTop: 16, textAlign: 'center' }}>Belum ada panen</Text>
+                <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#a09d91', textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }}>Rawat tanamanmu sampai waktunya panen buat nambah piala di sini!</Text>
+              </View>
+            ) : (
+              riwayatPanen.map((item, index) => (
+                <View key={item.id || index} style={{ flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', borderRadius: 20, padding: 16, marginBottom: 16, boxShadow: '4px 4px 0px #123924', alignItems: 'center' }}>
+                  <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#E3F5EC', borderWidth: 2, borderColor: '#3FA86B', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                    <Text style={{ fontSize: 32 }}>✨</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 18, color: '#123924' }}>{item.nickname || item.jenisTanaman}</Text>
+                    <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#3FA86B' }}>{item.jenisTanaman}</Text>
+                    <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F', marginTop: 4 }}>Ditanam: {new Date(item.tanggalTanam).toLocaleDateString('id-ID')} • Dipanen: {item.tanggalPanen ? new Date(item.tanggalPanen).toLocaleDateString('id-ID') : 'Hari ini'}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }

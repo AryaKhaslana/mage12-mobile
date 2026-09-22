@@ -1221,9 +1221,9 @@ export default function DashboardScreen() {
           )}
         
       <Modal visible={showGamification} animationType="slide" transparent={false}>
-        <View style={{ flex: 1, backgroundColor: '#FBF8F0', paddingTop: 48 }}>
+        <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, borderBottomWidth: 4, borderColor: '#123924', backgroundColor: '#FFB627' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, borderBottomWidth: 4, borderColor: '#123924', backgroundColor: '#FFB627' }}>
             <View>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Peta Perjalanan Tani</Text>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Lv.{userData?.level || 1} • {userData?.streak || 0} Streak</Text>

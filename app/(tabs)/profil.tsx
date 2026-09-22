@@ -153,6 +153,26 @@ export default function ProfilScreen() {
         </View>
 
         
+
+        <Pressable 
+          style={({pressed}) => [styles.section, { backgroundColor: '#FFECEB', borderColor: '#123924', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 24, marginBottom: 16, width: 'auto', paddingVertical: 16, borderRadius: 24, borderWidth: 2, boxShadow: '4px 4px 0px #123924' }, pressed && {opacity: 0.8}]}
+          onPress={() => {
+            setShowRiwayatPanen(true);
+            fetchRiwayatPanen();
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FF7D6B', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#123924' }}>
+              <MaterialIcons name="emoji-events" size={24} color="#123924" />
+            </View>
+            <View>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Riwayat Panen 🏆</Text>
+              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5C5A4F' }}>Lihat pencapaian kebunmu</Text>
+            </View>
+          </View>
+          <MaterialIcons name="chevron-right" size={28} color="#123924" />
+        </Pressable>
+
         {/* PENCAPAIAN */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Pencapaian</Text>

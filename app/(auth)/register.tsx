@@ -90,6 +90,7 @@ export default function RegisterScreen() {
       // Kembali ke login jika sukses
       showNotification("Berhasil!", "Akun kamu sudah dibuat. Silakan masuk.", "success");
       setTimeout(() => router.replace("/(auth)/login"), 1500);
+      setTimeout(() => router.replace({ pathname: "/(auth)/login", params: { isNewUser: "true" } }), 1500);
     } catch (error: any) {
       const msg =
         error.response?.data?.message ||

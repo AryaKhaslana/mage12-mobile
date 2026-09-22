@@ -1,13 +1,13 @@
 import * as SecureStore from "expo-secure-store";
-import React, { useState, useCallback } from 'react';
-import { View, Modal, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useFocusEffect } from 'expo-router';
-import api, { getAchievements, AchievementResponse, Achievement } from '../../services/api';
 import { Image } from "expo-image"; // use expo-image for avatars if they have it, or react-native Image
+import { router, useFocusEffect } from 'expo-router';
+import api, { Achievement, AchievementResponse, getAchievements } from '../../services/api';
 
 export default function ProfilScreen() {
   const getRankTitle = (level: number) => {
@@ -247,6 +247,18 @@ export default function ProfilScreen() {
           >
             <MaterialIcons name="notifications-none" size={24} color="#123924" />
             <Text style={styles.menuText}>Pengaturan Notifikasi</Text>
+            <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.menuItem, 
+              pressed && styles.menuItemPressed,
+            ]}
+            onPress={() => router.push("/pusat-bantuan")}
+          >
+            <MaterialIcons name="help-outline" size={24} color="#123924" />
+            <Text style={styles.menuText}>Pusat Bantuan</Text>
             <MaterialIcons name="chevron-right" size={24} color="rgba(18,57,36,0.5)" />
           </Pressable>
 

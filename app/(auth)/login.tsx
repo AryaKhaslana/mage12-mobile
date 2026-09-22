@@ -10,8 +10,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
-    Image,
     View,
     KeyboardAvoidingView,
     Platform,

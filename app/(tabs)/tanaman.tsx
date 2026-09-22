@@ -200,11 +200,11 @@ export default function TanamanScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
+          contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
               colors={["#3FA86B"]}
@@ -213,12 +213,9 @@ export default function TanamanScreen() {
             />
           }
         >
-          {/* HEADER BACKGROUND: Mentok Atas */}
-          <View style={{ position: 'absolute', top: 0, width: '100%', height: 120 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
-          
           {/* HEADER */}
-          <View style={[styles.header, { paddingTop: 20 + insets.top, zIndex: 1 }]}>
-            <Text style={[styles.headerTitle, { color: '#FFFFFF', textShadowColor: '#123924', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }]}>Tanaman Kamu</Text>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Tanaman Kamu</Text>
           </View>
 
           {/* FILTERS */}

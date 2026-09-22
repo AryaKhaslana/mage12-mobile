@@ -1,4 +1,4 @@
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -232,12 +232,22 @@ export default function DashboardScreen() {
   const { showNotification } = useNotification();
 
   useEffect(() => {
-    checkTutorialFinished().then((finished) => {
-      if (!finished) {
-        setNeedsTutorial(true);
-      }
-    });
-  }, []);
+    if (userData && !isLoading) {
+      checkTutorialFinished().then((finished) => {
+        if (!finished) {
+          // Jika user sudah punya EXP atau tanaman, berarti ini user lama (existing user)
+          // Kita anggap mereka sudah mengerti dan lewati tutorial
+          const isNewUser = (userData.exp || 0) === 0 && tanamanList.length === 0;
+          
+          if (isNewUser) {
+            setNeedsTutorial(true);
+          } else {
+            markTutorialFinished();
+          }
+        }
+      });
+    }
+  }, [userData, isLoading, tanamanList.length]);
 
   useEffect(() => {
     if (needsTutorial && !isLoading) {

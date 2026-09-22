@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +10,7 @@ import { router, useFocusEffect } from 'expo-router';
 import api, { Achievement, AchievementResponse, getAchievements } from '../../services/api';
 
 export default function ProfilScreen() {
+  const insets = useSafeAreaInsets();
   const getRankTitle = (level: number) => {
     if (level >= 8) return "Sultan Hidroponik ";
     if (level >= 4) return "Juragan Panen ";
@@ -67,11 +68,11 @@ export default function ProfilScreen() {
   const siapPanenCount = tanamanList.filter(t => t.sisaHariPanen <= 0).length;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* HEADER */}
-        <View style={styles.headerBackground}>
+        <View style={[styles.headerBackground, { paddingTop: 40 + insets.top }]}>
 
 
           <View style={styles.avatarWrapper}>

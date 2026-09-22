@@ -1,14 +1,16 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
+    Image,
     Dimensions,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
+    View
     Image,
     View,
     KeyboardAvoidingView,
@@ -17,10 +19,11 @@ import {
 } from "react-native";
 import Svg, { Polygon, Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api, { googleSignIn } from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
+import api, { googleSignIn } from "../../services/api";
 
 export default function LoginScreen() {
+  const params = useLocalSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +48,12 @@ export default function LoginScreen() {
           await SecureStore.setItemAsync("userData", JSON.stringify(userData));
         }
         router.replace("/");
+        
+        if (params.isNewUser === "true") {
+          router.replace({ pathname: "/(tabs)", params: { isNewUser: "true" } } as any);
+        } else {
+          router.replace("/");
+        }
       } else {
         showNotification("Login Gagal", "Login sukses tapi token tidak ditemukan di response.", "error");
       }

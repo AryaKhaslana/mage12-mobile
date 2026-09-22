@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
 import { useNotification } from '../../components/NotificationContext';
-import api, { CommunityPost, getCommunityPosts } from '../../services/api';
+import api, { CommunityPost, getCommunityPosts, getMyCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
@@ -89,6 +89,8 @@ export default function KomunitasScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [activeTab, setActiveTab] = useState<"semua" | "saya">("semua");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const limit = 10;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [tipePost, setTipePost] = useState<"progress_update" | "panen_surplus" | "pertanyaan">("progress_update");
@@ -167,7 +169,9 @@ export default function KomunitasScreen() {
       
       if (lat != null && lon != null) {
         setCoords({ latitude: lat, longitude: lon });
-        const commRes = await getCommunityPosts(lat, lon, 1, limit);
+        const commRes = activeTab === "semua" 
+          ? await getCommunityPosts(lat, lon, 1, limit) 
+          : await getMyCommunityPosts(1, limit);
         setPosts(commRes.data);
         setPage(commRes.meta.halamanSekarang);
         setHasMore(commRes.data.length >= limit);
@@ -188,11 +192,38 @@ export default function KomunitasScreen() {
     }, [])
   );
 
+  useEffect(() => {
+    if (coords) {
+      setIsLoading(true);
+      setPosts([]);
+      setPage(1);
+      
+      const fetchNewTab = async () => {
+        try {
+          const commRes = activeTab === "semua" 
+            ? await getCommunityPosts(coords.latitude, coords.longitude, 1, limit) 
+            : await getMyCommunityPosts(1, limit);
+          setPosts(commRes.data);
+          setPage(commRes.meta.halamanSekarang);
+          setHasMore(commRes.data.length >= limit);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchNewTab();
+    }
+  }, [activeTab]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       if (coords) {
-        const commRes = await getCommunityPosts(coords.latitude, coords.longitude, 1, limit).catch(() => null);
+        const commRes = activeTab === "semua"
+          ? await getCommunityPosts(coords.latitude, coords.longitude, 1, limit).catch(() => null)
+          : await getMyCommunityPosts(1, limit).catch(() => null);
         if (commRes?.data) {
           setPosts(commRes.data);
           setPage(commRes.meta.halamanSekarang);
@@ -211,7 +242,9 @@ export default function KomunitasScreen() {
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const commRes = await getCommunityPosts(coords.latitude, coords.longitude, nextPage, limit).catch(() => null);
+      const commRes = activeTab === "semua"
+        ? await getCommunityPosts(coords.latitude, coords.longitude, nextPage, limit).catch(() => null)
+        : await getMyCommunityPosts(nextPage, limit).catch(() => null);
       if (commRes?.data) {
         setPosts(prev => [...prev, ...commRes.data]);
         setPage(commRes.meta.halamanSekarang);
@@ -243,7 +276,8 @@ export default function KomunitasScreen() {
             <PostSkeleton />
           </View>
         </View>
-      </SafeAreaView>
+      
+    </SafeAreaView>
     );
   }
 
@@ -266,7 +300,32 @@ export default function KomunitasScreen() {
             />
           </View>
         ) : (
-          <FlatList
+          <>
+                {/* TABS */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, gap: 12 }}>
+        <Pressable 
+          onPress={() => setActiveTab('semua')}
+          style={({pressed}) => [
+            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 2, borderColor: '#123924' },
+            activeTab === 'semua' ? { backgroundColor: '#3FA86B', boxShadow: '3px 3px 0px #123924' } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+            pressed && { opacity: 0.5 }
+          ]}
+        >
+          <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'semua' ? '#FFFFFF' : '#123924' }}>Semua Postingan</Text>
+        </Pressable>
+        <Pressable 
+          onPress={() => setActiveTab('saya')}
+          style={({pressed}) => [
+            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 2, borderColor: '#123924' },
+            activeTab === 'saya' ? { backgroundColor: '#FFB627', boxShadow: '3px 3px 0px #123924' } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+            pressed && { opacity: 0.5 }
+          ]}
+        >
+          <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'saya' ? '#123924' : '#123924' }}>Postingan Anda</Text>
+        </Pressable>
+      </View>
+
+      <FlatList
             data={posts}
             keyExtractor={item => item.id.toString()}
             contentContainerStyle={styles.scrollContent}
@@ -313,10 +372,10 @@ export default function KomunitasScreen() {
                 <View style={styles.postCard}>
                   <View style={styles.postHeader}>
                     <View style={styles.avatarContainer}>
-                      <Text style={styles.avatarInitials}>{item.user_nama.charAt(0).toUpperCase()}</Text>
+                      <Text style={styles.avatarInitials}>{((item.user_nama || (item.author && item.author.nama) || (item.user && item.user.nama) || "P")).charAt(0).toUpperCase()}</Text>
                     </View>
                     <View style={styles.postMeta}>
-                      <Text style={styles.authorName} numberOfLines={1}>{item.user_nama}</Text>
+                      <Text style={styles.authorName} numberOfLines={1}>{item.user_nama || (item.author && item.author.nama) || (item.user && item.user.nama) || "Petani TaniSync"}</Text>
                       <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
                     </View>
                     {badgeText ? (
@@ -334,20 +393,21 @@ export default function KomunitasScreen() {
                   <Text style={styles.postCaption}>{item.deskripsi}</Text>
 
                   {item.fotoUrl && (
-                    <View style={styles.postImageContainer}>
+                    <Pressable style={styles.postImageContainer} onPress={() => setSelectedImage(item.fotoUrl)}>
                       <Image source={{ uri: item.fotoUrl }} style={styles.postImage} />
-                    </View>
+                    </Pressable>
                   )}
 
                   <View style={styles.locationRow}>
                     <MaterialIcons name="place" size={12} color="#5C5A4F" />
-                    <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+                    <Text style={styles.distanceText}>{item.distance != null ? item.distance.toFixed(1) + " km" : "Lokasi Anda"}</Text>
                   </View>
                   </Pressable>
                 </View>
               );
             }}
           />
+          </>
         )}
       </View>
 
@@ -452,6 +512,19 @@ export default function KomunitasScreen() {
             </View>
           </View>
         </Modal>
+    
+      {/* IMAGE ZOOM MODAL */}
+      <Modal visible={!!selectedImage} transparent={true} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.95)', justifyContent: 'center', alignItems: 'center' }}>
+          <Pressable style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#FFFFFF', padding: 8, borderRadius: 100, borderWidth: 2, borderColor: '#123924' }} onPress={() => setSelectedImage(null)}>
+            <MaterialIcons name="close" size={28} color="#123924" />
+          </Pressable>
+          {selectedImage && (
+            <Image source={{ uri: selectedImage }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
+          )}
+        </View>
+      </Modal>
+
     </SafeAreaView>
 
   );

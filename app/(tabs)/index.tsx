@@ -561,7 +561,7 @@ export default function DashboardScreen() {
   const { width } = Dimensions.get('window');
   
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
@@ -575,15 +575,16 @@ export default function DashboardScreen() {
         }
       >
       {/* HEADER BACKGROUND: Melengkung biasa */}
-      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
+      {/* HEADER BACKGROUND: Mentok Atas */}
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
       {/* HEADER */}
-      <View style={[styles.header, { backgroundColor: 'transparent' }]}>
+      <View style={[styles.header, { backgroundColor: 'transparent', paddingTop: 16 + insets.top }]}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
             {userData?.avatarUrl ? (
               <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
             ) : (
-              <MaterialIcons name="person" size={36} color="#123924" style={{ marginTop: 4 }} />
+              <MaterialIcons name="person" size={24} color="#123924" />
             )}
           </View>
           <View>
@@ -592,11 +593,11 @@ export default function DashboardScreen() {
               await resetTutorial();
               showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
             }}>
-              <Text style={[styles.greeting, { color: '#FFFFFF', textShadowColor: '#123924', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }]}>
+              <Text style={[styles.greeting, { color: '#123924' }]}>
                 {getGreeting()}, {userData?.nama || "Petani"}
               </Text>
             </Pressable>
-            <Text style={[styles.subtitle, { color: '#FFFFFF', fontFamily: 'Nunito_700Bold', textShadowColor: '#123924', textShadowOffset: { width: 1.5, height: 1.5 }, textShadowRadius: 0 }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
+            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>
       </View>
@@ -1421,8 +1422,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
+    width: 68,
+    height: 68,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
@@ -1431,7 +1432,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   greeting: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: "Nunito_800ExtraBold",
     color: "#00522c",
   },

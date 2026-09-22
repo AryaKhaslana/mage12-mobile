@@ -562,6 +562,18 @@ export default function DashboardScreen() {
   
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            colors={["#3FA86B"]}
+            refreshing={isRefreshing}
+            onRefresh={fetchDashboardData}
+          />
+        }
+      >
       {/* HEADER BACKGROUND: Melengkung biasa */}
       <View style={{ position: 'absolute', top: 0, width: '100%', height: 180, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
       {/* HEADER */}
@@ -588,19 +600,8 @@ export default function DashboardScreen() {
           </View>
         </View>
       </View>
-
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.contentContainer, { paddingTop: 40 }, isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            colors={["#3FA86B"]}
-            refreshing={isRefreshing}
-            onRefresh={fetchDashboardData}
-          />
-        }
-      >
+        {/* Pembungkus konten stat & kebunku */}
+        <View style={[styles.contentContainer, { paddingTop: 24 }]}>
         {isLoading ? (
           <HomeSkeleton />
         ) : isError ? (
@@ -1298,6 +1299,7 @@ export default function DashboardScreen() {
           </FadeInSlideUp>
           </>
         )}
+        </View>
       </ScrollView>
 
       {/* FAB TAMBAH TANAMAN BOUNCING */}

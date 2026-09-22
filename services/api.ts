@@ -235,6 +235,11 @@ export const getCommunityPosts = async (latitude: number, longitude: number, pag
   return response.data;
 };
 
+export const getMyCommunityPosts = async (page: number = 1, limit: number = 10) => {
+  const response = await api.get("/community/me", { params: { page, limit } });
+  return response.data;
+};
+
 
 export const deleteTanaman = async (id: number): Promise<void> => {
   await api.delete(`/tanaman/${id}`);

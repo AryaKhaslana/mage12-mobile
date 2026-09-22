@@ -585,7 +585,7 @@ export default function DashboardScreen() {
         <View style={styles.profileSection}>
           <Pressable 
             onLongPress={() => {
-              setUserData(prev => ({
+              setUserData((prev: any) => ({
                 ...prev,
                 level: 99,
                 streak: 365,
@@ -949,7 +949,29 @@ export default function DashboardScreen() {
               }
 
               return (
-                <View
+                <Pressable
+                  onLongPress={() => {
+                    setWeather({
+                      suhu: 24.5,
+                      kelembapan: 88,
+                      kondisi: "HUJAN",
+                      deskripsi: "Hujan Lebat (Simulasi)",
+                      prediksiHujanHariIni: true
+                    });
+                    
+                    const updatedList = tanamanList.map(t => {
+                      if (t.statusPenyiraman === "PERLU_SIRAM") {
+                        return { ...t, statusPenyiraman: "DITUNDA_HUJAN" };
+                      }
+                      return t;
+                    });
+                    setTanamanList(updatedList);
+                    showNotification(
+                      "☔ Simulasi Hujan Diaktifkan!",
+                      "Sistem mendeteksi hujan lebat. Penyiraman ditunda!",
+                      "info"
+                    );
+                  }}
                   style={{
                     backgroundColor: bg,
                     borderWidth: 2,
@@ -964,6 +986,7 @@ export default function DashboardScreen() {
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
+                      gap: 8,
                       marginBottom: 4,
                     }}
                   >
@@ -1008,7 +1031,7 @@ export default function DashboardScreen() {
                       Penyiraman beberapa tanaman mungkin ditunda sistem.
                     </Text>
                   )}
-                </View>
+                </Pressable>
               );
             })()}
 

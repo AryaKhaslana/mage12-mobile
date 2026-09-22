@@ -388,9 +388,9 @@ export default function ProfilScreen() {
     
       {/* MODAL RIWAYAT PANEN */}
       <Modal visible={showRiwayatPanen} animationType="slide" transparent={false}>
-        <View style={{ flex: 1, backgroundColor: '#FBF8F0', paddingTop: 48 }}>
+        <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, borderBottomWidth: 4, borderColor: '#123924', backgroundColor: '#FF7D6B' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, borderBottomWidth: 4, borderColor: '#123924', backgroundColor: '#FF7D6B' }}>
             <View>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Piala Panen 🏆</Text>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Tanaman yang sukses kamu rawat!</Text>

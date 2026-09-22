@@ -588,9 +588,15 @@ export default function DashboardScreen() {
             )}
           </View>
           <View>
-            <Text style={[styles.greeting, { color: '#123924' }]}>
-              {getGreeting()}, {userData?.nama || "Petani"}
-            </Text>
+            <Pressable onLongPress={async () => {
+              const { resetTutorial } = require('../../utils/tutorial');
+              await resetTutorial();
+              showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
+            }}>
+              <Text style={[styles.greeting, { color: '#123924' }]}>
+                {getGreeting()}, {userData?.nama || "Petani"}
+              </Text>
+            </Pressable>
             <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>

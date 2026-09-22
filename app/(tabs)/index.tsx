@@ -583,7 +583,7 @@ export default function DashboardScreen() {
             {userData?.avatarUrl ? (
               <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
             ) : (
-              <MaterialIcons name="person" size={24} color="#123924" />
+              <MaterialIcons name="person" size={36} color="#123924" style={{ marginTop: 4 }} />
             )}
           </View>
           <View>
@@ -592,11 +592,11 @@ export default function DashboardScreen() {
               await resetTutorial();
               showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
             }}>
-              <Text style={[styles.greeting, { color: '#123924' }]}>
+              <Text style={[styles.greeting, { color: '#FFFFFF', textShadowColor: '#123924', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }]}>
                 {getGreeting()}, {userData?.nama || "Petani"}
               </Text>
             </Pressable>
-            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
+            <Text style={[styles.subtitle, { color: '#FFFFFF', fontFamily: 'Nunito_700Bold', textShadowColor: '#123924', textShadowOffset: { width: 1.5, height: 1.5 }, textShadowRadius: 0 }]}>Yuk, rawat kebunmu hari ini! 🌱</Text>
           </View>
         </View>
       </View>

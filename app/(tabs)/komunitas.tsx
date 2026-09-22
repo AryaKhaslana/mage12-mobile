@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
 import { useNotification } from '../../components/NotificationContext';
-import api, { CommunityPost, getCommunityPosts } from '../../services/api';
+import api, { CommunityPost, getCommunityPosts, getMyCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
@@ -89,6 +89,8 @@ export default function KomunitasScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [activeTab, setActiveTab] = useState<"semua" | "saya">("semua");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const limit = 10;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [tipePost, setTipePost] = useState<"progress_update" | "panen_surplus" | "pertanyaan">("progress_update");
@@ -167,7 +169,9 @@ export default function KomunitasScreen() {
       
       if (lat != null && lon != null) {
         setCoords({ latitude: lat, longitude: lon });
-        const commRes = await getCommunityPosts(lat, lon, 1, limit);
+        const commRes = activeTab === "semua" 
+          ? await getCommunityPosts(lat, lon, 1, limit) 
+          : await getMyCommunityPosts(1, limit);
         setPosts(commRes.data);
         setPage(commRes.meta.halamanSekarang);
         setHasMore(commRes.data.length >= limit);
@@ -188,11 +192,38 @@ export default function KomunitasScreen() {
     }, [])
   );
 
+  useEffect(() => {
+    if (coords) {
+      setIsLoading(true);
+      setPosts([]);
+      setPage(1);
+      
+      const fetchNewTab = async () => {
+        try {
+          const commRes = activeTab === "semua" 
+            ? await getCommunityPosts(coords.latitude, coords.longitude, 1, limit) 
+            : await getMyCommunityPosts(1, limit);
+          setPosts(commRes.data);
+          setPage(commRes.meta.halamanSekarang);
+          setHasMore(commRes.data.length >= limit);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchNewTab();
+    }
+  }, [activeTab]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       if (coords) {
-        const commRes = await getCommunityPosts(coords.latitude, coords.longitude, 1, limit).catch(() => null);
+        const commRes = activeTab === "semua"
+          ? await getCommunityPosts(coords.latitude, coords.longitude, 1, limit).catch(() => null)
+          : await getMyCommunityPosts(1, limit).catch(() => null);
         if (commRes?.data) {
           setPosts(commRes.data);
           setPage(commRes.meta.halamanSekarang);
@@ -211,7 +242,9 @@ export default function KomunitasScreen() {
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const commRes = await getCommunityPosts(coords.latitude, coords.longitude, nextPage, limit).catch(() => null);
+      const commRes = activeTab === "semua"
+        ? await getCommunityPosts(coords.latitude, coords.longitude, nextPage, limit).catch(() => null)
+        : await getMyCommunityPosts(nextPage, limit).catch(() => null);
       if (commRes?.data) {
         setPosts(prev => [...prev, ...commRes.data]);
         setPage(commRes.meta.halamanSekarang);
@@ -243,7 +276,8 @@ export default function KomunitasScreen() {
             <PostSkeleton />
           </View>
         </View>
-      </SafeAreaView>
+      
+    </SafeAreaView>
     );
   }
 
@@ -452,6 +486,19 @@ export default function KomunitasScreen() {
             </View>
           </View>
         </Modal>
+    
+      {/* IMAGE ZOOM MODAL */}
+      <Modal visible={!!selectedImage} transparent={true} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.95)', justifyContent: 'center', alignItems: 'center' }}>
+          <Pressable style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#FFFFFF', padding: 8, borderRadius: 100, borderWidth: 2, borderColor: '#123924' }} onPress={() => setSelectedImage(null)}>
+            <MaterialIcons name="close" size={28} color="#123924" />
+          </Pressable>
+          {selectedImage && (
+            <Image source={{ uri: selectedImage }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
+          )}
+        </View>
+      </Modal>
+
     </SafeAreaView>
 
   );

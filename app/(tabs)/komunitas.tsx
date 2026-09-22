@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -79,7 +79,6 @@ const PostSkeleton = () => {
 };
 
 export default function KomunitasScreen() {
-  const insets = useSafeAreaInsets();
   const { showNotification } = useNotification();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isError, setIsError] = useState(false);
@@ -232,14 +231,11 @@ export default function KomunitasScreen() {
 
   if (isLoading && !isRefreshing && posts.length === 0) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
+      <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
-          {/* HEADER BACKGROUND */}
-          <View style={{ position: 'absolute', top: 0, width: '100%', height: 130 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
-          
-          <View style={[styles.header, { paddingTop: 20 + insets.top, zIndex: 1 }]}>
-            <Text style={[styles.headerTitle, { color: '#FFFFFF', textShadowColor: '#123924', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }]}>Komunitas</Text>
-            <Text style={[styles.headerSubtitle, { color: '#FFFFFF', opacity: 0.9 }]}>Tempat nongkrongnya petani digital </Text>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Komunitas</Text>
+            <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital </Text>
           </View>
           <View style={styles.scrollContent}>
             <PostSkeleton />
@@ -471,7 +467,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 32,
+    paddingTop: 16,
     paddingBottom: 120,
     gap: 16,
   },

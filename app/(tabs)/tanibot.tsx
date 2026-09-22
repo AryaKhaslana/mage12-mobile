@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChatMessage, getTanibotHistory, sendTanibotMessage } from '../../services/api';
 
 const getRelativeTime = (isoString: string) => {
@@ -87,7 +87,6 @@ const ChatSkeleton = () => {
 };
 
 export default function TanibotScreen() {
-  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -171,15 +170,16 @@ export default function TanibotScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         
         {/* HEADER */}
-        <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
+        <View style={styles.header}>
+          
           <View>
-            <Text style={[styles.headerTitle, { color: '#FFFFFF', textShadowColor: '#123924', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }]}>TaniBot </Text>
-            <Text style={[styles.headerSubtitle, { color: '#FFFFFF', opacity: 0.9 }]}>Asisten tanamanmu</Text>
+            <Text style={styles.headerTitle}>TaniBot </Text>
+            <Text style={styles.headerSubtitle}>Asisten tanamanmu</Text>
           </View>
         </View>
 
@@ -273,13 +273,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    borderBottomWidth: 4,
-    borderColor: '#123924',
-    backgroundColor: '#3FA86B',
-    zIndex: 10,
+    paddingVertical: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: '#E8E5DA',
+    backgroundColor: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 20,
@@ -375,28 +372,25 @@ const styles = StyleSheet.create({
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    
+    paddingBottom: 36,
     padding:16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
-    borderColor: '#123924',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopColor: '#E8E5DA',
     gap: 12,
   },
   inputField: {
     flex: 1,
     minHeight: 48,
     maxHeight: 120,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FBF8F0',
     borderWidth: 2,
-    boxShadow: '3px 3px 0px #123924',
     borderColor: '#123924',
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: 'Nunito_500Medium',
     fontSize: 14,
     color: '#123924',
   },
@@ -409,7 +403,7 @@ const styles = StyleSheet.create({
     borderColor: '#123924',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '3px 3px 0px #123924',
+    boxShadow: '2px 2px 0px #123924',
     elevation: 4,
   }
 });

@@ -134,7 +134,7 @@ export default function RegisterScreen() {
       {/* MASCOT: In the middle of the green trapezoid */}
       <View style={{ position: 'absolute', top: 60, width: '100%', alignItems: 'center', zIndex: 1 }}>
         <Image
-          source={require("../../assets/images/icontampilanawal/seedling-ngintip.png")}
+          source={require("../../assets/images/icontampilanawal/seedling-ngintip.svg")}
           style={{ width: 400, height: 400 }}
           resizeMode="contain"
         />

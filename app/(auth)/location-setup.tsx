@@ -112,7 +112,7 @@ export default function LocationSetupScreen() {
       <View style={styles.container}>
         <View style={styles.iconContainer}>
           <Animated.Image 
-            source={require("../../assets/images/icontampilanawal/seedling-meneropong.png")} 
+            source={require("../../assets/images/icontampilanawal/seedling-meneropong.svg")} 
             style={[{ width: 340, height: 340 }, animatedImageStyle]} 
             resizeMode="contain" 
           />

@@ -31,28 +31,28 @@ const slides = [
     title: "Kenalin, Si Tani!",
     description:
       "Dia sahabat kecil yang bakal nemenin kamu ngerawat tanaman, dari bibit sampai panen.",
-    image: require("../assets/images/icontampilanawal/seedling-halo.png"),
+    image: require("../assets/images/icontampilanawal/seedling-halo.svg"),
   },
   {
     id: "2",
     title: "TaniSync itu apa sih?",
     description:
       "Aplikasi asisten urban farming yang bantu kamu nanem sayur sendiri di rumah — walau cuma punya balkon kecil sekalipun.",
-    image: require("../assets/images/icontampilanawal/seedling-menanam.png"),
+    image: require("../assets/images/icontampilanawal/seedling-menanam.svg"),
   },
   {
     id: "3",
     title: "Gak akan lupa lagi",
     description:
       "Reminder otomatis kapan harus nyiram & mupuk, plus kumpulin streak tiap kali kamu rajin ngerawat tanaman.",
-    image: require("../assets/images/icontampilanawal/seedling-lompat.png"),
+    image: require("../assets/images/icontampilanawal/seedling-lompat.svg"),
   },
   {
     id: "4",
     title: "Kecil tapi berdampak",
     description:
       "Setiap tanaman yang kamu rawat bantu ketahanan pangan mandiri di kotamu — kecil tapi nyata.",
-    image: require("../assets/images/icontampilanawal/seedling-meneropong.png"),
+    image: require("../assets/images/icontampilanawal/seedling-meneropong.svg"),
   },
 ];
 export default function OnboardingScreen() {
@@ -133,7 +133,7 @@ export default function OnboardingScreen() {
         <View style={styles.imageWrapper}>
           {item.id === "4" && (
             <Animated.Image
-              source={require("../assets/images/icontampilanawal/icon-gedung-chart.png")}
+              source={require("../assets/images/icontampilanawal/icon-gedung-chart.svg")}
               style={styles.buildingChart}
               resizeMode="contain"
             />
@@ -145,7 +145,7 @@ export default function OnboardingScreen() {
           />
           {item.id === "2" && (
             <Animated.Image
-              source={require("../assets/images/icontampilanawal/icon-potkecil.png")}
+              source={require("../assets/images/icontampilanawal/icon-potkecil.svg")}
               style={[styles.floatingPot, animatedFloatingStyle]}
               resizeMode="contain"
             />
@@ -153,12 +153,12 @@ export default function OnboardingScreen() {
           {item.id === "3" && (
             <>
               <Animated.Image
-                source={require("../assets/images/icontampilanawal/icon-notifikasi.png")}
+                source={require("../assets/images/icontampilanawal/icon-notifikasi.svg")}
                 style={[styles.floatingNotif, animatedFloatingStyle]}
                 resizeMode="contain"
               />
               <Animated.Image
-                source={require("../assets/images/icontampilanawal/icon-piala.png")}
+                source={require("../assets/images/icontampilanawal/icon-piala.svg")}
                 style={[styles.floatingPiala, animatedFloatingStyleAlt]}
                 resizeMode="contain"
               />

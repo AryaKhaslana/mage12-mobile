@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatMessage, getTanibotHistory, sendTanibotMessage } from '../../services/api';
 
 const getRelativeTime = (isoString: string) => {
@@ -87,6 +87,7 @@ const ChatSkeleton = () => {
 };
 
 export default function TanibotScreen() {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -170,16 +171,15 @@ export default function TanibotScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         
         {/* HEADER */}
-        <View style={styles.header}>
-          
+        <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
           <View>
-            <Text style={styles.headerTitle}>TaniBot </Text>
-            <Text style={styles.headerSubtitle}>Asisten tanamanmu</Text>
+            <Text style={[styles.headerTitle, { color: '#FFFFFF', textShadowColor: '#123924', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }]}>TaniBot </Text>
+            <Text style={[styles.headerSubtitle, { color: '#FFFFFF', opacity: 0.9 }]}>Asisten tanamanmu</Text>
           </View>
         </View>
 
@@ -273,10 +273,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: '#E8E5DA',
-    backgroundColor: '#FFFFFF',
+    paddingBottom: 20,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    borderBottomWidth: 4,
+    borderColor: '#123924',
+    backgroundColor: '#3FA86B',
+    zIndex: 10,
   },
   headerTitle: {
     fontSize: 20,

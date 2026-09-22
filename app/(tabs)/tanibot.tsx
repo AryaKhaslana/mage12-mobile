@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingBottom: 36,
+    
     padding:16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,

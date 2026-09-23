@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import api from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 import { registerForPushNotificationsAsync, scheduleDailyPlantReminder, cancelAllPlantReminders } from '../services/notificationService';
 
@@ -78,6 +79,8 @@ export default function PengaturanNotifikasiScreen() {
           await SecureStore.setItemAsync('notifEnabled', 'false');
         }
       } else {
+        // 🔥 Kirim null ke backend agar Cron berhenti ngecek
+        await api.put('/user/setting-notif', { jamNotif: null });
         await cancelAllPlantReminders();
         showNotification("Dimatikan", "Reminder dimatikan");
       }
@@ -93,6 +96,9 @@ export default function PengaturanNotifikasiScreen() {
     try {
       setSelectedTime(timeOption);
       await SecureStore.setItemAsync('notifTime', JSON.stringify({ hour: timeOption.hour, minute: timeOption.minute }));
+      
+      // 🔥 Kirim jam pilihan ke backend agar Cron Vercel tahu
+      await api.put('/user/setting-notif', { jamNotif: timeOption.label });
       
       if (isEnabled) {
         await scheduleDailyPlantReminder(timeOption.hour, timeOption.minute);

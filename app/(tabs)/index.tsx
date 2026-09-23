@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  Image,
   Modal,
   Pressable,
   RefreshControl,
@@ -28,6 +27,7 @@ const FALLBACK_THUMB =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
 
 import { forwardRef } from 'react';
+import { Image } from 'expo-image';
 
 const EmptyHint = forwardRef<View, {
   icon?: any;

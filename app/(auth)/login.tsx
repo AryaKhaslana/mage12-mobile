@@ -4,7 +4,6 @@ import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
-    Image,
     Dimensions,
     StyleSheet,
     Text,
@@ -19,6 +18,7 @@ import Svg, { Polygon, Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNotification } from "../../components/NotificationContext";
 import api, { googleSignIn } from "../../services/api";
+import { Image } from 'expo-image';
 
 export default function LoginScreen() {
   const params = useLocalSearchParams();
@@ -86,7 +86,7 @@ export default function LoginScreen() {
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.svg")}
           style={{ width: 480, height: 480 }}
-          resizeMode="contain"
+          contentFit="contain"
         />
       </View>
 
@@ -177,7 +177,7 @@ export default function LoginScreen() {
                     <Image 
                       source={require("../../assets/images/google-logo.png")} 
                       style={styles.googleLogo} 
-                      resizeMode="contain" 
+                      contentFit="contain" 
                     />
                     <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
                   </>

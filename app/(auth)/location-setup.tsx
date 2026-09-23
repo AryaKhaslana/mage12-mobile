@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,6 +14,9 @@ import {
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
+import { Image } from 'expo-image';
+
+const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 
 export default function LocationSetupScreen() {
   const [isLoading, setIsLoading] = useState(false);
@@ -111,10 +113,10 @@ export default function LocationSetupScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Animated.Image 
+          <AnimatedExpoImage 
             source={require("../../assets/images/icontampilanawal/seedling-meneropong.svg")} 
             style={[{ width: 340, height: 340 }, animatedImageStyle]} 
-            resizeMode="contain" 
+            contentFit="contain" 
           />
         </View>
         

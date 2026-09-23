@@ -5,7 +5,6 @@ import React, { useState } from "react";
 import {
     ActivityIndicator,
     Dimensions,
-    Image,
     KeyboardAvoidingView,
     Platform,
     Alert,
@@ -28,6 +27,7 @@ import Svg, { Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
+import { Image } from 'expo-image';
 export default function RegisterScreen() {
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
@@ -136,7 +136,7 @@ export default function RegisterScreen() {
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.svg")}
           style={{ width: 400, height: 400 }}
-          resizeMode="contain"
+          contentFit="contain"
         />
       </View>
 

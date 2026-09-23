@@ -2,7 +2,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-    Image,
     Linking,
     ScrollView,
     StyleSheet,
@@ -12,6 +11,7 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 const faqs = [
   {

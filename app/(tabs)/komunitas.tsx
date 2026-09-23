@@ -302,7 +302,7 @@ export default function KomunitasScreen() {
         ) : (
           <>
                 {/* TABS */}
-      <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, gap: 12 }}>
+      <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, marginTop: 16, gap: 12 }}>
         <Pressable 
           onPress={() => setActiveTab('semua')}
           style={({pressed}) => [

@@ -421,11 +421,11 @@ export default function DashboardScreen() {
     }, [])
   );
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isManualRefresh = false) => {
     if (tanamanList.length === 0 && !userData) {
       setIsLoading(true);
       setIsError(false);
-    } else {
+    } else if (isManualRefresh) {
       setIsRefreshing(true);
     }
     try {
@@ -573,7 +573,7 @@ export default function DashboardScreen() {
           <RefreshControl
             colors={["#3FA86B"]}
             refreshing={isRefreshing}
-            onRefresh={fetchDashboardData}
+            onRefresh={() => fetchDashboardData(true)}
           />
         }
       >

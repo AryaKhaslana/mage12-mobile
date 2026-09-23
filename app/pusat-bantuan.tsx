@@ -65,7 +65,9 @@ export default function PusatBantuanScreen() {
             <Text style={styles.headerTitle}>Pusat Bantuan</Text>
           </View>
         </View>
-
+        <View style={[styles.profileImage, { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center' }]}>
+          <MaterialIcons name="person" size={20} color="#123924" />
+        </View>
       </View>
 
       <ScrollView 

@@ -17,13 +17,14 @@ export default function ProfilScreen() {
     return "Petani Balkon ";
   };
   const [showAbout, setShowAbout] = React.useState(false);
-  const [showRiwayatPanen, setShowRiwayatPanen] = React.useState(false);
-  const [riwayatPanen, setRiwayatPanen] = React.useState<any[]>([]);
-  const [isLoadingRiwayat, setIsLoadingRiwayat] = React.useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [achievementsData, setAchievementsData] = useState<AchievementResponse | null>(null);
+
+  const [showRiwayatPanen, setShowRiwayatPanen] = useState(false);
+  const [isLoadingRiwayat, setIsLoadingRiwayat] = useState(false);
+  const [riwayatPanen, setRiwayatPanen] = useState<any[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -411,7 +412,7 @@ export default function ProfilScreen() {
                 <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#a09d91', textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }}>Rawat tanamanmu sampai waktunya panen buat nambah piala di sini!</Text>
               </View>
             ) : (
-              riwayatPanen.map((item, index) => (
+              riwayatPanen.map((item: any, index: number) => (
                 <View key={item.id || index} style={{ flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', borderRadius: 20, padding: 16, marginBottom: 16, boxShadow: '4px 4px 0px #123924', alignItems: 'center' }}>
                   <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#E3F5EC', borderWidth: 2, borderColor: '#3FA86B', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
                     <Text style={{ fontSize: 32 }}>✨</Text>

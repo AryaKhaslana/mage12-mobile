@@ -1,13 +1,14 @@
-import * as Haptics from 'expo-haptics';
-import React, { useState, useCallback, useMemo } from 'react';
-import { Share, View, Modal, TextInput, Text, Pressable, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Animated, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SecureStore from "expo-secure-store";
-import api, { TanamanDetail, LogAktivitas, getTanamanById, getLogsByTanaman, createLog, deleteTanaman, updateTanaman, harvestTanaman, createCommunityPost } from '../services/api';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import * as SecureStore from "expo-secure-store";
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
+import { LogAktivitas, TanamanDetail, createCommunityPost, createLog, deleteTanaman, getLogsByTanaman, getTanamanById, harvestTanaman, updateTanaman } from '../services/api';
 
 const FALLBACK_HERO = 'https://lh3.googleusercontent.com/aida-public/AOSwzR6X7y3O2Q2_0uXwFhK8TQKf0vFvP4o7SjYdJ9k-h-5E8tV8D2Q3g0K_b8QkLp6g5zZ9n3nK2N8k5L0g-v4c0r9r6p2y2J5b8w';
 
@@ -28,7 +29,7 @@ const formatDate = (isoString: string) => {
 };
 
 
-import { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const DetailTanamanSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;

@@ -1,29 +1,32 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Image } from 'expo-image';
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  Dimensions,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ViewToken,
+    Dimensions,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    ViewToken,
 } from "react-native";
 import Animated, {
-  Extrapolation,
-  FadeInDown,
-  interpolate,
-  interpolateColor,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
+    Extrapolation,
+    FadeInDown,
+    interpolate,
+    interpolateColor,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 const { width } = Dimensions.get("window");
 const slides = [
   {
@@ -132,19 +135,19 @@ export default function OnboardingScreen() {
       <View style={styles.slide}>
         <View style={styles.imageWrapper}>
           {item.id === "4" && (
-            <Animated.Image
+            <AnimatedImage
               source={require("../assets/images/icontampilanawal/icon-gedung-chart.svg")}
               style={styles.buildingChart}
               resizeMode="contain"
             />
           )}
-          <Animated.Image
+          <AnimatedImage
             source={item.image}
             style={[styles.image, item.id !== "4" && animatedImageStyle]}
             resizeMode="contain"
           />
           {item.id === "2" && (
-            <Animated.Image
+            <AnimatedImage
               source={require("../assets/images/icontampilanawal/icon-potkecil.svg")}
               style={[styles.floatingPot, animatedFloatingStyle]}
               resizeMode="contain"
@@ -152,12 +155,12 @@ export default function OnboardingScreen() {
           )}
           {item.id === "3" && (
             <>
-              <Animated.Image
+              <AnimatedImage
                 source={require("../assets/images/icontampilanawal/icon-notifikasi.svg")}
                 style={[styles.floatingNotif, animatedFloatingStyle]}
                 resizeMode="contain"
               />
-              <Animated.Image
+              <AnimatedImage
                 source={require("../assets/images/icontampilanawal/icon-piala.svg")}
                 style={[styles.floatingPiala, animatedFloatingStyleAlt]}
                 resizeMode="contain"

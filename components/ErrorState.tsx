@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface ErrorStateProps {
   onRetry: () => void;
@@ -19,7 +19,8 @@ export default function ErrorState({
     <View style={styles.container}>
       <Image 
         source={require('../assets/images/icontampilanawal/seedling-ngantuk.svg')} 
-        style={{ width: 140, height: 140, marginBottom: 24, resizeMode: 'contain' }} 
+        style={{ width: 140, height: 140, marginBottom: 24 }} 
+        contentFit="contain"
       />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>

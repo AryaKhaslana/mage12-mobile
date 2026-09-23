@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
 import { useNotification } from '../../components/NotificationContext';
-import api, { CommunityPost, getCommunityPosts } from '../../services/api';
+import api, { CommunityPost, getCommunityPosts, getMyCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>

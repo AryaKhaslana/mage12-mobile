@@ -11,6 +11,7 @@ import {
   View,
   ViewToken,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import Animated, {
   Extrapolation,
   FadeInDown,
@@ -25,6 +26,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
+const AnimatedExpoImage = Animated.createAnimatedComponent(ExpoImage);
+
 const slides = [
   {
     id: "1",
@@ -132,19 +135,19 @@ export default function OnboardingScreen() {
       <View style={styles.slide}>
         <View style={styles.imageWrapper}>
           {item.id === "4" && (
-            <Animated.Image
+            <AnimatedExpoImage
               source={require("../assets/images/icontampilanawal/icon-gedung-chart.svg")}
               style={styles.buildingChart}
               resizeMode="contain"
             />
           )}
-          <Animated.Image
+          <AnimatedExpoImage
             source={item.image}
             style={[styles.image, item.id !== "4" && animatedImageStyle]}
             resizeMode="contain"
           />
           {item.id === "2" && (
-            <Animated.Image
+            <AnimatedExpoImage
               source={require("../assets/images/icontampilanawal/icon-potkecil.svg")}
               style={[styles.floatingPot, animatedFloatingStyle]}
               resizeMode="contain"
@@ -152,12 +155,12 @@ export default function OnboardingScreen() {
           )}
           {item.id === "3" && (
             <>
-              <Animated.Image
+              <AnimatedExpoImage
                 source={require("../assets/images/icontampilanawal/icon-notifikasi.svg")}
                 style={[styles.floatingNotif, animatedFloatingStyle]}
                 resizeMode="contain"
               />
-              <Animated.Image
+              <AnimatedExpoImage
                 source={require("../assets/images/icontampilanawal/icon-piala.svg")}
                 style={[styles.floatingPiala, animatedFloatingStyleAlt]}
                 resizeMode="contain"

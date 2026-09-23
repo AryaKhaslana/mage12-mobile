@@ -370,11 +370,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   inputArea: {
-    paddingBottom: 110,
     flexDirection: 'row',
     alignItems: 'flex-end',
     
     padding:16,
+    paddingBottom: 110,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
     borderTopColor: '#E8E5DA',

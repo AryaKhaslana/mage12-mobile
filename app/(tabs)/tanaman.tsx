@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator, Animated,
-    Image,
+    FlatList,
     Modal,
     Pressable,
     RefreshControl,
@@ -14,6 +14,7 @@ import {
     View
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import api, { TanamanDetail } from "../../services/api";
@@ -199,12 +200,138 @@ export default function TanamanScreen() {
     return true;
   });
 
+  const renderHeader = () => (
+    <>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Tanaman Kamu</Text>
+      </View>
+      <FadeInSlideUp delay={0}>
+        <View style={styles.filterSection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterScroll}
+            contentContainerStyle={styles.filterScrollContent}
+          >
+            {filters.map((filter) => (
+              <Pressable
+                key={filter}
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  activeFilter === filter ? styles.filterChipActive : styles.filterChipInactive,
+                  pressed && { opacity: 0.8 },
+                ]}
+                onPress={() => setActiveFilter(filter)}
+              >
+                <Text style={[
+                    styles.filterChipText,
+                    activeFilter === filter ? styles.filterChipTextActive : styles.filterChipTextInactive,
+                  ]}
+                >
+                  {filter}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      </FadeInSlideUp>
+    </>
+  );
+
+  const renderItem = ({ item: tanaman }: { item: TanamanDetail }) => {
+    const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam).getTime()) / 86400000) + 1;
+    let bgColor = "#E8F5E9";
+    let borderColor = "#3FA86B";
+    let textColor = "#123924";
+    let statusText = "Aman";
+    
+    if ((tanaman.sisaHariPanen ?? 999) <= 0) {
+      bgColor = "#FFF9E6";
+      borderColor = "#FFB627";
+      textColor = "#FFB627";
+      statusText = "Siap Panen 🌾";
+    } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+      bgColor = "#FFECEB";
+      borderColor = "#FF6B5C";
+      textColor = "#FF6B5C";
+      statusText = "Perlu Disiram";
+    } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+      bgColor = "#FFF9E6";
+      borderColor = "#FFB627";
+      textColor = "#FFB627";
+      statusText = "Ditunda Hujan";
+    } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+      statusText = "Sudah Disiram";
+    }
+    
+    const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+    if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
+      bgColor = "#E8F5E9";
+      borderColor = "#3FA86B";
+      textColor = "#123924";
+      statusText = "Sudah Disiram Hari Ini 💧";
+    }
+
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.card,
+          pressed && styles.pressedShadow4,
+        ]}
+        onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
+      >
+        <View style={[styles.imageContainer, { overflow: 'hidden' }]}>
+          <Image 
+            source={{ uri: tanaman.logTerakhir?.fotoUrl || FALLBACK_THUMB }} 
+            style={{ width: '100%', height: '100%' }} 
+            contentFit="cover"
+            transition={200}
+          />
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {tanaman.nickname || tanaman.jenisTanaman}
+          </Text>
+          <Text style={styles.cardSubtitle}>Skor: {tanaman.predictiveScore} • Panen: {tanaman.sisaHariPanen}hr</Text>
+          <View style={styles.cardFooter}>
+            <View style={[styles.badge, { backgroundColor: bgColor, borderColor: borderColor }]}>
+              <Text style={[styles.badgeText, { color: textColor }]}>
+                {statusText}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderEmpty = () => {
+    if (isLoading) return <PlantGridSkeleton />;
+    if (isError) return <ErrorState onRetry={() => fetchTanaman(true)} />;
+    return (
+      <View style={styles.emptyState}>
+        <MaterialIcons name="eco" size={64} color="#bdcabd" />
+        <Text style={styles.emptyText}>Belum ada tanaman.</Text>
+        <Text style={styles.emptySubText}>
+          Tekan + untuk menanam sekarang!
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
+        <FlatList
+          data={isLoading || isError ? [] : filteredList}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          numColumns={2}
+          columnWrapperStyle={styles.gridContainer}
           contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
           refreshControl={
             <RefreshControl
               colors={["#3FA86B"]}
@@ -212,162 +339,8 @@ export default function TanamanScreen() {
               onRefresh={() => fetchTanaman(true)}
             />
           }
-        >
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Tanaman Kamu</Text>
-          </View>
-
-          {/* FILTERS */}
-          <FadeInSlideUp delay={0}>
-          <View style={styles.filterSection}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterScroll}
-              contentContainerStyle={styles.filterScrollContent}
-            >
-              {filters.map((filter) => (
-                <Pressable
-                  key={filter}
-                  style={({ pressed }) => [
-                    styles.filterChip,
-                    activeFilter === filter
-                      ? styles.filterChipActive
-                      : styles.filterChipInactive,
-                    pressed && { opacity: 0.8 },
-                  ]}
-                  onPress={() => setActiveFilter(filter)}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      activeFilter === filter
-                        ? styles.filterChipTextActive
-                        : styles.filterChipTextInactive,
-                    ]}
-                  >
-                    {filter}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-          </FadeInSlideUp>
-
-          {/* PLANT GRID */}
-          {isLoading ? (
-            <PlantGridSkeleton />
-          ) : isError ? (
-            <ErrorState onRetry={() => fetchTanaman(true)} />
-          ) : filteredList.length === 0 ? (
-            <View style={styles.emptyState}>
-              <MaterialIcons name="eco" size={64} color="#bdcabd" />
-              <Text style={styles.emptyText}>Belum ada tanaman.</Text>
-              <Text style={styles.emptySubText}>
-                Tekan + untuk menanam sekarang!
-              </Text>
-            </View>
-          ) : (
-            <FadeInSlideUp delay={100}>
-            <View style={styles.gridContainer}>
-              {filteredList.map((tanaman) => {
-                const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam).getTime()) / 86400000) + 1;
-                let bgColor = "#E8F5E9";
-                let borderColor = "#3FA86B";
-                let textColor = "#123924";
-                let statusText = "Aman";
-                
-                if ((tanaman.sisaHariPanen ?? 999) <= 0) {
-                  bgColor = "#FFF9E6";
-                  borderColor = "#FFB627";
-                  textColor = "#FFB627";
-                  statusText = "Siap Panen ";
-                } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
-                  bgColor = "#FFECEB";
-                  borderColor = "#FF6B5C";
-                  textColor = "#FF6B5C";
-                  statusText = "Perlu Disiram";
-                } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
-                  bgColor = "#FFF9E6";
-                  borderColor = "#FFB627";
-                  textColor = "#FFB627";
-                  statusText = "Ditunda Hujan";
-                } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
-                  statusText = "Sudah Disiram";
-                }
-                
-                const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-                if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
-                  bgColor = "#E8F5E9";
-                  borderColor = "#3FA86B";
-                  textColor = "#123924";
-                  statusText = "Sudah Disiram Hari Ini ";
-                }
-
-                return (
-                  <Pressable
-                    key={tanaman.id}
-                    style={({ pressed }) => [
-                      styles.card,
-                      pressed && styles.pressedShadow4,
-                    ]}
-                    onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
-                  >
-                    <View style={[styles.imageContainer, { overflow: 'hidden' }]}>
-                      { tanaman.logTerakhir?.fotoUrl ? (
-                        <Image source={{ uri: tanaman.logTerakhir.fotoUrl }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                      ) : (
-                        <Image source={{ uri: FALLBACK_THUMB }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                      )}
-                    </View>
-                    <View style={styles.cardBody}>
-                      <Text style={styles.cardTitle} numberOfLines={1}>
-                        {tanaman.nickname || tanaman.jenisTanaman}
-                      </Text>
-                      <Text style={styles.cardSubtitle}>Skor: {tanaman.predictiveScore} • Panen: {tanaman.sisaHariPanen}hr</Text>
-                      <View style={styles.cardFooter}>
-                        <View
-                          style={[
-                            styles.badge,
-                            {
-                              backgroundColor: bgColor,
-                              borderColor: borderColor,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.badgeText,
-                              { color: textColor },
-                            ]}
-                          >
-                            {statusText}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-            </FadeInSlideUp>
-          )}
-        </ScrollView>
-      </View>
-
-      {/* FAB */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.fab,
-            pressed && styles.pressedShadow4,
-          ]}
-          onPress={() => setModalVisible(true)}
-        >
-          <MaterialIcons name="add" size={32} color="#FFFFFF" />
-        </Pressable>
-
-        {/* MODAL TAMBAH TANAMAN */}
+        />
+              </View>
         <Modal
           animationType="slide"
           transparent={true}

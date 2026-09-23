@@ -192,7 +192,7 @@ export default function TanibotScreen() {
               ref={flatListRef}
               data={messages}
               keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+              contentContainerStyle={{ padding: 20,  }}
               keyboardShouldPersistTaps="handled"
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
@@ -370,6 +370,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   inputArea: {
+    paddingBottom: 110,
     flexDirection: 'row',
     alignItems: 'flex-end',
     
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 12,
+    
     fontFamily: 'Nunito_500Medium',
     fontSize: 14,
     color: '#123924',

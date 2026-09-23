@@ -452,9 +452,10 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   scrollContent: {
+    paddingBottom: 140,
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 100,
+    
   },
 
   // State tertekan Neobrutalism
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
   },
   filterScrollContent: {
     gap: 8,
-    paddingBottom: 4,
+    
   },
   filterChip: {
     paddingHorizontal: 16,

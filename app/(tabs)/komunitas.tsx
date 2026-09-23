@@ -539,15 +539,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    paddingBottom: 140,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 120,
+    
     gap: 16,
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 8,
+    
   },
   headerTitle: {
     fontSize: 32,

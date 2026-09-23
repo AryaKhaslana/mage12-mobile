@@ -152,7 +152,7 @@ const HomeSkeleton = () => {
   const pillStyles = { backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924', boxShadow: "2px 2px 0px #123924" };
 
   return (
-    <Animated.View style={{ opacity: fadeAnim, paddingHorizontal: 20, paddingTop: 0, paddingBottom: 40 }}>
+    <Animated.View style={{ opacity: fadeAnim, paddingHorizontal: 20, paddingTop: 0, paddingBottom: 140 }}>
       {/* STAT STRIP SKELETON */}
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
         <View style={[{ flex: 1, height: 34, borderRadius: 100 }, pillStyles]} />
@@ -1427,7 +1427,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingBottom: 140,
     paddingTop: 16,
   },
 

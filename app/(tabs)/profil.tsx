@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF8F0',
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 140,
   },
 
   // State tertekan Neobrutalism

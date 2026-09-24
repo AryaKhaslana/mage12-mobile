@@ -1305,8 +1305,6 @@ export default function DashboardScreen() {
               style={({ pressed }) => [{
                 backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 0, alignItems: 'center', shadowColor: '#123924', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3
               }, pressed && { transform: [{ scale: 0.96 }], shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }]}
-                backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', boxShadow: '3px 3px 0px #123924'
-              }, pressed && { transform: [{ translateY: 3 }, { translateX: 3 }], boxShadow: '0px 0px 0px #123924' }]}
             >
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Tutup</Text>
             </Pressable>
@@ -1331,8 +1329,6 @@ export default function DashboardScreen() {
                 style={({ pressed }) => [{
                   backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 0, alignItems: 'center', shadowColor: '#123924', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3
                 }, pressed && { transform: [{ scale: 0.96 }], shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }, isRestoring && { opacity: 0.7 }]}
-                  backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', boxShadow: '3px 3px 0px #123924'
-                }, pressed && { transform: [{ translateY: 3 }, { translateX: 3 }], boxShadow: '0px 0px 0px #123924' }, isRestoring && { opacity: 0.7 }]}
               >
                 {isRestoring ? (
                   <ActivityIndicator color="#FFFFFF" />
@@ -1375,9 +1371,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2 },
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-    boxShadow: "0px 0px 0px #123924",
-    elevation: 0 },
 
   header: {
     flexDirection: "row",
@@ -1427,9 +1420,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
     elevation: 8,
     zIndex: 50 },
   pressedFab: {
@@ -1438,8 +1428,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4 },
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-    boxShadow: "0px 0px 0px #123924" },
   logoutButton: {
     width: 48,
     height: 48,
@@ -1451,9 +1439,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
     alignItems: "center",
     justifyContent: "center" },
   heroCard: {
@@ -1468,9 +1453,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 20,
     elevation: 6 },
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924" },
   fireIconContainer: {
     width: 48,
     height: 48,
@@ -1505,9 +1487,6 @@ const styles = StyleSheet.create({
   taskCard: {
     backgroundColor: "#FFFFFF",
     borderWidth: 0,
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
     borderRadius: 24,
     padding: 12,
     flexDirection: "row",
@@ -1518,7 +1497,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 3 },
-    marginBottom: 12 },
   taskIconBox: {
     width: 48,
     height: 48,
@@ -1559,9 +1537,6 @@ const styles = StyleSheet.create({
     width: 140,
     backgroundColor: "#FFFFFF",
     borderWidth: 0,
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
     borderRadius: 24,
     overflow: "hidden",
     marginRight: 16,
@@ -1570,7 +1545,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 4 },
-    marginRight: 16 },
   plantImagePlaceholder: {
     width: "100%",
     aspectRatio: 1,

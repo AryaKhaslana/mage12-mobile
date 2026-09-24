@@ -116,7 +116,7 @@ export default function ProfilScreen() {
             <>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={styles.profileName}>{nameFallback}</Text>
-                <View style={{ backgroundColor: '#FFB627', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, borderWidth: 0 }}>
+                <View style={{ backgroundColor: '#FFB627', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, borderWidth: 1, }}>
                   <Text style={{ fontSize: 10, fontFamily: 'Nunito_800ExtraBold', color: '#123924' }}>Lv.{userData?.level || 1}</Text>
                 </View>
               </View>
@@ -124,7 +124,7 @@ export default function ProfilScreen() {
                 <Text style={styles.profileUsername}>@{userData.username}</Text>
               )}
               
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 0, borderColor: '#3FA86B', alignSelf: 'center', marginTop: 4, marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#3FA86B', alignSelf: 'center', marginTop: 4, marginBottom: 8 }}>
                 <Text style={{ fontSize: 12, fontFamily: 'Nunito_700Bold', color: '#123924' }}>{getRankTitle(userData?.level || 1)}</Text>
               </View>
               
@@ -156,14 +156,14 @@ export default function ProfilScreen() {
         
 
         <Pressable 
-          style={({pressed}) => [styles.section, { backgroundColor: '#FFECEB',  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 24, marginBottom: 16, width: 'auto', paddingVertical: 16, borderRadius: 24, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }, pressed && {opacity: 0.8}]}
+          style={({pressed}) => [styles.section, { backgroundColor: '#FFECEB',  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 24, marginBottom: 16, width: 'auto', paddingVertical: 16, borderRadius: 24, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,}, pressed && {opacity: 0.8}]}
           onPress={() => {
             setShowRiwayatPanen(true);
             fetchRiwayatPanen();
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FF7D6B', alignItems: 'center', justifyContent: 'center', borderWidth: 0 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FF7D6B', alignItems: 'center', justifyContent: 'center', borderWidth: 0, }}>
               <MaterialIcons name="emoji-events" size={24} color="#123924" />
             </View>
             <View>
@@ -376,7 +376,7 @@ export default function ProfilScreen() {
               
               <Pressable 
                 onPress={() => setShowAbout(false)}
-                style={({ pressed }) => [{ backgroundColor: '#3FA86B', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 100, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }, pressed && { shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1, transform: [{ scale: 0.98 }] }]}
+                style={({ pressed }) => [{ backgroundColor: '#3FA86B', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 100, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,}, pressed && { shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1, transform: [{ scale: 0.98 }],}]}
               >
                 <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Tutup</Text>
               </Pressable>
@@ -396,24 +396,29 @@ export default function ProfilScreen() {
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Piala Panen 🏆</Text>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Tanaman yang sukses kamu rawat!</Text>
             </View>
-            <Pressable onPress={() => setShowRiwayatPanen(false)} style={{ backgroundColor: '#FFECEB', padding: 8, borderRadius: 100, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }}>
+            <Pressable onPress={() => setShowRiwayatPanen(false)} style={{ backgroundColor: '#FFECEB', padding: 8, borderRadius: 100, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,}}>
               <MaterialIcons name="close" size={24} color="#123924" />
             </Pressable>
           </View>
 
           {/* LIST */}
-          <ScrollView contentContainerStyle={{ padding: 24 }}>
-            {isLoadingRiwayat ? (
-              <ActivityIndicator size="large" color="#3FA86B" style={{ marginTop: 40 }} />
-            ) : riwayatPanen.length === 0 ? (
-              <View style={{ alignItems: 'center', marginTop: 80 }}>
-                <MaterialIcons name="eco" size={80} color="#E8E5DA" />
-                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#5C5A4F', marginTop: 16, textAlign: 'center' }}>Belum ada panen</Text>
-                <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#a09d91', textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }}>Rawat tanamanmu sampai waktunya panen buat nambah piala di sini!</Text>
-              </View>
-            ) : (
-              riwayatPanen.map((item: any, index: number) => (
-                <View key={item.id || index} style={{ flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 0,  borderRadius: 20, padding: 16, marginBottom: 16, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
+          {isLoadingRiwayat ? (
+            <ActivityIndicator size="large" color="#3FA86B" style={{ marginTop: 40 }} />
+          ) : (
+            <FlatList
+              data={riwayatPanen}
+              keyExtractor={(item, index) => (item.id || index).toString()}
+              contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={{ alignItems: 'center', marginTop: 80 }}>
+                  <MaterialIcons name="eco" size={80} color="#E8E5DA" />
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#5C5A4F', marginTop: 16, textAlign: 'center' }}>Belum ada panen</Text>
+                  <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#a09d91', textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }}>Rawat tanamanmu sampai waktunya panen buat nambah piala di sini!</Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <View style={{ flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 0,  borderRadius: 20, padding: 16, marginBottom: 16, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
                   <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#E3F5EC', borderWidth: 0, borderColor: '#3FA86B', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
                     <Text style={{ fontSize: 32 }}>✨</Text>
                   </View>
@@ -436,23 +441,28 @@ export default function ProfilScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0' },
+    backgroundColor: '#FBF8F0',
+  },
   scrollContent: {
-    paddingBottom: 140 },
+    paddingBottom: 140,
+  },
 
   // State tertekan Neobrutalism
   pressedShadow2: {
     shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
     
     
-    transform: [{ scale: 0.98 }] },
+    transform: [{ scale: 0.98 }],
+  },
   pressedShadow3: {
     shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
     
     
-    transform: [{ scale: 0.98 }] },
+    transform: [{ scale: 0.98 }],
+  },
   menuItemPressed: {
-    backgroundColor: '#f1eee6' },
+    backgroundColor: '#f1eee6',
+  },
 
   headerBackground: {
     backgroundColor: '#1F5C3D',
@@ -462,27 +472,31 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 72,
     paddingHorizontal: 20,
-    position: 'relative' },
+    position: 'relative',
+  },
   avatarWrapper: {
     position: 'relative',
     marginTop: 8,
-    marginBottom: 12 },
+    marginBottom: 12,
+  },
   avatarContainer: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    borderWidth: 0,
+    borderWidth: 3,
     
     backgroundColor: '#FFFFFF',
-    overflow: 'hidden' },
+    overflow: 'hidden',
+  },
   avatarImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover' },
+  },
   avatarInitials: {
     fontSize: 32,
     fontFamily: 'Nunito_700Bold',
-    color: '#FFFFFF' },
+    color: '#FFFFFF',
+  },
   editBadge: {
     position: 'absolute',
     bottom: -4,
@@ -495,12 +509,15 @@ const styles = StyleSheet.create({
     
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    
+  },
   profileLevel: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
     color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: 4 },
+    marginTop: 4,
+  },
   achievementIcon: {
     width: 56,
     height: 56,
@@ -509,7 +526,8 @@ const styles = StyleSheet.create({
     
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+  },
   achievementIconLocked: {
     width: 44,
     height: 44,
@@ -520,37 +538,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.7,
-    marginTop: 6 },
+    marginTop: 6,
+  },
   profileName: {
     fontSize: 20,
     fontFamily: 'Nunito_700Bold',
-    color: '#FFFFFF' },
+    color: '#FFFFFF',
+  },
   profileUsername: {
     fontSize: 13,
     fontFamily: 'Nunito_700Bold',
     color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: 4 },
+    marginTop: 4,
+  },
   profileBio: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
     color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 4,
     textAlign: 'center',
-    paddingHorizontal: 20 },
+    paddingHorizontal: 20,
+  },
   profileBioEmpty: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
     color: 'rgba(255, 255, 255, 0.7)',
     fontStyle: 'italic',
     marginTop: 4,
-    opacity: 0.8 },
+    opacity: 0.8,
+  },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginTop: -40,
     zIndex: 10,
-    gap: 12 },
+    gap: 12,
+  },
   statBox: {
     flex: 1,
     borderRadius: 16,
@@ -559,39 +583,47 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+  },
   statValue: {
     fontSize: 20,
     fontFamily: 'Nunito_700Bold',
-    color: '#123924' },
+    color: '#123924',
+  },
   statLabel: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
     color: '#123924',
     textAlign: 'center',
     marginTop: 4,
-    lineHeight: 16 },
+    lineHeight: 16,
+  },
   section: {
     marginTop: 24,
-    paddingHorizontal: 20 },
+    paddingHorizontal: 20,
+  },
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_700Bold',
     color: '#3FA86B',
-    marginBottom: 16 },
+    marginBottom: 16,
+  },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16 },
+    marginBottom: 16,
+  },
   seeAllText: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
     color: '#3FA86B',
-    textDecorationLine: 'underline' },
+    textDecorationLine: 'underline',
+  },
   horizontalScroll: {
     gap: 16,
-    paddingBottom: 8 },
+    paddingBottom: 8,
+  },
   plantCard: {
     width: 90,
     backgroundColor: '#FFFFFF',
@@ -600,7 +632,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     overflow: 'hidden',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+  },
   plantBlock: {
     width: '100%',
     aspectRatio: 1,
@@ -608,15 +641,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: '#123924' },
+    borderBottomColor: '#123924',
+  },
   plantNameContainer: {
     padding: 8,
     width: '100%',
-    alignItems: 'center' },
+    alignItems: 'center',
+  },
   plantName: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
-    color: '#1c1c17' },
+    color: '#1c1c17',
+  },
   plantAddCard: {
     width: 90,
     minHeight: 120,
@@ -627,7 +663,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 8,
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+  },
   plantAddIcon: {
     width: 40,
     height: 40,
@@ -637,11 +674,13 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8 },
+    marginBottom: 8,
+  },
   plantAddText: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
-    color: '#123924' },
+    color: '#123924',
+  },
   menuContainer: {
     marginHorizontal: 20,
     marginTop: 24,
@@ -650,19 +689,22 @@ const styles = StyleSheet.create({
     
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+  },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 2,
-    borderBottomColor: '#123924' },
+    borderBottomColor: '#123924',
+  },
   menuText: {
     flex: 1,
     fontSize: 15,
     marginLeft: 16,
     fontFamily: 'Nunito_700Bold',
-    color: '#1c1c17' },
+    color: '#1c1c17',
+  },
   logoutButton: {
     marginHorizontal: 20,
     marginTop: 24,
@@ -675,9 +717,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+  },
   logoutText: {
     fontSize: 15,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#FF6B5C' }
+    color: '#FF6B5C',
+  }
 });

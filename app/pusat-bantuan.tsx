@@ -17,23 +17,19 @@ const faqs = [
   {
     id: 1,
     question: 'Bagaimana cara mendapatkan dan menaikkan Level?',
-    answer: 'Kamu bisa menaikkan level dengan mengumpulkan EXP. EXP didapatkan setiap kali kamu rajin menyiram tanaman sesuai jadwal dan menyelesaikan tugas harian di Dashboard.',
-  },
+    answer: 'Kamu bisa menaikkan level dengan mengumpulkan EXP. EXP didapatkan setiap kali kamu rajin menyiram tanaman sesuai jadwal dan menyelesaikan tugas harian di Dashboard.' },
   {
     id: 2,
     question: 'Apa fungsi dari ☔ Pelindung Streak?',
-    answer: 'Pelindung Streak berfungsi menyelamatkan rekor beruntun (Streak) kamu agar api tidak padam jika kamu lupa menyiram tanaman dalam satu hari. Pelindung ini sangat berharga dan bisa didapatkan saat naik level!',
-  },
+    answer: 'Pelindung Streak berfungsi menyelamatkan rekor beruntun (Streak) kamu agar api tidak padam jika kamu lupa menyiram tanaman dalam satu hari. Pelindung ini sangat berharga dan bisa didapatkan saat naik level!' },
   {
     id: 3,
     question: 'Bagaimana cara kerja Smart Watering & Prediksi Cuaca?',
-    answer: 'Sistem TaniSync akan secara otomatis mendeteksi jika akan turun hujan lebat di area lahanmu hari ini. Jika iya, status penyiraman akan berubah menjadi "Ditunda Hujan" untuk menghemat air dan mencegah tanaman kelebihan air (overwatering).',
-  },
+    answer: 'Sistem TaniSync akan secara otomatis mendeteksi jika akan turun hujan lebat di area lahanmu hari ini. Jika iya, status penyiraman akan berubah menjadi "Ditunda Hujan" untuk menghemat air dan mencegah tanaman kelebihan air (overwatering).' },
   {
     id: 4,
     question: 'Bagaimana cara menggunakan Peta Wabah Hama Lokal?',
-    answer: 'Buka menu Peta Hama, aplikasi akan mendeteksi lokasimu menggunakan GPS dan menampilkan potensi risiko serangan hama di sekitar area lahanmu secara real-time. Semakin merah zonanya, semakin waspada kamu harus menjaga tanamanmu!',
-  }
+    answer: 'Buka menu Peta Hama, aplikasi akan mendeteksi lokasimu menggunakan GPS dan menampilkan potensi risiko serangan hama di sekitar area lahanmu secara real-time. Semakin merah zonanya, semakin waspada kamu harus menjaga tanamanmu!' }
 ];
 
 export default function PusatBantuanScreen() {
@@ -241,8 +237,7 @@ export default function PusatBantuanScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
+    backgroundColor: '#FBF8F0' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,53 +245,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 64,
     backgroundColor: 'rgba(251, 248, 240, 0.85)',
-    zIndex: 50,
-  },
+    zIndex: 50 },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-  },
+    gap: 16 },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '3px 3px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
+    gap: 4 },
   headerLogo: {
     width: 32,
     height: 32,
-    resizeMode: 'contain',
-  },
+    resizeMode: 'contain' },
   headerTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 20,
-    color: '#123924',
-  },
+    color: '#123924' },
   profileImage: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-  },
+    borderRadius: 16 },
   container: {
-    flex: 1,
-  },
+    flex: 1 },
   contentContainer: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 40,
-    gap: 24,
-  },
+    gap: 24 },
   
   /* HERO CARD */
   heroCard: {
@@ -306,13 +292,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
-    boxShadow: '0px 8px 20px rgba(18,57,36,0.12)',
-  },
+    boxShadow: '0px 8px 20px rgba(18,57,36,0.12)' },
   heroContent: {
     flex: 1,
     gap: 4,
-    zIndex: 10,
-  },
+    zIndex: 10 },
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -323,36 +307,30 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     alignSelf: 'flex-start',
     boxShadow: '0px 2px 8px rgba(18,57,36,0.08)',
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   heroBadgeText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 11,
-    color: '#123924',
-  },
+    color: '#123924' },
   heroTitle: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 20,
-    color: '#123924',
-  },
+    color: '#123924' },
   heroSubtitle: {
     fontFamily: 'Nunito_500Medium',
     fontSize: 12,
     color: '#123924',
-    opacity: 0.8,
-  },
+    opacity: 0.8 },
   heroImageContainer: {
     width: 80,
     height: 80,
     zIndex: 10,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   heroImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain',
-  },
+    resizeMode: 'contain' },
   heroAmbientCircle: {
     position: 'absolute',
     right: -24,
@@ -361,23 +339,20 @@ const styles = StyleSheet.create({
     height: 128,
     borderRadius: 64,
     backgroundColor: '#D2EFE0',
-    opacity: 0.6,
-  },
+    opacity: 0.6 },
   
   /* SEARCH BAR */
   searchContainer: {
     position: 'relative',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   searchIcon: {
     position: 'absolute',
     left: 16,
-    zIndex: 10,
-  },
+    zIndex: 10 },
   searchInput: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 16,
     paddingVertical: 14,
     paddingLeft: 48,
@@ -385,72 +360,61 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_500Medium',
     fontSize: 15,
     color: '#123924',
-    boxShadow: '3px 3px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   clearBtn: {
     position: 'absolute',
     right: 14,
     zIndex: 10,
-    padding: 4,
-  },
+    padding: 4 },
   
   /* SECTIONS */
   section: {
-    gap: 12,
-  },
+    gap: 12 },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between' },
   sectionTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 18,
-    color: '#123924',
-  },
+    color: '#123924' },
   sectionSubtitle: {
     fontFamily: 'Nunito_500Medium',
     fontSize: 12,
-    color: '#5C5A4F',
-  },
+    color: '#5C5A4F' },
   
   /* CATEGORIES */
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
-  },
+    gap: 12 },
   categoryCard: {
     width: '48%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     padding: 16,
-    boxShadow: '3px 3px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   categoryIconBox: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   categoryTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
-    color: '#123924',
-  },
+    color: '#123924' },
   categoryDesc: {
     fontFamily: 'Nunito_500Medium',
     fontSize: 11,
     color: '#5C5A4F',
-    marginTop: 2,
-  },
+    marginTop: 2 },
   
   /* FAQ SECTION */
   popularBadge: {
@@ -458,115 +422,95 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     backgroundColor: '#FFB627',
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-  },
+    borderWidth: 0 },
   popularBadgeText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 11,
-    color: '#123924',
-  },
+    color: '#123924' },
   faqList: {
-    gap: 12,
-  },
+    gap: 12 },
   faqCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '3px 3px 0px #123924',
-    overflow: 'hidden',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    overflow: 'hidden' },
   faqToggle: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     padding: 16,
-    gap: 12,
-  },
+    gap: 12 },
   faqQuestion: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
     color: '#123924',
     flex: 1,
-    lineHeight: 20,
-  },
+    lineHeight: 20 },
   faqContent: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
+    paddingBottom: 16 },
   faqDivider: {
     height: 1,
     backgroundColor: '#f1eee6',
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   faqAnswer: {
     fontFamily: 'Nunito_500Medium',
     fontSize: 15,
     color: '#5C5A4F',
-    lineHeight: 24,
-  },
+    lineHeight: 24 },
   
   /* CONTACT SUPPORT */
   contactCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     padding: 16,
     gap: 16,
-    boxShadow: '4px 4px 0px #123924',
-    marginBottom: 32,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    marginBottom: 32 },
   contactHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 16,
-  },
+    gap: 16 },
   contactIconBox: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#b1f1c8',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   contactInfo: {
-    flex: 1,
-  },
+    flex: 1 },
   contactTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 17,
-    color: '#123924',
-  },
+    color: '#123924' },
   contactDesc: {
     fontFamily: 'Nunito_500Medium',
     fontSize: 12,
     color: '#5C5A4F',
-    marginTop: 2,
-  },
+    marginTop: 2 },
   contactHours: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 8,
-  },
+    marginTop: 8 },
   onlineDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#3FA86B',
-  },
+    backgroundColor: '#3FA86B' },
   contactHoursText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 12,
-    color: '#123924',
-  },
+    color: '#123924' },
   contactButtons: {
-    gap: 12,
-  },
+    gap: 12 },
   waButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -575,15 +519,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#3FA86B',
     paddingVertical: 12,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '3px 3px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   waButtonText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
-    color: '#FFFFFF',
-  },
+    color: '#FFFFFF' },
   ticketButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -592,14 +534,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: 10,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '3px 3px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   ticketButtonText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
-    color: '#123924',
-  }
+    color: '#123924' }
 });
 

@@ -4,11 +4,14 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from "expo-secure-store";
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState , useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
 import { LogAktivitas, TanamanDetail, createCommunityPost, createLog, deleteTanaman, getLogsByTanaman, getTanamanById, harvestTanaman, updateTanaman } from '../services/api';
+
+
+
 
 const FALLBACK_HERO = 'https://lh3.googleusercontent.com/aida-public/AOSwzR6X7y3O2Q2_0uXwFhK8TQKf0vFvP4o7SjYdJ9k-h-5E8tV8D2Q3g0K_b8QkLp6g5zZ9n3nK2N8k5L0g-v4c0r9r6p2y2J5b8w';
 
@@ -28,9 +31,6 @@ const formatDate = (isoString: string) => {
          date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
 };
 
-
-import { useEffect, useRef } from 'react';
-
 const DetailTanamanSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
@@ -46,17 +46,17 @@ const DetailTanamanSkeleton = () => {
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim, padding: 20, gap: 24 }}>
       <View style={{ alignItems: 'center', gap: 12, marginTop: 20 }}>
-        <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
         <View style={{ width: 150, height: 28, borderRadius: 14, backgroundColor: '#E8E5DA' }} />
         <View style={{ width: 100, height: 18, borderRadius: 9, backgroundColor: '#E8E5DA' }} />
       </View>
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
-        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
+        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
       </View>
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
-        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924' }} />
+        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
+        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
       </View>
     </Animated.View>
   );
@@ -101,8 +101,7 @@ export default function DetailTanamanModal() {
     try {
       await updateTanaman(Number(id), {
         nickname: editNickname || undefined,
-        jenisTanaman: editJenis,
-      });
+        jenisTanaman: editJenis });
       showNotification("Sukses", "Tanaman berhasil diupdate!");
       setIsEditModalVisible(false);
       fetchData(); // refetch to update UI
@@ -280,8 +279,7 @@ export default function DetailTanamanModal() {
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.7,
-      });
+        quality: 0.7 });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
@@ -346,8 +344,7 @@ export default function DetailTanamanModal() {
       const shareMessage = ` Pamer Progres TaniSync! \n\nGue udah ngerawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari!\nStatus kesehatannya dapet skor ${tanaman?.predictiveScore}/100! \n\nSisa ${tanaman?.sisaHariPanen} hari lagi menuju panen! Yuk buruan mulai kebun lu sendiri di TaniSync! `;
       await Share.share({
         message: shareMessage,
-        title: "Pamer Progres TaniSync",
-      });
+        title: "Pamer Progres TaniSync" });
     } catch (error) {
       console.error(error);
     }
@@ -393,7 +390,7 @@ export default function DetailTanamanModal() {
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#FFB627', borderColor: '#123924' }]} onPress={handleShare}>
+            <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#FFB627' }]} onPress={handleShare}>
               <MaterialIcons name="share" size={24} color="#123924" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={handleDeleteTanaman} disabled={isDeleting}>
@@ -488,7 +485,7 @@ export default function DetailTanamanModal() {
               Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 
             </Text>
           ) : tanaman.statusPenyiraman === "DITUNDA_HUJAN" ? (
-            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924', textAlign: 'center', backgroundColor: '#E3F5EC', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#3FA86B' }}>
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924', textAlign: 'center', backgroundColor: '#E3F5EC', padding: 16, borderRadius: 16, borderWidth: 0, borderColor: '#3FA86B' }}>
               Penyiraman ditunda karena sistem mendeteksi hujan lebat hari ini! 🌧️ Streak kamu aman!
             </Text>
           ) : (
@@ -611,17 +608,17 @@ export default function DetailTanamanModal() {
       
       <Modal visible={showDeleteConfirm} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Image source={require("../assets/images/icontampilanawal/seedling-ngantuk.svg")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Tanaman?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Tanaman ini beserta seluruh riwayat jurnalnya akan dihapus permanen dan tidak bisa dikembalikan.
             </Text>
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
-              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setShowDeleteConfirm(false)}>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 0,  alignItems: 'center' }} onPress={() => setShowDeleteConfirm(false)}>
                 <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmDelete} disabled={isDeleting}>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 0,  alignItems: 'center' }} onPress={confirmDelete} disabled={isDeleting}>
                 {isDeleting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Hapus</Text>}
               </TouchableOpacity>
             </View>
@@ -631,17 +628,17 @@ export default function DetailTanamanModal() {
 
       <Modal visible={showHarvestConfirm} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Image source={require("../assets/images/icontampilanawal/seedling-lompat.svg")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini? </Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Perjuanganmu merawat {tanaman?.nickname || tanaman?.jenisTanaman} sudah selesai! Tanaman ini akan dicatat di riwayat panenmu.
             </Text>
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
-              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setShowHarvestConfirm(false)}>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 0,  alignItems: 'center' }} onPress={() => setShowHarvestConfirm(false)}>
                 <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FFB627', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmHarvest}>
+              <TouchableOpacity style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FFB627', borderWidth: 0,  alignItems: 'center' }} onPress={confirmHarvest}>
                 <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Panen!</Text>
               </TouchableOpacity>
             </View>
@@ -651,9 +648,9 @@ export default function DetailTanamanModal() {
 
       <Modal visible={showCertificate} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.95)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, overflow: 'hidden', borderWidth: 4, borderColor: '#FFB627', paddingBottom: 24, boxShadow: '8px 8px 0px #FFB627' }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, overflow: 'hidden', borderWidth: 0, borderColor: '#FFB627', paddingBottom: 24, shadowColor: '#FFB627', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 }}>
             
-            <View style={{ backgroundColor: '#FFB627', paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', borderBottomWidth: 4, borderColor: '#123924' }}>
+            <View style={{ backgroundColor: '#FFB627', paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', borderBottomWidth: 4 }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>Sertifikat Lulus Panen </Text>
             </View>
 
@@ -663,11 +660,11 @@ export default function DetailTanamanModal() {
               </Text>
               
               <View style={{ flexDirection: 'row', gap: 16, marginTop: 16, width: '100%' }}>
-                <View style={{ flex: 1, backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#3FA86B', alignItems: 'center' }}>
+                <View style={{ flex: 1, backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, borderWidth: 0, borderColor: '#3FA86B', alignItems: 'center' }}>
                   <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#3FA86B' }}>{hariKe}</Text>
                   <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924', marginTop: 4 }}>Hari Dirawat</Text>
                 </View>
-                <View style={{ flex: 1, backgroundColor: '#FFE5E3', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#FF6B5C', alignItems: 'center' }}>
+                <View style={{ flex: 1, backgroundColor: '#FFE5E3', padding: 16, borderRadius: 16, borderWidth: 0, borderColor: '#FF6B5C', alignItems: 'center' }}>
                   <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#FF6B5C' }}>{tanaman?.predictiveScore || 0}</Text>
                   <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924', marginTop: 4 }}>Total Skor</Text>
                 </View>
@@ -675,7 +672,7 @@ export default function DetailTanamanModal() {
 
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 24 }}>
                 {photoLogsAsc.slice(0, 3).map((url, i) => (
-                  <View key={i} style={{ width: 80, height: 80, borderRadius: 12, borderWidth: 2, borderColor: '#123924', overflow: 'hidden', transform: [{ rotate: i === 1 ? '5deg' : '-5deg' }] }}>
+                  <View key={i} style={{ width: 80, height: 80, borderRadius: 12, borderWidth: 0,  overflow: 'hidden', transform: [{ rotate: i === 1 ? '5deg' : '-5deg' }] }}>
                     <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
                   </View>
                 ))}
@@ -690,7 +687,7 @@ export default function DetailTanamanModal() {
 
             <View style={{ paddingHorizontal: 24, gap: 12 }}>
               <TouchableOpacity 
-                style={{ backgroundColor: '#123924', padding: 16, borderRadius: 16, alignItems: 'center', borderWidth: 2, borderColor: '#123924', boxShadow: '4px 4px 0px #3FA86B' }}
+                style={{ backgroundColor: '#123924', padding: 16, borderRadius: 16, alignItems: 'center', borderWidth: 0,  shadowColor: '#3FA86B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }}
                 onPress={handleShareCertificate}
                 disabled={isPosting}
               >
@@ -725,65 +722,56 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 2,
-    borderBottomColor: '#E8E5DA',
-  },
+    borderBottomColor: '#E8E5DA' },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
 
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
+    justifyContent: 'flex-end' },
   modalContent: {
     backgroundColor: '#FBF8F0',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
-    borderWidth: 2,
-    borderColor: '#123924',
-    maxHeight: '80%',
-  },
+    borderWidth: 0,
+    
+    maxHeight: '80%' },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-  },
+    marginBottom: 20 },
   modalTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   modalLabel: {
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
     color: '#123924',
     marginBottom: 8,
-    marginTop: 16,
-  },
+    marginTop: 16 },
   modalInput: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
-    color: '#123924',
-  },
+    color: '#123924' },
   pickerContainer: {
     maxHeight: 200,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 16,
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   pickerItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -791,73 +779,61 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E5DA',
-  },
+    borderBottomColor: '#E8E5DA' },
   pickerItemActive: {
-    backgroundColor: '#3FA86B',
-  },
+    backgroundColor: '#3FA86B' },
   pickerItemText: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
-    color: '#123924',
-  },
+    color: '#123924' },
   pickerItemTextActive: {
     color: '#FFFFFF',
-    fontFamily: 'Nunito_700Bold',
-  },
+    fontFamily: 'Nunito_700Bold' },
   submitButton: {
     backgroundColor: '#3FA86B',
     paddingVertical: 16,
     borderRadius: 100,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '3px 3px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   submitButtonText: {
     fontSize: 16,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   safeArea: { flex: 1, backgroundColor: '#FBF8F0' },
   scrollContent: { paddingBottom: 40 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, marginBottom: 16 },
-  iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center', shadowColor: '#123924', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 },
+  iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 0,  alignItems: 'center', justifyContent: 'center', elevation: 4 },
   heroSection: { marginHorizontal: 20, position: 'relative', marginBottom: 16 },
-  imageWrapper: { width: '100%', aspectRatio: 1, borderRadius: 20, borderWidth: 2, borderColor: '#123924', overflow: 'hidden', backgroundColor: '#96d4ad', shadowColor: '#123924', shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 },
+  imageWrapper: { width: '100%', aspectRatio: 1, borderRadius: 20, borderWidth: 0,  overflow: 'hidden', backgroundColor: '#96d4ad', elevation: 4 },
   heroImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  floatingCamButton: { position: 'absolute', bottom: -16, right: 24, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center', shadowColor: '#123924', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 5, zIndex: 10 },
+  floatingCamButton: { position: 'absolute', bottom: -16, right: 24, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 0,  alignItems: 'center', justifyContent: 'center', elevation: 5, zIndex: 10 },
   titleSection: { paddingHorizontal: 20, marginBottom: 20 },
   plantTitle: { fontSize: 24, fontWeight: '800', color: '#1F5C3D', marginBottom: 4 },
   plantSubtitle: { fontSize: 12, color: '#5C5A4F' },
   harvestCard: { marginHorizontal: 20, backgroundColor: '#1F5C3D', borderRadius: 28, padding: 24, flexDirection: 'row', alignItems: 'center', marginBottom: 24, shadowColor: '#123924', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 },
-  harvestIconCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 4, borderColor: '#FFB627', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
+  harvestIconCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 0, borderColor: '#FFB627', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   harvestTextContainer: { marginLeft: 16, flex: 1 },
   harvestTitle: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   harvestSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
 
   harvestActionBtn: {
     backgroundColor: '#FFB627',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 30,
     minHeight: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#123924',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
+    elevation: 4 },
   harvestActionBtnText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 20,
-    color: '#123924',
-  },
+    color: '#123924' },
 
   actionRow: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, marginBottom: 20 },
-  actionBtn: { flex: 1, minHeight: 56, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, shadowColor: '#123924', shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  actionBtn: { flex: 1, minHeight: 56, borderRadius: 999, borderWidth: 0,  alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, elevation: 3 },
   btnWhite: { backgroundColor: '#FFFFFF' },
   btnGreen: { backgroundColor: '#3FA86B' },
   btnWhiteText: { fontSize: 12, fontWeight: '700', color: '#123924', textAlign: 'center' },
@@ -865,13 +841,13 @@ const styles = StyleSheet.create({
   historySection: { paddingHorizontal: 20 },
   historySectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F5C3D', marginBottom: 12 },
   historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: '#123924' },
-  historyImage: { width: 40, height: 40, borderRadius: 8, borderWidth: 2, borderColor: '#123924', marginRight: 12, backgroundColor: '#e5e2db' },
+  historyImage: { width: 40, height: 40, borderRadius: 8, borderWidth: 0,  marginRight: 12, backgroundColor: '#e5e2db' },
   historyTextCol: { flex: 1 },
   historyTitle: { fontSize: 12, fontWeight: '700', color: '#123924' },
   historySubtitle: { fontSize: 11, color: '#5C5A4F', marginTop: 2 },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 0 },
   badgeText: { fontSize: 10, fontWeight: "800" },
-  toast: { position: 'absolute', top: 20, left: 20, right: 20, backgroundColor: '#FFB627', padding: 16, borderRadius: 12, zIndex: 50, elevation: 10, borderWidth: 2, borderColor: '#123924', shadowColor: '#123924', shadowOffset: {width:4, height:4}, shadowOpacity: 1, shadowRadius: 0 },
+  toast: { position: 'absolute', top: 20, left: 20, right: 20, backgroundColor: '#FFB627', padding: 16, borderRadius: 12, zIndex: 50, elevation: 10, borderWidth: 0 },
   toastText: { color: '#123924', fontWeight: '800', textAlign: 'center' },
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,57,36,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   emptyState: { alignItems: 'center', paddingVertical: 32, opacity: 0.7 },

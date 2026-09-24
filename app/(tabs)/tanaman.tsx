@@ -1,6 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState , useRef } from "react";
 import {
     ActivityIndicator, Animated,
     FlatList,
@@ -18,6 +18,8 @@ import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import api, { TanamanDetail } from "../../services/api";
+
+
 
 const FALLBACK_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
 
@@ -44,8 +46,6 @@ const JENIS_TANAMAN_ENUM = [
   "Pisang",
 ];
 
-import { useRef } from 'react';
-
 const PlantGridSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
@@ -61,7 +61,7 @@ const PlantGridSkeleton = () => {
   return (
     <Animated.View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', opacity: fadeAnim }}>
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <View key={i} style={{ width: '48%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 2, borderColor: '#123924', marginBottom: 16, overflow: 'hidden' }}>
+        <View key={i} style={{ width: '48%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0,  marginBottom: 16, overflow: 'hidden' }}>
           <View style={{ width: '100%', height: 100, backgroundColor: '#E8E5DA', borderBottomWidth: 2, borderBottomColor: '#123924' }} />
           <View style={{ padding: 12, gap: 6 }}>
             <View style={{ width: '80%', height: 14, borderRadius: 7, backgroundColor: '#E8E5DA' }} />
@@ -169,8 +169,7 @@ export default function TanamanScreen() {
     try {
       const response = await api.post("/tanaman", {
         jenisTanaman: selectedTanaman,
-        nickname: nickname || undefined,
-      });
+        nickname: nickname || undefined });
       if (response.data?.status === "success") {
         showNotification(
           "Sukses",
@@ -418,132 +417,99 @@ export default function TanamanScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FBF8F0",
-  },
+    backgroundColor: "#FBF8F0" },
   container: {
     flex: 1,
-    position: "relative",
-  },
+    position: "relative" },
   scrollContent: {
     paddingBottom: 140,
     paddingHorizontal: 20,
-    paddingTop: 24,
-    
-  },
+    paddingTop: 24 },
 
   // State tertekan Neobrutalism
   pressedShadow4: {
-    boxShadow: "0px 0px 0px #123924",
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+    
+    
+    transform: [{ scale: 0.98 }] },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   headerTitle: {
     fontSize: 22,
     fontFamily: "Nunito_800ExtraBold",
-    color: "#1F5C3D",
-  },
+    color: "#1F5C3D" },
   filterSection: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   filterScroll: {
-    flex: 1,
-  },
+    flex: 1 },
   filterScrollContent: {
-    gap: 8,
-    
-  },
+    gap: 8 },
   filterChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#123924",
-  },
+    borderWidth: 0 },
   filterChipActive: {
-    backgroundColor: "#3FA86B",
-  },
+    backgroundColor: "#3FA86B" },
   filterChipInactive: {
-    backgroundColor: "#FFFFFF",
-  },
+    backgroundColor: "#FFFFFF" },
   filterChipText: {
     fontSize: 12,
-    fontFamily: "Nunito_700Bold",
-  },
+    fontFamily: "Nunito_700Bold" },
   filterChipTextActive: {
-    color: "#FFFFFF",
-  },
+    color: "#FFFFFF" },
   filterChipTextInactive: {
-    color: "#3e4a40",
-  },
+    color: "#3e4a40" },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
-  },
+    gap: 12 },
   card: {
     width: "48%",
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     overflow: "hidden",
     marginBottom: 8,
-    boxShadow: "4px 4px 0px #123924",
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   imageContainer: {
     width: "100%",
     aspectRatio: 1,
-    backgroundColor: "#b1f1c8",
-  },
+    backgroundColor: "#b1f1c8" },
   cardBody: {
     padding: 12,
-    flex: 1,
-  },
+    flex: 1 },
   cardTitle: {
     fontSize: 14,
     fontFamily: "Nunito_700Bold",
     color: "#123924",
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   cardSubtitle: {
     fontFamily: "Nunito_500Medium",
     fontSize: 11,
     color: "#5C5A4F",
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   cardFooter: {
     marginTop: "auto",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-  },
+    justifyContent: "space-between" },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 100,
-    borderWidth: 1,
-    borderColor: "#123924",
-  },
+    borderWidth: 0 },
   badgeText: {
     fontSize: 9,
-    fontFamily: "Nunito_700Bold",
-  },
+    fontFamily: "Nunito_700Bold" },
   fab: {
     position: "absolute",
     bottom: 120,
@@ -552,124 +518,96 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: "#3FA86B",
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "4px 4px 0px #123924",
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-    zIndex: 50,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    zIndex: 50 },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 60,
-  },
+    paddingVertical: 60 },
   emptyText: {
     fontSize: 16,
     fontFamily: "Nunito_700Bold",
     color: "#123924",
     marginTop: 16,
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   emptySubText: {
     fontFamily: "Nunito_500Medium",
     fontSize: 14,
-    color: "#5C5A4F",
-  },
+    color: "#5C5A4F" },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(18, 57, 36, 0.5)",
-    justifyContent: "flex-end",
-  },
+    justifyContent: "flex-end" },
   modalContent: {
     backgroundColor: "#FBF8F0",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     borderBottomWidth: 0,
     padding: 24,
-    maxHeight: "80%",
-  },
+    maxHeight: "80%" },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-  },
+    marginBottom: 20 },
   modalTitle: {
     fontSize: 20,
     fontFamily: "Nunito_800ExtraBold",
-    color: "#123924",
-  },
+    color: "#123924" },
   textInput: {
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
     fontFamily: "Nunito_700Bold",
     color: "#123924",
-    marginBottom: 20,
-  },
+    marginBottom: 20 },
   modalLabel: {
     fontSize: 14,
     fontFamily: "Nunito_700Bold",
     color: "#5C5A4F",
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   pickerContainer: {
     maxHeight: 250,
     marginBottom: 24,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     borderRadius: 30,
     backgroundColor: "#FFFFFF",
-    padding: 8,
-  },
+    padding: 8 },
   pickerItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   pickerItemActive: {
-    backgroundColor: "#3FA86B",
-  },
+    backgroundColor: "#3FA86B" },
   pickerItemText: {
     fontSize: 14,
     fontFamily: "Nunito_700Bold",
-    color: "#123924",
-  },
+    color: "#123924" },
   pickerItemTextActive: {
-    color: "#FFFFFF",
-  },
+    color: "#FFFFFF" },
   submitButton: {
     backgroundColor: "#1F5C3D",
     borderRadius: 30,
     paddingVertical: 16,
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
-    shadowColor: "#123924",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   submitButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Nunito_700Bold",
-  },
-});
+    fontFamily: "Nunito_700Bold" } });

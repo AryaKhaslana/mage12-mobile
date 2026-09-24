@@ -16,8 +16,8 @@ const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, 
     <Text style={{ fontSize: 14, fontFamily: 'Nunito_500Medium', color: '#5C5A4F', textAlign: 'center' }}>{subtitle}</Text>
     {ctaText && onCtaPress && (
       <Pressable onPress={onCtaPress} style={({ pressed }) => [
-        { marginTop: 24, backgroundColor: '#3FA86B', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 100, borderWidth: 2, borderColor: '#123924', boxShadow: "3px 3px 0px #123924" },
-        pressed && { boxShadow: "0px 0px 0px #123924", transform: [{ translateX: 3 }, { translateY: 3 }] }
+        { marginTop: 24, backgroundColor: '#3FA86B', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 100, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+        pressed && { shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1, transform: [{ scale: 0.98 }] }
       ]}>
         <Text style={{ color: '#FFFFFF', fontSize: 14, fontFamily: 'Nunito_700Bold' }}>{ctaText}</Text>
       </Pressable>
@@ -54,8 +54,8 @@ const PostSkeleton = () => {
     <Animated.View style={[{
       backgroundColor: '#FFFFFF',
       borderRadius: 24,
-      borderWidth: 2,
-      borderColor: '#123924',
+      borderWidth: 0,
+      
       padding: 16,
       opacity: fadeAnim, 
       marginBottom: 16 
@@ -104,8 +104,7 @@ export default function KomunitasScreen() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.7,
-    });
+      quality: 0.7 });
     if (!result.canceled) {
       setFoto(result.assets[0]);
     }
@@ -125,15 +124,12 @@ export default function KomunitasScreen() {
         formData.append("foto", {
           uri: foto.uri,
           name: "foto.jpg",
-          type: "image/jpeg",
-        } as any);
+          type: "image/jpeg" } as any);
       }
 
       await api.post("/community", formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+          "Content-Type": "multipart/form-data" } });
 
       showNotification("Mantap!", "Berhasil posting broskie!", "success");
       setIsModalVisible(false);
@@ -306,8 +302,8 @@ export default function KomunitasScreen() {
         <Pressable 
           onPress={() => setActiveTab('semua')}
           style={({pressed}) => [
-            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 2, borderColor: '#123924' },
-            activeTab === 'semua' ? { backgroundColor: '#3FA86B', boxShadow: '3px 3px 0px #123924' } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
+            activeTab === 'semua' ? { backgroundColor: '#3FA86B', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
             pressed && { opacity: 0.5 }
           ]}
         >
@@ -316,8 +312,8 @@ export default function KomunitasScreen() {
         <Pressable 
           onPress={() => setActiveTab('saya')}
           style={({pressed}) => [
-            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 2, borderColor: '#123924' },
-            activeTab === 'saya' ? { backgroundColor: '#FFB627', boxShadow: '3px 3px 0px #123924' } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
+            activeTab === 'saya' ? { backgroundColor: '#FFB627', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
             pressed && { opacity: 0.5 }
           ]}
         >
@@ -516,7 +512,7 @@ export default function KomunitasScreen() {
       {/* IMAGE ZOOM MODAL */}
       <Modal visible={!!selectedImage} transparent={true} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.95)', justifyContent: 'center', alignItems: 'center' }}>
-          <Pressable style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#FFFFFF', padding: 8, borderRadius: 100, borderWidth: 2, borderColor: '#123924' }} onPress={() => setSelectedImage(null)}>
+          <Pressable style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#FFFFFF', padding: 8, borderRadius: 100, borderWidth: 0 }} onPress={() => setSelectedImage(null)}>
             <MaterialIcons name="close" size={28} color="#123924" />
           </Pressable>
           {selectedImage && (
@@ -533,138 +529,111 @@ export default function KomunitasScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
+    backgroundColor: '#FBF8F0' },
   container: {
-    flex: 1,
-  },
+    flex: 1 },
   scrollContent: {
     paddingBottom: 140,
     paddingHorizontal: 20,
     paddingTop: 16,
     
-    gap: 16,
-  },
+    gap: 16 },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 24,
-    
-  },
+    paddingTop: 24 },
   headerTitle: {
     fontSize: 32,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   headerSubtitle: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
     color: '#5C5A4F',
-    marginTop: 4,
-  },
+    marginTop: 4 },
   postCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     padding: 16,
-    boxShadow: '4px 4px 0px #123924',
-    elevation: 4,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   avatarContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: '#3FA86B',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   avatarInitials: {
     color: '#FFFFFF',
     fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-  },
+    fontSize: 16 },
   postMeta: {
-    flex: 1,
-  },
+    flex: 1 },
   authorName: {
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
-    color: '#123924',
-  },
+    color: '#123924' },
   timeText: {
     fontSize: 10,
     color: '#5C5A4F',
-    fontFamily: 'Nunito_500Medium',
-  },
+    fontFamily: 'Nunito_500Medium' },
   badge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 100,
-    borderWidth: 1,
-    borderColor: '#123924',
-  },
+    borderWidth: 0 },
   badgeText: {
     fontSize: 10,
-    fontFamily: 'Nunito_700Bold',
-  },
+    fontFamily: 'Nunito_700Bold' },
   postCaption: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
     color: '#123924',
     lineHeight: 20,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   postImageContainer: {
     width: '100%',
     aspectRatio: 4/3,
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   postImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
-  },
+    resizeMode: 'cover' },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 2,
-    borderTopColor: '#E8E5DA',
-  },
+    borderTopColor: '#E8E5DA' },
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-  },
+    gap: 16 },
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
+    gap: 6 },
   actionText: {
     fontSize: 13,
     fontFamily: 'Nunito_700Bold',
-    color: '#5C5A4F',
-  },
+    color: '#5C5A4F' },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
+    gap: 4 },
   distanceText: {
     fontSize: 10,
     color: '#5C5A4F',
-    fontFamily: 'Nunito_500Medium',
-  },
+    fontFamily: 'Nunito_500Medium' },
   fab: {
     position: 'absolute',
     bottom: 120,
@@ -673,107 +642,89 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: '#3FA86B',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '4px 4px 0px #123924',
-    elevation: 5,
-    zIndex: 50,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    zIndex: 50 },
   pressedShadow4: {
-    boxShadow: '0px 0px 0px #123924',
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+    transform: [{ scale: 0.98 }] },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(18,57,36,0.5)',
-    justifyContent: 'flex-end',
-  },
+    justifyContent: 'flex-end' },
   modalDragIndicator: {
     width: 48,
     height: 6,
     backgroundColor: '#bdcabd',
     borderRadius: 3,
     alignSelf: 'center',
-    marginBottom: 20,
-  },
+    marginBottom: 20 },
   modalContent: {
     backgroundColor: '#FBF8F0',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderBottomWidth: 0,
     padding: 24,
     paddingTop: 16,
-    maxHeight: '85%',
-  },
+    maxHeight: '85%' },
   closeModalButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '2px 2px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   modalSubtitle: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
     color: '#5C5A4F',
-    marginTop: 2,
-  },
+    marginTop: 2 },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-  },
+    marginBottom: 20 },
   modalTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '2px 2px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   chipActive: {
-    backgroundColor: '#3FA86B',
-  },
+    backgroundColor: '#3FA86B' },
   chipInactive: {
-    backgroundColor: '#FFFFFF',
-  },
+    backgroundColor: '#FFFFFF' },
   chipText: {
     fontSize: 12,
-    fontFamily: 'Nunito_700Bold',
-  },
+    fontFamily: 'Nunito_700Bold' },
   chipTextActive: {
-    color: '#FFFFFF',
-  },
+    color: '#FFFFFF' },
   chipTextInactive: {
-    color: '#3e4a40',
-  },
+    color: '#3e4a40' },
   inputContainer: {
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   textInput: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 16,
     padding: 16,
     height: 120,
@@ -781,77 +732,67 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#123924',
     textAlignVertical: 'top',
-    boxShadow: '4px 4px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   counterText: {
     fontFamily: 'Nunito_500Medium',
     fontSize: 10,
     color: '#5C5A4F',
     textAlign: 'right',
-    marginTop: 4,
-  },
+    marginTop: 4 },
   photoDashedButton: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderStyle: 'dashed',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
-    boxShadow: '4px 4px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   photoIconWrapper: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#E8F5E9',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   photoDashedText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
-    color: '#123924',
-  },
+    color: '#123924' },
   previewContainer: {
     width: 120,
     aspectRatio: 4/3,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     overflow: 'hidden',
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   previewImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
-  },
+    resizeMode: 'cover' },
   removePhotoButton: {
     position: 'absolute',
     top: 4,
     right: 4,
     backgroundColor: 'rgba(18,57,36,0.7)',
     borderRadius: 12,
-    padding: 4,
-  },
+    padding: 4 },
   submitButton: {
     backgroundColor: '#1F5C3D',
     borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     padding: 16,
     alignItems: 'center',
-    boxShadow: '4px 4px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   submitButtonText: {
     color: '#FFFFFF',
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16,
-  }
+    fontSize: 16 }
 });

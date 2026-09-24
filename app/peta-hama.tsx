@@ -221,21 +221,21 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     padding: 24, 
     borderBottomWidth: 4, 
-    borderColor: '#123924', 
+     
     backgroundColor: '#FFECEB' 
   },
   backBtn: {
     backgroundColor: '#FFFFFF',
     padding: 8,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '2px 2px 0px #123924',
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     marginRight: 16
   },
   btnPressed: {
-    boxShadow: '0px 0px 0px #123924',
-    transform: [{ translateX: 2 }, { translateY: 2 }]
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+    transform: [{ scale: 0.98 }]
   },
   title: { fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', marginBottom: 4 },
   subtitle: { fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F', lineHeight: 18 },
@@ -243,16 +243,16 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 16,
     borderBottomWidth: 4, 
-    borderColor: '#123924',
+    
     backgroundColor: '#FFFFFF'
   },
   statsCard: {
     backgroundColor: '#FFB627',
     padding: 16,
     borderRadius: 16,
-    borderWidth: 3,
-    borderColor: '#123924',
-    boxShadow: '4px 4px 0px #123924',
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     alignItems: 'center',
     marginBottom: 20
   },
@@ -267,13 +267,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '2px 2px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   filterChipActive: {
-    backgroundColor: '#3FA86B',
-  },
+    backgroundColor: '#3FA86B' },
   filterText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
@@ -305,10 +303,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '4px 4px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   emptyText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 14,
@@ -331,10 +328,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '2px 2px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   retryText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 14,

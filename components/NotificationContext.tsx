@@ -16,8 +16,7 @@ interface NotificationContextData {
 }
 
 const NotificationContext = createContext<NotificationContextData>({
-  showNotification: () => {},
-});
+  showNotification: () => {} });
 
 export const useNotification = () => useContext(NotificationContext);
 
@@ -43,8 +42,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
               style={[
                 styles.notifIconBox,
                 {
-                  backgroundColor: notification.type === "success" ? "#FFB627" : notification.type === "info" ? "#4DB8FF" : "#FF6B5C",
-                },
+                  backgroundColor: notification.type === "success" ? "#FFB627" : notification.type === "info" ? "#4DB8FF" : "#FF6B5C" },
               ]}
             >
               <MaterialIcons
@@ -73,11 +71,9 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
     borderRadius: 20,
     padding: 16,
-    boxShadow: "3px 3px 0px #123924",
+    shadowColor: '#123924', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -87,21 +83,15 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "#123924",
     alignItems: "center",
-    justifyContent: "center",
-  },
+    justifyContent: "center" },
   notifTitle: {
     fontFamily: "Nunito_700Bold",
     fontSize: 14,
     color: "#123924",
-    marginBottom: 2,
-  },
+    marginBottom: 2 },
   notifMessage: {
     fontFamily: "Nunito_500Medium",
     fontSize: 12,
-    color: "#5C5A4F",
-  },
-});
+    color: "#5C5A4F" } });
 

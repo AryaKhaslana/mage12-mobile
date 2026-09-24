@@ -53,8 +53,7 @@ export default function EditProfilScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.7,
-    });
+      quality: 0.7 });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setFotoBaru(result.assets[0]);
@@ -217,8 +216,7 @@ export default function EditProfilScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
+    backgroundColor: '#FBF8F0' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -226,50 +224,42 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 2,
     borderBottomColor: '#E8E5DA',
-    backgroundColor: '#FFFFFF',
-  },
+    backgroundColor: '#FFFFFF' },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   card: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 24,
     padding: 20,
-    boxShadow: '4px 4px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   avatarContainer: {
     width: 96,
     height: 96,
     borderRadius: 48,
     backgroundColor: '#3FA86B',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   avatarImage: {
     width: '100%',
     height: '100%',
     borderRadius: 48,
-    resizeMode: 'cover',
-  },
+    resizeMode: 'cover' },
   avatarInitials: {
     fontSize: 40,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#FFFFFF',
-  },
+    color: '#FFFFFF' },
   avatarEditBadge: {
     position: 'absolute',
     bottom: 0,
@@ -280,56 +270,48 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
+    borderWidth: 0,
+    borderColor: '#FFFFFF' },
   avatarHint: {
     marginTop: 8,
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
-    color: '#5C5A4F',
-  },
+    color: '#5C5A4F' },
   inputGroup: {
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   inputLabel: {
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
     color: '#123924',
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   inputField: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
     fontFamily: 'Nunito_500Medium',
     fontSize: 14,
-    color: '#123924',
-  },
+    color: '#123924' },
   bottomBar: {
     padding: 20,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
-    borderTopColor: '#E8E5DA',
-  },
+    borderTopColor: '#E8E5DA' },
   saveButton: {
     backgroundColor: '#3FA86B',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 100,
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '2px 2px 0px #123924',
-    gap: 8,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    gap: 8 },
   saveButtonText: {
     fontSize: 16,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  }
+    color: '#123924' }
 });

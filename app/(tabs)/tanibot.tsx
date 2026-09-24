@@ -192,7 +192,7 @@ export default function TanibotScreen() {
               ref={flatListRef}
               data={messages}
               keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={{ padding: 20,  }}
+              contentContainerStyle={{ padding: 20 }}
               keyboardShouldPersistTaps="handled"
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
@@ -215,12 +215,11 @@ export default function TanibotScreen() {
                         style={({ pressed }) => [
                           {
                             backgroundColor: '#E8F5E9',
-                            borderWidth: 1,
+                            borderWidth: 0,
                             borderColor: '#3FA86B',
                             borderRadius: 100,
                             paddingHorizontal: 16,
-                            paddingVertical: 8,
-                          },
+                            paddingVertical: 8 },
                           pressed && { opacity: 0.7 }
                         ]}
                       >
@@ -267,8 +266,7 @@ export default function TanibotScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
+    backgroundColor: '#FBF8F0' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -276,30 +274,25 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 2,
     borderBottomColor: '#E8E5DA',
-    backgroundColor: '#FFFFFF',
-  },
+    backgroundColor: '#FFFFFF' },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   headerSubtitle: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
-    color: '#5C5A4F',
-  },
+    color: '#5C5A4F' },
   welcomeContainer: {
     alignItems: 'center',
     padding: 24,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '4px 4px 0px #123924',
-    elevation: 4,
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     marginBottom: 20,
-    marginTop: 10,
-  },
+    marginTop: 10 },
   welcomeIconWrapper: {
     width: 80,
     height: 80,
@@ -308,67 +301,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#123924',
-  },
+    borderWidth: 0 },
   welcomeTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
     color: '#123924',
     marginBottom: 8,
-    textAlign: 'center',
-  },
+    textAlign: 'center' },
   welcomeSubtitle: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
     color: '#5C5A4F',
     textAlign: 'center',
-    lineHeight: 22,
-  },
+    lineHeight: 22 },
   bubbleWrapper: {
     marginBottom: 24,
-    maxWidth: '80%',
-  },
+    maxWidth: '80%' },
   bubbleWrapperLeft: {
-    alignSelf: 'flex-start',
-  },
+    alignSelf: 'flex-start' },
   bubbleWrapperRight: {
-    alignSelf: 'flex-end',
-  },
+    alignSelf: 'flex-end' },
   bubble: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
+    paddingVertical: 12 },
   bubbleUser: {
     backgroundColor: '#3FA86B',
     borderRadius: 18,
-    borderBottomRightRadius: 4,
-  },
+    borderBottomRightRadius: 4 },
   bubbleBot: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 18,
-    borderBottomLeftRadius: 4,
-  },
+    borderBottomLeftRadius: 4 },
   bubbleText: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
-    lineHeight: 22,
-  },
+    lineHeight: 22 },
   textUser: {
-    color: '#FFFFFF',
-  },
+    color: '#FFFFFF' },
   textBot: {
-    color: '#1c1c17',
-  },
+    color: '#1c1c17' },
   timeText: {
     fontSize: 10,
     fontFamily: 'Nunito_500Medium',
     color: '#a09d91',
     marginTop: 4,
-    marginHorizontal: 4,
-  },
+    marginHorizontal: 4 },
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -378,33 +357,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
     borderTopColor: '#E8E5DA',
-    gap: 12,
-  },
+    gap: 12 },
   inputField: {
     flex: 1,
     minHeight: 48,
     maxHeight: 120,
     backgroundColor: '#FBF8F0',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 12,
     
     fontFamily: 'Nunito_500Medium',
     fontSize: 14,
-    color: '#123924',
-  },
+    color: '#123924' },
   sendButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#3FA86B',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '2px 2px 0px #123924',
-    elevation: 4,
-  }
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }
 });

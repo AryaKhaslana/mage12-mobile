@@ -3,24 +3,22 @@ import {
     Nunito_500Medium,
     Nunito_700Bold,
     Nunito_800ExtraBold,
-    useFonts,
-} from "@expo-google-fonts/nunito";
+    useFonts } from "@expo-google-fonts/nunito";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 
-SplashScreen.preventAutoHideAsync();
-
 import { NotificationProvider } from "../components/NotificationContext";
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     Nunito_400Regular,
     Nunito_500Medium,
     Nunito_700Bold,
-    Nunito_800ExtraBold,
-  });
+    Nunito_800ExtraBold });
 
   useEffect(() => {
     if (loaded || error) {

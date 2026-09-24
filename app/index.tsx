@@ -52,8 +52,7 @@ export default function IndexScreen() {
           flex: 1,
           backgroundColor: "#FBF8F0",
           justifyContent: "center",
-          alignItems: "center",
-        }}
+          alignItems: "center" }}
       >
         <ActivityIndicator size="large" color="#3FA86B" />
       </View>

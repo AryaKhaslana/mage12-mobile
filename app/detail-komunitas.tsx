@@ -434,16 +434,16 @@ export default function DetailKomunitasScreen() {
         </View>
         <Modal visible={!!postToDelete} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Postingan?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Postingan ini beserta semua komentarnya akan hilang permanen!
             </Text>
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
-              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setPostToDelete(null)}>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 0,  alignItems: 'center' }} onPress={() => setPostToDelete(null)}>
                 <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
               </Pressable>
-              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmDeletePost} disabled={isDeletingId !== null}>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 0,  alignItems: 'center' }} onPress={confirmDeletePost} disabled={isDeletingId !== null}>
                 {isDeletingId !== null ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Hapus</Text>}
               </Pressable>
             </View>
@@ -453,16 +453,16 @@ export default function DetailKomunitasScreen() {
 
       <Modal visible={!!commentToDelete} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 4, borderColor: '#123924', boxShadow: '8px 8px 0px #123924', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Komentar?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Komentar ini akan dihapus permanen broskie.
             </Text>
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
-              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={() => setCommentToDelete(null)}>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 0,  alignItems: 'center' }} onPress={() => setCommentToDelete(null)}>
                 <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}>Batal</Text>
               </Pressable>
-              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 2, borderColor: '#123924', alignItems: 'center' }} onPress={confirmDeleteComment} disabled={isDeletingId !== null}>
+              <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 0,  alignItems: 'center' }} onPress={confirmDeleteComment} disabled={isDeletingId !== null}>
                 {isDeletingId !== null ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Hapus</Text>}
               </Pressable>
             </View>
@@ -477,11 +477,9 @@ export default function DetailKomunitasScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
+    backgroundColor: '#FBF8F0' },
   container: {
-    flex: 1,
-  },
+    flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -489,156 +487,126 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 2,
-    borderBottomColor: '#E8E5DA',
-  },
+    borderBottomColor: '#E8E5DA' },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   postCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     padding: 16,
-    boxShadow: '4px 4px 0px #123924',
-    elevation: 4,
-    marginBottom: 24,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    marginBottom: 24 },
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   avatarContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: '#3FA86B',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   avatarInitials: {
     color: '#FFFFFF',
     fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-  },
+    fontSize: 16 },
   postMeta: {
-    flex: 1,
-  },
+    flex: 1 },
   authorName: {
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
-    color: '#123924',
-  },
+    color: '#123924' },
   timeText: {
     fontSize: 10,
     color: '#5C5A4F',
-    fontFamily: 'Nunito_500Medium',
-  },
+    fontFamily: 'Nunito_500Medium' },
   badge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 100,
-    borderWidth: 1,
-    borderColor: '#123924',
-  },
+    borderWidth: 0 },
   badgeText: {
     fontSize: 10,
-    fontFamily: 'Nunito_700Bold',
-  },
+    fontFamily: 'Nunito_700Bold' },
   postCaption: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
     color: '#123924',
     lineHeight: 20,
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   postImageContainer: {
     width: '100%',
     aspectRatio: 4/3,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#123924',
-  },
+    borderWidth: 0 },
   postImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
-  },
+    resizeMode: 'cover' },
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 24,
     paddingTop: 12,
     borderTopWidth: 2,
-    borderTopColor: '#E8E5DA',
-  },
+    borderTopColor: '#E8E5DA' },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
+    gap: 6 },
   actionText: {
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
-    color: '#5C5A4F',
-  },
+    color: '#5C5A4F' },
   commentSectionTitle: {
     fontSize: 16,
     fontFamily: 'Nunito_800ExtraBold',
     color: '#123924',
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   commentItem: {
     flexDirection: 'row',
     marginBottom: 16,
-    gap: 12,
-  },
+    gap: 12 },
   commentBubble: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     padding: 12,
-    boxShadow: '2px 2px 0px #123924',
-    elevation: 2,
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   commentName: {
     fontSize: 13,
     fontFamily: 'Nunito_700Bold',
     color: '#123924',
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   commentTime: {
     fontSize: 10,
     fontFamily: 'Nunito_500Medium',
-    color: '#a09d91',
-  },
+    color: '#a09d91' },
   commentText: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
     color: '#123924',
-    lineHeight: 20,
-  },
+    lineHeight: 20 },
   loadMoreBtn: {
     alignItems: 'center',
-    paddingVertical: 12,
-  },
+    paddingVertical: 12 },
   loadMoreText: {
     fontFamily: 'Nunito_700Bold',
-    color: '#3FA86B',
-  },
+    color: '#3FA86B' },
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -646,32 +614,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
     borderTopColor: '#123924',
-    gap: 12,
-  },
+    gap: 12 },
   inputField: {
     flex: 1,
     minHeight: 48,
     maxHeight: 120,
     backgroundColor: '#FBF8F0',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
     fontFamily: 'Nunito_500Medium',
     fontSize: 14,
-    color: '#123924',
-  },
+    color: '#123924' },
   sendButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#3FA86B',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '2px 2px 0px #123924',
-  }
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }
 });

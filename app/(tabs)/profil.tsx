@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -98,7 +98,7 @@ export default function ProfilScreen() {
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarContainer}>
               {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" />
               ) : (
                 <View style={[styles.avatarImage, { backgroundColor: '#3FA86B', alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={styles.avatarInitials}>{initial}</Text>
@@ -402,18 +402,23 @@ export default function ProfilScreen() {
           </View>
 
           {/* LIST */}
-          <ScrollView contentContainerStyle={{ padding: 24 }}>
-            {isLoadingRiwayat ? (
-              <ActivityIndicator size="large" color="#3FA86B" style={{ marginTop: 40 }} />
-            ) : riwayatPanen.length === 0 ? (
-              <View style={{ alignItems: 'center', marginTop: 80 }}>
-                <MaterialIcons name="eco" size={80} color="#E8E5DA" />
-                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#5C5A4F', marginTop: 16, textAlign: 'center' }}>Belum ada panen</Text>
-                <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#a09d91', textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }}>Rawat tanamanmu sampai waktunya panen buat nambah piala di sini!</Text>
-              </View>
-            ) : (
-              riwayatPanen.map((item: any, index: number) => (
-                <View key={item.id || index} style={{ flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', borderRadius: 20, padding: 16, marginBottom: 16, boxShadow: '4px 4px 0px #123924', alignItems: 'center' }}>
+          {isLoadingRiwayat ? (
+            <ActivityIndicator size="large" color="#3FA86B" style={{ marginTop: 40 }} />
+          ) : (
+            <FlatList
+              data={riwayatPanen}
+              keyExtractor={(item, index) => (item.id || index).toString()}
+              contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={{ alignItems: 'center', marginTop: 80 }}>
+                  <MaterialIcons name="eco" size={80} color="#E8E5DA" />
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#5C5A4F', marginTop: 16, textAlign: 'center' }}>Belum ada panen</Text>
+                  <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#a09d91', textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }}>Rawat tanamanmu sampai waktunya panen buat nambah piala di sini!</Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <View style={{ flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#123924', borderRadius: 20, padding: 16, marginBottom: 16, boxShadow: '4px 4px 0px #123924', alignItems: 'center' }}>
                   <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#E3F5EC', borderWidth: 2, borderColor: '#3FA86B', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
                     <Text style={{ fontSize: 32 }}>✨</Text>
                   </View>
@@ -423,9 +428,9 @@ export default function ProfilScreen() {
                     <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F', marginTop: 4 }}>Ditanam: {new Date(item.tanggalTanam).toLocaleDateString('id-ID')} • Dipanen: {item.tanggalPanen ? new Date(item.tanggalPanen).toLocaleDateString('id-ID') : 'Hari ini'}</Text>
                   </View>
                 </View>
-              ))
-            )}
-          </ScrollView>
+              )}
+            />
+          )}
         </View>
       </Modal>
 
@@ -486,7 +491,6 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   avatarInitials: {
     fontSize: 32,

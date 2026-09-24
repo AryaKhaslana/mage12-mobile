@@ -42,16 +42,14 @@ const EmptyHint = forwardRef<View, {
   title,
   subtitle,
   ctaText,
-  onCtaPress,
-}, ref) => (
+  onCtaPress }, ref) => (
   <View
     ref={ref}
     style={{
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 24,
-      paddingHorizontal: 16,
-    }}
+      paddingHorizontal: 16 }}
   >
     {imageSource ? (
       <Image 
@@ -72,8 +70,7 @@ const EmptyHint = forwardRef<View, {
         fontFamily: "Nunito_700Bold",
         color: "#123924",
         textAlign: "center",
-        marginBottom: 4,
-      }}
+        marginBottom: 4 }}
     >
       {title}
     </Text>
@@ -82,8 +79,7 @@ const EmptyHint = forwardRef<View, {
         fontSize: 12,
         fontFamily: "Nunito_500Medium",
         color: "#5C5A4F",
-        textAlign: "center",
-      }}
+        textAlign: "center" }}
     >
       {subtitle}
     </Text>
@@ -95,17 +91,13 @@ const EmptyHint = forwardRef<View, {
           backgroundColor: "#3FA86B",
           paddingHorizontal: 16,
           paddingVertical: 8,
-          borderRadius: 100,
-          borderWidth: 2,
-          borderColor: "#123924",
-        }}
+          borderRadius: 100 }}
       >
         <Text
           style={{
             color: "#FFFFFF",
             fontSize: 12,
-            fontFamily: "Nunito_700Bold",
-          }}
+            fontFamily: "Nunito_700Bold" }}
         >
           {ctaText}
         </Text>
@@ -148,8 +140,8 @@ const HomeSkeleton = () => {
     ).start();
   }, [fadeAnim]);
 
-  const boxStyles = { backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924', boxShadow: "4px 4px 0px #123924" };
-  const pillStyles = { backgroundColor: '#E8E5DA', borderWidth: 2, borderColor: '#123924', boxShadow: "2px 2px 0px #123924" };
+  const boxStyles = { backgroundColor: '#E8E5DA' };
+  const pillStyles = { backgroundColor: '#E8E5DA' };
 
   return (
     <Animated.View style={{ opacity: fadeAnim, paddingHorizontal: 20, paddingTop: 0, paddingBottom: 140 }}>
@@ -269,14 +261,12 @@ export default function DashboardScreen() {
                 rect: { x: results[0].x, y: results[0].y, width: results[0].w, height: results[0].h },
                 title: "Streak Belajar",
                 description: "Lihat seberapa konsisten kamu merawat tanaman tiap harinya. Pertahankan streak-mu!",
-                borderRadius: 24,
-              },
+                borderRadius: 24 },
               {
                 rect: { x: results[1].x, y: results[1].y, width: results[1].w, height: results[1].h },
                 title: "Tugas Hari Ini",
                 description: "Semua tanaman yang butuh perhatianmu hari ini akan muncul di sini.",
-                borderRadius: 24,
-              },
+                borderRadius: 24 },
               {
                 rect: { x: results[2].x, y: results[2].y, width: results[2].w, height: results[2].h },
                 title: "Tandai Selesai",
@@ -287,8 +277,7 @@ export default function DashboardScreen() {
                 rect: { x: results[3].x, y: results[3].y, width: results[3].w, height: results[3].h },
                 title: "Kebunku",
                 description: "Lihat koleksi semua tanamanmu dan pantau statusnya di sini.",
-                borderRadius: 24,
-              },
+                borderRadius: 24 },
               {
                 rect: { 
                   x: 0, 
@@ -298,8 +287,7 @@ export default function DashboardScreen() {
                 },
                 title: "Navigasi Utama",
                 description: "Pindah ke halaman lain seperti Tanaman, ChatBot, atau Komunitas lewat menu ini.",
-                borderRadius: 0,
-              },
+                borderRadius: 0 },
             ];
             setTutorialSteps(steps);
             setShowTutorial(true);
@@ -499,8 +487,7 @@ export default function DashboardScreen() {
     try {
       const response = await api.post("/logs", {
         tanamanId,
-        tipeValidasi: "button_only",
-      });
+        tipeValidasi: "button_only" });
       if (response.data?.status === "success") {
         const d = response.data.data;
         setUserData((prev: any) => prev ? { 
@@ -579,7 +566,7 @@ export default function DashboardScreen() {
       >
       {/* HEADER BACKGROUND: Melengkung biasa */}
       {/* HEADER BACKGROUND: Mentok Atas */}
-      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, borderColor: '#123924', zIndex: 0 }} />
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, zIndex: 0 }} />
       {/* HEADER */}
       <View style={[styles.header, { backgroundColor: 'transparent', paddingTop: 16 + insets.top }]}>
         <View style={styles.profileSection}>
@@ -589,8 +576,7 @@ export default function DashboardScreen() {
                 ...prev,
                 level: 99,
                 streak: 365,
-                poin: 9999,
-              }));
+                poin: 9999 }));
               showNotification("GOD MODE ACTIVATED 🚀", "Level 99, Streak 365! Siap bantai presentasi!", "success");
             }}
             style={({pressed}) => [styles.avatar, pressed && {opacity: 0.7}]}
@@ -630,8 +616,7 @@ export default function DashboardScreen() {
             flexDirection: "row",
             justifyContent: "space-between",
             marginBottom: 24,
-            gap: 8,
-          }}
+            gap: 8 }}
         >
           <View
             style={{
@@ -640,21 +625,16 @@ export default function DashboardScreen() {
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: "#FFFFFF",
-              borderWidth: 2,
-              borderColor: "#123924",
               borderRadius: 100,
               paddingVertical: 6,
-              gap: 4,
-              boxShadow: "2px 2px 0px #123924",
-            }}
+              gap: 4 }}
           >
             <MaterialIcons name="eco" size={16} color="#3FA86B" />
             <Text
               style={{
                 fontFamily: "Nunito_700Bold",
                 fontSize: 12,
-                color: "#123924",
-              }}
+                color: "#123924" }}
             >
               {tanamanList.length} Tanaman
             </Text>
@@ -666,13 +646,9 @@ export default function DashboardScreen() {
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: "#FFFFFF",
-              borderWidth: 2,
-              borderColor: "#123924",
               borderRadius: 100,
               paddingVertical: 6,
-              gap: 4,
-              boxShadow: "2px 2px 0px #123924",
-            }}
+              gap: 4 }}
           >
             <MaterialIcons
               name="local-fire-department"
@@ -683,8 +659,7 @@ export default function DashboardScreen() {
               style={{
                 fontFamily: "Nunito_700Bold",
                 fontSize: 12,
-                color: "#123924",
-              }}
+                color: "#123924" }}
             >
               {userData?.streak || 0} Streak
             </Text>
@@ -696,21 +671,16 @@ export default function DashboardScreen() {
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: "#FFFFFF",
-              borderWidth: 2,
-              borderColor: "#123924",
               borderRadius: 100,
               paddingVertical: 6,
-              gap: 4,
-              boxShadow: "2px 2px 0px #123924",
-            }}
+              gap: 4 }}
           >
             <MaterialIcons name="star" size={16} color="#FFB627" />
             <Text
               style={{
                 fontFamily: "Nunito_700Bold",
                 fontSize: 12,
-                color: "#123924",
-              }}
+                color: "#123924" }}
             >
               Level {userData?.level || 1}
             </Text>
@@ -762,8 +732,6 @@ export default function DashboardScreen() {
                   paddingHorizontal: 8,
                   paddingVertical: 4,
                   borderRadius: 999,
-                  borderWidth: 2,
-                  borderColor: '#123924',
                   boxShadow: pressed ? '0px 0px 0px #123924' : '2px 2px 0px #123924',
                   transform: [{ rotate: '5deg' }, { translateX: pressed ? 2 : 0 }, { translateY: pressed ? 2 : 0 }],
                   flexDirection: 'row',
@@ -792,8 +760,6 @@ export default function DashboardScreen() {
           style={({ pressed }) => [
             {
               backgroundColor: '#FFECEB',
-              borderWidth: 2,
-              borderColor: '#123924',
               borderRadius: 24,
               padding: 20,
               marginBottom: 32,
@@ -805,7 +771,7 @@ export default function DashboardScreen() {
           ]}
           onPress={() => router.push('/peta-hama' as any)}
         >
-          <View style={{ backgroundColor: '#FF6B5C', padding: 12, borderRadius: 100, borderWidth: 2, borderColor: '#123924', marginRight: 16 }}>
+          <View style={{ backgroundColor: '#FF6B5C', padding: 12, borderRadius: 100, marginRight: 16 }}>
             <MaterialIcons name="map" size={24} color="#FFFFFF" />
           </View>
           <View style={{ flex: 1 }}>
@@ -843,20 +809,15 @@ export default function DashboardScreen() {
               style={({ pressed }) => [
                 {
                   backgroundColor: "#FFFFFF",
-                  borderWidth: 2,
-                  borderColor: "#123924",
                   borderRadius: 24,
                   padding: 16,
-                  marginBottom: 16,
-                  boxShadow: "4px 4px 0px #123924",
-                },
+                  marginBottom: 16 },
                 pressed && styles.pressedShadow4,
               ]}
               onPress={() =>
                 router.push({
                   pathname: "/detail-tanaman",
-                  params: { id: panenTerdekat.id },
-                })
+                  params: { id: panenTerdekat.id } })
               }
             >
               <Text
@@ -864,8 +825,7 @@ export default function DashboardScreen() {
                   fontFamily: "Nunito_800ExtraBold",
                   fontSize: 12,
                   color: "#5C5A4F",
-                  marginBottom: 4,
-                }}
+                  marginBottom: 4 }}
               >
                 PANEN TERDEKAT
               </Text>
@@ -874,16 +834,14 @@ export default function DashboardScreen() {
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "flex-end",
-                  marginBottom: 12,
-                }}
+                  marginBottom: 12 }}
               >
                 <Text
                   style={{
                     fontFamily: "Nunito_700Bold",
                     fontSize: 16,
                     color: "#123924",
-                    flex: 1,
-                  }}
+                    flex: 1 }}
                   numberOfLines={1}
                 >
                   {panenTerdekat.nickname || panenTerdekat.jenisTanaman}
@@ -893,8 +851,7 @@ export default function DashboardScreen() {
                     fontFamily: "Nunito_800ExtraBold",
                     fontSize: 32,
                     color: "#1F5C3D",
-                    lineHeight: 36,
-                  }}
+                    lineHeight: 36 }}
                 >
                   {panenTerdekat.sisaHariPanen ?? 999}{" "}
                   <Text style={{ fontSize: 14 }}>hari</Text>
@@ -903,21 +860,17 @@ export default function DashboardScreen() {
               <View
                 style={{
                   backgroundColor: "#E8F5E9",
-                  borderWidth: 2,
-                  borderColor: "#123924",
                   borderRadius: 100,
                   height: 12,
                   width: "100%",
-                  overflow: "hidden",
-                }}
+                  overflow: "hidden" }}
               >
                 <View
                   style={{
                     backgroundColor: "#3FA86B",
                     width: `${persen}%`,
                     height: "100%",
-                    borderRadius: 100,
-                  }}
+                    borderRadius: 100 }}
                 />
               </View>
             </Pressable>
@@ -974,21 +927,16 @@ export default function DashboardScreen() {
                   }}
                   style={{
                     backgroundColor: bg,
-                    borderWidth: 2,
-                    borderColor: "#123924",
                     borderRadius: 24,
                     padding: 16,
-                    marginBottom: 16,
-                    boxShadow: "4px 4px 0px #123924",
-                  }}
+                    marginBottom: 16 }}
                 >
                   <View
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 8,
-                      marginBottom: 4,
-                    }}
+                      marginBottom: 4 }}
                   >
                     <MaterialIcons
                       name={iconName as any}
@@ -1001,8 +949,7 @@ export default function DashboardScreen() {
                         fontFamily: "Nunito_700Bold",
                         fontSize: 13,
                         color: "#123924",
-                        flex: 1,
-                      }}
+                        flex: 1 }}
                     >
                       {titleText}
                     </Text>
@@ -1012,8 +959,7 @@ export default function DashboardScreen() {
                       fontFamily: "Nunito_500Medium",
                       fontSize: 11,
                       color: "#5C5A4F",
-                      marginLeft: 32,
-                    }}
+                      marginLeft: 32 }}
                   >
                     {weather.deskripsi} • {Math.round(weather.suhu)}°C
                   </Text>
@@ -1025,8 +971,7 @@ export default function DashboardScreen() {
                         fontSize: 10,
                         color: "#5C5A4F",
                         marginLeft: 32,
-                        marginTop: 4,
-                      }}
+                        marginTop: 4 }}
                     >
                       Penyiraman beberapa tanaman mungkin ditunda sistem.
                     </Text>
@@ -1065,8 +1010,7 @@ export default function DashboardScreen() {
                     } else {
                       router.push({
                         pathname: "/detail-tanaman",
-                        params: { id: tanaman.id },
-                      });
+                        params: { id: tanaman.id } });
                     }
                   }}
                 >
@@ -1169,8 +1113,7 @@ export default function DashboardScreen() {
                     onPress={() =>
                       router.push({
                         pathname: "/detail-tanaman",
-                        params: { id: tanaman.id },
-                      })
+                        params: { id: tanaman.id } })
                     }
                   >
                     <View
@@ -1185,8 +1128,7 @@ export default function DashboardScreen() {
                           style={{
                             width: "100%",
                             height: "100%",
-                            resizeMode: "cover",
-                          }}
+                            resizeMode: "cover" }}
                         />
                       ) : (
                         <Image
@@ -1194,8 +1136,7 @@ export default function DashboardScreen() {
                           style={{
                             width: "100%",
                             height: "100%",
-                            resizeMode: "cover",
-                          }}
+                            resizeMode: "cover" }}
                         />
                       )}
                     </View>
@@ -1223,12 +1164,12 @@ export default function DashboardScreen() {
       <Modal visible={showGamification} animationType="slide" transparent={false}>
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, borderBottomWidth: 4, borderColor: '#123924', backgroundColor: '#FFB627' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, borderBottomWidth: 4, backgroundColor: '#FFB627' }}>
             <View>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Peta Perjalanan Tani</Text>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Lv.{userData?.level || 1} • {userData?.streak || 0} Streak</Text>
             </View>
-            <TouchableOpacity onPress={() => setShowGamification(false)} style={{ backgroundColor: '#FFECEB', padding: 8, borderRadius: 100, borderWidth: 2, borderColor: '#123924', boxShadow: '2px 2px 0px #123924' }}>
+            <TouchableOpacity onPress={() => setShowGamification(false)} style={{ backgroundColor: '#FFECEB', padding: 8, borderRadius: 100 }}>
               <MaterialIcons name="close" size={24} color="#123924" />
             </TouchableOpacity>
           </View>
@@ -1237,15 +1178,15 @@ export default function DashboardScreen() {
           <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
             
             {/* LEVEL PROGRESS */}
-            <View style={{ backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', boxShadow: '4px 4px 0px #123924', marginBottom: 24 }}>
+            <View style={{ backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 24 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                 <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Level Progress</Text>
                 <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#3FA86B' }}>
                   {(userData?.exp || 0) % 100} / 100 EXP
                 </Text>
               </View>
-              <View style={{ height: 16, backgroundColor: '#E8F5E9', borderRadius: 8, borderWidth: 2, borderColor: '#123924', overflow: 'hidden' }}>
-                <View style={{ width: `${(userData?.exp || 0) % 100}%`, height: '100%', backgroundColor: '#3FA86B', borderRightWidth: 2, borderColor: '#123924' }} />
+              <View style={{ height: 16, backgroundColor: '#E8F5E9', borderRadius: 8, overflow: 'hidden' }}>
+                <View style={{ width: `${(userData?.exp || 0) % 100}%`, height: '100%', backgroundColor: '#3FA86B', borderRightWidth: 2 }} />
               </View>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: '#5C5A4F', marginTop: 8, textAlign: 'center' }}>
                 Naikin level dengan rajin panen dan jaga streak harian!
@@ -1253,7 +1194,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* HEATMAP STREAK */}
-            <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#123924', marginBottom: 32 }}>
+            <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, marginBottom: 32 }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924', marginBottom: 12 }}>Aktivitas 28 Hari Terakhir</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                 {Array.from({ length: 28 }).map((_, i) => {
@@ -1264,9 +1205,7 @@ export default function DashboardScreen() {
                       style={{ 
                         width: 24, height: 24, borderRadius: 6, 
                         backgroundColor: isStreak ? '#3FA86B' : 'rgba(28,57,36,0.1)',
-                        borderWidth: isStreak ? 2 : 0,
-                        borderColor: '#123924'
-                      }} 
+                        borderWidth: isStreak ? 2 : 0 }} 
                     />
                   );
                 })}
@@ -1298,8 +1237,7 @@ export default function DashboardScreen() {
                     <View style={{ 
                       width: 48, height: 48, borderRadius: 24, 
                       backgroundColor: isPassed ? '#3FA86B' : '#FFFFFF', 
-                      borderWidth: 4, borderColor: '#123924', 
-                      alignItems: 'center', justifyContent: 'center',
+                      borderWidth: 4, alignItems: 'center', justifyContent: 'center',
                       zIndex: 2,
                       boxShadow: isCurrent ? '4px 4px 0px #FFB627' : 'none'
                     }}>
@@ -1312,14 +1250,12 @@ export default function DashboardScreen() {
                     <View style={{ 
                       flex: 1, marginLeft: 16, padding: 16, 
                       backgroundColor: isPassed ? '#E8F5E9' : '#F5F5F5', 
-                      borderRadius: 16, borderWidth: 2, borderColor: '#123924',
-                      boxShadow: '4px 4px 0px #123924',
-                      opacity: isPassed ? 1 : 0.6
+                      borderRadius: 16, opacity: isPassed ? 1 : 0.6
                     }}>
                       <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>{item.title}</Text>
                       <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5C5A4F', marginTop: 4 }}>{item.desc}</Text>
                       {isCurrent && (
-                        <View style={{ marginTop: 12, backgroundColor: '#FFB627', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, alignSelf: 'flex-start', borderWidth: 1, borderColor: '#123924' }}>
+                        <View style={{ marginTop: 12, backgroundColor: '#FFB627', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, alignSelf: 'flex-start' }}>
                           <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#123924' }}>POSISI KAMU SEKARANG</Text>
                         </View>
                       )}
@@ -1357,7 +1293,7 @@ export default function DashboardScreen() {
 
       <Modal transparent visible={showBadgeInfo} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 3, borderColor: '#123924', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
               ☔ Pelindung Streak
             </Text>
@@ -1367,8 +1303,8 @@ export default function DashboardScreen() {
             <Pressable
               onPress={() => setShowBadgeInfo(false)}
               style={({ pressed }) => [{
-                backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', boxShadow: '3px 3px 0px #123924'
-              }, pressed && { transform: [{ translateY: 3 }, { translateX: 3 }], boxShadow: '0px 0px 0px #123924' }]}
+                backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 0, alignItems: 'center', shadowColor: '#123924', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3
+              }, pressed && { transform: [{ scale: 0.96 }], shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }]}
             >
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Tutup</Text>
             </Pressable>
@@ -1378,7 +1314,7 @@ export default function DashboardScreen() {
 
       <Modal transparent visible={showRestorePopup} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 3, borderColor: '#123924', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
               Apinya Padam! 😱
             </Text>
@@ -1391,8 +1327,8 @@ export default function DashboardScreen() {
                 onPress={handleRestoreStreak}
                 disabled={isRestoring}
                 style={({ pressed }) => [{
-                  backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center', boxShadow: '3px 3px 0px #123924'
-                }, pressed && { transform: [{ translateY: 3 }, { translateX: 3 }], boxShadow: '0px 0px 0px #123924' }, isRestoring && { opacity: 0.7 }]}
+                  backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 0, alignItems: 'center', shadowColor: '#123924', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3
+                }, pressed && { transform: [{ scale: 0.96 }], shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }, isRestoring && { opacity: 0.7 }]}
               >
                 {isRestoring ? (
                   <ActivityIndicator color="#FFFFFF" />
@@ -1420,24 +1356,21 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FBF8F0",
-  },
+    backgroundColor: "#FBF8F0" },
   container: {
-    flex: 1,
-  },
+    flex: 1 },
   contentContainer: {
     paddingHorizontal: 20,
     paddingBottom: 140,
-    paddingTop: 16,
-  },
+    paddingTop: 16 },
 
-  // Style animasi neobrutalism saat ditekan
+  // Style animasi neobrutalism saat ditekan -> Diubah jadi scale (Clay style)
   pressedShadow4: {
-    boxShadow: "0px 0px 0px #123924",
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-  },
+    transform: [{ scale: 0.98 }],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2 },
 
   header: {
     flexDirection: "row",
@@ -1445,33 +1378,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#FBF8F0",
-  },
+    backgroundColor: "#FBF8F0" },
   profileSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-  },
+    gap: 12 },
   avatar: {
     width: 58,
     height: 58,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
     alignItems: "center",
-    justifyContent: "center",
-  },
+    justifyContent: "center" },
   greeting: {
     fontSize: 18,
     fontFamily: "Nunito_800ExtraBold",
-    color: "#00522c",
-  },
+    color: "#00522c" },
   subtitle: {
     fontSize: 14,
     color: "#5C5A4F",
-    fontFamily: "Nunito_500Medium",
-  },
+    fontFamily: "Nunito_500Medium" },
 
   tanibotFab: {
     position: "absolute",
@@ -1483,27 +1415,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#3FA86B",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
+    borderWidth: 0,
+    shadowColor: "#3FA86B",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
     elevation: 8,
-    zIndex: 50,
-  },
+    zIndex: 50 },
   pressedFab: {
-    boxShadow: "0px 0px 0px #123924",
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-  },
+    transform: [{ scale: 0.95 }],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4 },
   logoutButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
     alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "4px 4px 0px #123924",
-  },
+    justifyContent: "center" },
   heroCard: {
     backgroundColor: "#1F5C3D",
     borderRadius: 28,
@@ -1511,136 +1448,119 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 32,
-    boxShadow: "4px 4px 0px #123924",
-  },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 6 },
   fireIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: "#FFB627",
     alignItems: "center",
-    justifyContent: "center",
-  },
+    justifyContent: "center" },
   heroTextContainer: {
     flex: 1,
-    marginLeft: 12,
-  },
+    marginLeft: 12 },
   heroTitle: {
     fontSize: 16,
     fontFamily: "Nunito_800ExtraBold",
     color: "#FFFFFF",
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   heroSubtitle: {
     fontFamily: "Nunito_500Medium",
     fontSize: 12,
-    color: "rgba(255,255,255,0.75)",
-  },
+    color: "rgba(255,255,255,0.75)" },
   section: {
-    marginBottom: 32,
-  },
+    marginBottom: 32 },
   sectionTitle: {
     fontSize: 16,
     fontFamily: "Nunito_700Bold",
     color: "#00522c",
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   taskCard: {
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
     borderRadius: 24,
     padding: 12,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
-    boxShadow: "4px 4px 0px #123924",
-  },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3 },
   taskIconBox: {
     width: 48,
     height: 48,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    backgroundColor: "#F6F3EB",
     alignItems: "center",
-    justifyContent: "center",
-  },
+    justifyContent: "center" },
   taskInfo: {
     flex: 1,
-    marginLeft: 12,
-  },
+    marginLeft: 12 },
   taskName: {
     fontSize: 13,
     fontFamily: "Nunito_700Bold",
     color: "#123924",
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   taskStatus: {
     fontFamily: "Nunito_500Medium",
     fontSize: 11,
-    color: "#5C5A4F",
-  },
+    color: "#5C5A4F" },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#123924",
-    backgroundColor: "#FFFFFF",
+    borderWidth: 0,
+    backgroundColor: "#F1EEE6",
     marginRight: 8,
     alignItems: "center",
-    justifyContent: "center",
-  },
+    justifyContent: "center" },
   checkboxDoneCoral: {
-    backgroundColor: "#FF6B5C",
-  },
+    backgroundColor: "#FF6B5C" },
   checkboxDoneAmber: {
-    backgroundColor: "#FFB627",
-  },
+    backgroundColor: "#FFB627" },
   horizontalScroll: {
     gap: 16,
-    paddingBottom: 8,
-  },
+    paddingBottom: 8 },
   plantCard: {
     width: 140,
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
     borderRadius: 24,
     overflow: "hidden",
     marginRight: 16,
-    boxShadow: "4px 4px 0px #123924",
-  },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4 },
   plantImagePlaceholder: {
     width: "100%",
     aspectRatio: 1,
-    backgroundColor: "#96d4ad",
-  },
+    backgroundColor: "#96d4ad" },
   plantCardBody: {
-    padding: 12,
-  },
+    padding: 12 },
   plantName: {
     fontSize: 12,
     fontFamily: "Nunito_700Bold",
     color: "#123924",
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   badge: {
     alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 100,
-    borderWidth: 1,
-    borderColor: "#123924",
-  },
+    borderRadius: 100 },
   badgeText: {
     fontSize: 10,
-    fontFamily: "Nunito_700Bold",
-  },
-});
+    fontFamily: "Nunito_700Bold" } });

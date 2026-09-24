@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -98,7 +98,7 @@ export default function ProfilScreen() {
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarContainer}>
               {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" />
               ) : (
                 <View style={[styles.avatarImage, { backgroundColor: '#3FA86B', alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={styles.avatarInitials}>{initial}</Text>
@@ -423,9 +423,9 @@ export default function ProfilScreen() {
                     <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F', marginTop: 4 }}>Ditanam: {new Date(item.tanggalTanam).toLocaleDateString('id-ID')} • Dipanen: {item.tanggalPanen ? new Date(item.tanggalPanen).toLocaleDateString('id-ID') : 'Hari ini'}</Text>
                   </View>
                 </View>
-              ))
-            )}
-          </ScrollView>
+              )}
+            />
+          )}
         </View>
       </Modal>
 

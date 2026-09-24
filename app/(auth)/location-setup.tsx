@@ -9,8 +9,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from "react-native";
+  View } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
@@ -49,8 +48,7 @@ export default function LocationSetupScreen() {
       transform: [
         { scale: breathingScale.value },
         { translateY: floatingTranslateY.value }
-      ],
-    };
+      ] };
   });
   const [locationStr, setLocationStr] = useState<string | null>(null);
   const [locationData, setLocationData] = useState<{lat: string, lon: string} | null>(null);
@@ -178,60 +176,51 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   title: {
     fontSize: 28,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
     marginBottom: 12,
-    textAlign: "center",
-  },
+    textAlign: "center" },
   subtitle: {
     fontSize: 14,
     fontFamily: "Nunito_500Medium",
     color: "#5C5A4F",
     marginBottom: 32,
     textAlign: "center",
-    lineHeight: 22,
-  },
+    lineHeight: 22 },
   statusBox: {
     width: "100%",
     backgroundColor: "#F1EEE6",
     padding: 16,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     marginBottom: 32,
     alignItems: "center",
-    flexDirection: "row",
-  },
+    flexDirection: "row" },
   statusLabel: {
     fontSize: 11,
     fontFamily: "Nunito_700Bold",
     color: "#3FA86B",
     textTransform: "uppercase",
-    marginBottom: 2,
-  },
+    marginBottom: 2 },
   statusText: {
     fontSize: 14,
     fontFamily: "Nunito_700Bold",
-    color: "#123924",
-  },
+    color: "#123924" },
   primaryButton: {
     backgroundColor: "#3FA86B",
     width: "100%",
     height: 56,
     borderRadius: 30,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "4px 4px 0px #123924",
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Nunito_700Bold",
-  },
-});
+    fontFamily: "Nunito_700Bold" } });

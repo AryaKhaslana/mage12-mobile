@@ -57,8 +57,7 @@ export default function KebijakanPrivasiScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
+    backgroundColor: '#FBF8F0' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -66,30 +65,23 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 2,
     borderBottomColor: '#E8E5DA',
-    backgroundColor: '#FFFFFF',
-  },
+    backgroundColor: '#FFFFFF' },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   content: {
     padding: 20,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   card: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
     borderRadius: 24,
     padding: 20,
-    boxShadow: '4px 4px 0px #123924',
-  },
+    shadowColor: '#123924', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
   subtitle: {
     fontSize: 13,
     fontFamily: 'Nunito_500Medium',
     color: '#5C5A4F',
     marginBottom: 20,
-    fontStyle: 'italic',
-  }
+    fontStyle: 'italic' }
 });

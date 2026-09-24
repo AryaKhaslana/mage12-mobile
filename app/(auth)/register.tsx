@@ -14,15 +14,13 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withRepeat,
     withSequence,
-    withTiming,
-} from "react-native-reanimated";
+    withTiming } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
@@ -53,8 +51,7 @@ export default function RegisterScreen() {
   }, []);
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: scale.value }],
-    };
+      transform: [{ scale: scale.value }] };
   });
   const handleRegister = async () => {
     // Validasi
@@ -92,8 +89,7 @@ export default function RegisterScreen() {
         email,
         password,
         latitude,
-        longitude,
-      });
+        longitude });
       // Kembali ke login jika sukses
       showNotification("Berhasil!", "Akun kamu sudah dibuat. Silakan masuk.", "success");
       setTimeout(() => router.replace("/(auth)/login"), 1500);
@@ -306,32 +302,28 @@ const styles = StyleSheet.create({
   headerContainer: {
     marginTop: 220,
     marginBottom: 32,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   title: {
     fontSize: 32,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
     marginBottom: 8,
-    textAlign: 'center',
-  },
+    textAlign: 'center' },
   subtitle: {
     fontSize: 16,
     fontFamily: "Nunito_700Bold",
     color: "#5C5A4F",
-    textAlign: 'center',
-  },
+    textAlign: 'center' },
   wallCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    borderWidth: 3,
-    borderColor: "#123924",
-    boxShadow: "6px 6px 0px #123924",
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     padding: 24,
     paddingTop: 32,
     position: "relative",
-    zIndex: 2,
-  },
+    zIndex: 2 },
   backButton: {
     position: 'absolute',
     top: 60,
@@ -340,110 +332,95 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    borderWidth: 3,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FBF8F0",
-    boxShadow: "3px 3px 0px #123924",
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   inputContainer: { marginBottom: 16, position: "relative" },
   input: {
     height: 56,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     borderRadius: 30,
     paddingHorizontal: 20,
     backgroundColor: "#FBF8F0",
     fontSize: 16,
     fontFamily: "Nunito_500Medium",
-    color: "#123924",
-  },
+    color: "#123924" },
   eyeIcon: { position: "absolute", right: 16, top: 16 },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 24,
-    marginTop: 8,
-  },
+    marginTop: 8 },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     backgroundColor: "#FBF8F0",
     marginRight: 12,
     alignItems: "center",
-    justifyContent: "center",
-  },
+    justifyContent: "center" },
   checkboxChecked: { backgroundColor: "#3FA86B" },
   checkboxText: {
     fontSize: 12,
     color: "#5C5A4F",
-    fontFamily: "Nunito_700Bold",
-  },
+    fontFamily: "Nunito_700Bold" },
   privacyLinkText: {
     fontSize: 12,
     color: "#3FA86B",
     fontFamily: "Nunito_800ExtraBold",
-    textDecorationLine: "underline",
-  },
+    textDecorationLine: "underline" },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(18, 57, 36, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-  },
+    padding: 24 },
   modalContent: {
     backgroundColor: "#FBF8F0",
     borderRadius: 24,
-    borderWidth: 3,
-    borderColor: "#123924",
-    boxShadow: "8px 8px 0px #123924",
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     padding: 24,
     width: '100%',
-    maxHeight: '70%',
-  },
+    maxHeight: '70%' },
   modalTitle: {
     fontSize: 24,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
     marginBottom: 16,
-    textAlign: "center",
-  },
+    textAlign: "center" },
   modalScroll: {
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   modalText: {
     fontSize: 14,
     fontFamily: "Nunito_500Medium",
     color: "#123924",
-    lineHeight: 22,
-    },
+    lineHeight: 22 },
   primaryButton: {
     backgroundColor: "#3FA86B",
     height: 56,
     borderRadius: 30,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
+    
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,
     marginTop: 8,
-    boxShadow: "3px 3px 0px #123924",
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Nunito_800ExtraBold",
-  },
+    fontFamily: "Nunito_800ExtraBold" },
   footerLink: { alignItems: "center" },
   footerText: {
     color: "#5C5A4F",
     fontSize: 14,
-    fontFamily: "Nunito_500Medium",
-  },
-  footerTextBold: { color: "#123924", fontFamily: "Nunito_800ExtraBold" },
-});
+    fontFamily: "Nunito_500Medium" },
+  footerTextBold: { color: "#123924", fontFamily: "Nunito_800ExtraBold" } });

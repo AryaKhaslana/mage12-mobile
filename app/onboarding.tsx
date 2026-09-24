@@ -1,6 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image } from 'expo-image';
+import { Image , Image as ExpoImage } from 'expo-image';
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -10,9 +10,8 @@ import {
     Text,
     TouchableOpacity,
     View,
-    ViewToken,
-} from "react-native";
-import { Image as ExpoImage } from "expo-image";
+    ViewToken } from "react-native";
+
 import Animated, {
     Extrapolation,
     FadeInDown,
@@ -23,8 +22,7 @@ import Animated, {
     useSharedValue,
     withRepeat,
     withSequence,
-    withTiming,
-} from "react-native-reanimated";
+    withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
@@ -37,29 +35,25 @@ const slides = [
     title: "Kenalin, Si Tani!",
     description:
       "Dia sahabat kecil yang bakal nemenin kamu ngerawat tanaman, dari bibit sampai panen.",
-    image: require("../assets/images/icontampilanawal/seedling-halo.svg"),
-  },
+    image: require("../assets/images/icontampilanawal/seedling-halo.svg") },
   {
     id: "2",
     title: "TaniSync itu apa sih?",
     description:
       "Aplikasi asisten urban farming yang bantu kamu nanem sayur sendiri di rumah — walau cuma punya balkon kecil sekalipun.",
-    image: require("../assets/images/icontampilanawal/seedling-menanam.svg"),
-  },
+    image: require("../assets/images/icontampilanawal/seedling-menanam.svg") },
   {
     id: "3",
     title: "Gak akan lupa lagi",
     description:
       "Reminder otomatis kapan harus nyiram & mupuk, plus kumpulin streak tiap kali kamu rajin ngerawat tanaman.",
-    image: require("../assets/images/icontampilanawal/seedling-lompat.svg"),
-  },
+    image: require("../assets/images/icontampilanawal/seedling-lompat.svg") },
   {
     id: "4",
     title: "Kecil tapi berdampak",
     description:
       "Setiap tanaman yang kamu rawat bantu ketahanan pangan mandiri di kotamu — kecil tapi nyata.",
-    image: require("../assets/images/icontampilanawal/seedling-meneropong.svg"),
-  },
+    image: require("../assets/images/icontampilanawal/seedling-meneropong.svg") },
 ];
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -96,18 +90,15 @@ export default function OnboardingScreen() {
   }, []);
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: breathingScale.value }],
-    };
+      transform: [{ scale: breathingScale.value }] };
   });
   const animatedFloatingStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: floatingTranslateY.value }],
-    };
+      transform: [{ translateY: floatingTranslateY.value }] };
   });
   const animatedFloatingStyleAlt = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: floatingTranslateYAlt.value }],
-    };
+      transform: [{ translateY: floatingTranslateYAlt.value }] };
   });
   // Scroll Animation for Pagination
   const scrollX = useSharedValue(0);
@@ -220,8 +211,7 @@ export default function OnboardingScreen() {
               );
               return {
                 width: widthVal,
-                backgroundColor: colorVal,
-              };
+                backgroundColor: colorVal };
             });
             return (
               <Animated.View
@@ -258,103 +248,88 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FBF8F0",
-  },
+    backgroundColor: "#FBF8F0" },
   header: {
     flexDirection: "row",
     justifyContent: "flex-end",
     paddingHorizontal: 24,
     paddingTop: 16,
-    height: 60,
-  },
+    height: 60 },
   skipText: {
     fontSize: 14,
     fontFamily: "Nunito_800ExtraBold",
-    color: "#3FA86B",
-  },
+    color: "#3FA86B" },
   slide: {
     width,
     alignItems: "center",
-    paddingTop: 60,
-  },
+    paddingTop: 60 },
   imageWrapper: {
     position: "relative",
     width: width * 0.7,
     height: width * 0.7,
-    marginBottom: 60,
-  },
+    marginBottom: 60 },
   image: {
     width: "100%",
-    height: "100%",
-  },
+    height: "100%" },
   buildingChart: {
     position: "absolute",
     bottom: -5,
     alignSelf: "center",
     width: width * 1.55,
     height: width * 0.7,
-    zIndex: -1,
-  },
+    zIndex: -1 },
   floatingPot: {
     position: "absolute",
     right: -120,
     top: "15%",
     width: 260,
     height: 260,
-    zIndex: 10,
-  },
+    zIndex: 10 },
   floatingNotif: {
     position: "absolute",
     left: -40,
     top: "5%",
     width: 130,
     height: 130,
-    zIndex: 10,
-  },
+    zIndex: 10 },
   floatingPiala: {
     position: "absolute",
     right: -50,
     top: "25%",
     width: 140,
     height: 140,
-    zIndex: 10,
-  },
+    zIndex: 10 },
   textContainer: {
     paddingHorizontal: 32,
-    alignItems: "center",
-  },
+    alignItems: "center" },
   title: {
     fontSize: 24,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
     marginBottom: 16,
-    textAlign: "center",
-  },
+    textAlign: "center" },
   description: {
     fontSize: 14,
     color: "#123924",
     textAlign: "center",
     lineHeight: 22,
-    fontFamily: "Nunito_500Medium",
-  },
+    fontFamily: "Nunito_500Medium" },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
     paddingBottom: 40,
-    height: 100,
-  },
+    height: 100 },
   pagination: {
     flexDirection: "row",
-    alignItems: "center",
-  },
+    alignItems: "center" },
   dot: {
     height: 8,
     borderRadius: 4,
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#123924", // Neobrutalism border
+    borderWidth: 0,
+     // Neobrutalism border
   },
   nextButton: {
     width: 60,
@@ -363,10 +338,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#3FA86B",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   startButton: {
     height: 60,
     paddingHorizontal: 32,
@@ -374,17 +348,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "4px 4px 0px #123924",
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   startButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Nunito_800ExtraBold",
-  },
+    fontFamily: "Nunito_800ExtraBold" },
   pressedNextButton: {
-    boxShadow: "0px 0px 0px #123924",
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-  },
-});
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+    transform: [{ scale: 0.98 }] } });

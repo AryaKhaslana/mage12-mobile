@@ -7,8 +7,7 @@ import Animated, {
   withSpring,
   withTiming,
   interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
+  Extrapolation } from 'react-native-reanimated';
 import Svg, { Defs, Mask, Rect } from 'react-native-svg';
 
 export type CoachMarkStep = {
@@ -80,8 +79,7 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
     height: currentH.value + 2 * B,
     borderWidth: B,
     borderColor: 'rgba(18,57,36,0.75)',
-    borderRadius: currentR.value + B,
-  }));
+    borderRadius: currentR.value + B }));
   const borderHighlightStyle = useAnimatedStyle(() => ({
     position: 'absolute',
     left: currentX.value - 2,
@@ -89,7 +87,7 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
     width: currentW.value + 4,
     height: currentH.value + 4,
     borderRadius: currentR.value + 2,
-    borderWidth: 2,
+    borderWidth: 0,
     borderColor: '#3FA86B'
   }));
 
@@ -115,14 +113,12 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
       left: bubbleX,
       top: withSpring(safeY, { damping: 15, stiffness: 120 }),
       width: BUBBLE_WIDTH,
-      opacity: opacity.value,
-    };
+      opacity: opacity.value };
   });
 
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    flex: 1,
-  }));
+    flex: 1 }));
 
   if (!visible || steps.length === 0) return null;
 
@@ -167,7 +163,7 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
               <Pressable 
                 style={({ pressed }) => [
                   styles.nextButton,
-                  pressed && { transform: [{ translateX: 2 }, { translateY: 2 }] }
+                  pressed && { transform: [{ scale: 0.98 }] }
                 ]}
                 onPress={handleNext}
               >
@@ -182,7 +178,7 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
         {/* NEOBRUTALISM SKIP CONFIRMATION MODAL */}
         <Modal transparent visible={showConfirmSkip} animationType="fade">
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-            <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 3, borderColor: '#123924', padding: 24 }}>
+            <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0,  padding: 24 }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 8 }}>
                 Yakin mau skip broskie? 🥺
               </Text>
@@ -194,7 +190,7 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
                 <Pressable
                   onPress={() => setShowConfirmSkip(false)}
                   style={({ pressed }) => [{
-                    backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 2, borderColor: '#123924', alignItems: 'center'
+                    backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 0,  alignItems: 'center'
                   }, pressed && { transform: [{ translateY: 2 }] }]}
                 >
                   <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Lanjut Belajar</Text>
@@ -224,73 +220,60 @@ const styles = StyleSheet.create({
     right: -3,
     bottom: -3,
     backgroundColor: '#123924',
-    borderRadius: 20,
-  },
+    borderRadius: 20 },
   bubbleContent: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#123924',
-    padding: 20,
-  },
+    borderWidth: 0,
+    
+    padding: 20 },
   bubbleHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    gap: 12,
-  },
+    gap: 12 },
   stepBadge: {
     backgroundColor: '#E8F5E9',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#3FA86B',
-  },
+    borderWidth: 0,
+    borderColor: '#3FA86B' },
   stepBadgeText: {
     color: '#3FA86B',
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 12,
-  },
+    fontSize: 12 },
   bubbleTitle: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 16,
     color: '#123924',
-    flex: 1,
-  },
+    flex: 1 },
   bubbleDesc: {
     fontFamily: 'Nunito_500Medium',
     fontSize: 14,
     color: '#5C5A4F',
     lineHeight: 20,
-    marginBottom: 20,
-  },
+    marginBottom: 20 },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   skipButton: {
     paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
+    paddingHorizontal: 12 },
   skipText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
-    color: '#5C5A4F',
-  },
+    color: '#5C5A4F' },
   nextButton: {
     backgroundColor: '#3FA86B',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#123924',
-    boxShadow: '2px 2px 0px #123924',
-  },
+    borderWidth: 0,
+    
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   nextText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 14,
-    color: '#FFFFFF',
-  },
-});
+    color: '#FFFFFF' } });

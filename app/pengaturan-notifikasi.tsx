@@ -183,8 +183,7 @@ export default function PengaturanNotifikasiScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0',
-  },
+    backgroundColor: '#FBF8F0' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -192,92 +191,75 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 2,
     borderBottomColor: '#E8E5DA',
-    backgroundColor: '#FFFFFF',
-  },
+    backgroundColor: '#FFFFFF' },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924',
-  },
+    color: '#123924' },
   content: {
-    padding: 20,
-  },
+    padding: 20 },
   card: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
+    borderWidth: 0,
+    
     borderRadius: 24,
     padding: 20,
-    boxShadow: '4px 4px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   toggleLabel: {
     fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    color: '#123924',
-  },
+    color: '#123924' },
   timeSelectionContainer: {
     marginTop: 8,
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   timeLabel: {
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
     color: '#5C5A4F',
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
+    gap: 8 },
   chip: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#123924',
-    borderRadius: 100,
-  },
+    borderWidth: 0,
+    
+    borderRadius: 100 },
   chipSelected: {
-    backgroundColor: '#3FA86B',
-  },
+    backgroundColor: '#3FA86B' },
   chipText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
-    color: '#123924',
-  },
+    color: '#123924' },
   chipTextSelected: {
-    color: '#FFFFFF',
-  },
+    color: '#FFFFFF' },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E5DA',
-  },
+    borderBottomColor: '#E8E5DA' },
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
+    gap: 12 },
   menuText: {
     fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    color: '#123924',
-  },
+    color: '#123924' },
   descriptionText: {
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
     color: '#5C5A4F',
     marginTop: 8,
-    lineHeight: 18,
-  }
+    lineHeight: 18 }
 });

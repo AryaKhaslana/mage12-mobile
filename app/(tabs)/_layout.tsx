@@ -17,8 +17,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
-            canPreventDefault: true,
-          });
+            canPreventDefault: true });
 
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
@@ -28,8 +27,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         const onLongPress = () => {
           navigation.emit({
             type: 'tabLongPress',
-            target: route.key,
-          });
+            target: route.key });
         };
 
         const color = isFocused ? '#1F5C3D' : '#5C5A4F';
@@ -132,33 +130,28 @@ const styles = StyleSheet.create({
     right: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 28,
-    borderWidth: 2.5,
-    borderColor: '#123924',
+    borderWidth: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    boxShadow: '5px 5px 0px #123924',
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-  },
+    paddingVertical: 4 },
   iconContainer: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-  },
+    position: 'relative' },
   tabLabel: {
     fontSize: 12,
     fontFamily: 'Nunito_800ExtraBold',
-    marginTop: 2,
-  },
+    marginTop: 2 },
   badgeIndicator: {
     position: 'absolute',
     top: -4,
@@ -166,33 +159,25 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     backgroundColor: '#FFB627',
-    borderRadius: 3,
-  },
+    borderRadius: 3 },
   fabWrapper: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   fab: {
     width: 56,
     height: 56,
     marginTop: -32,
     borderRadius: 28,
     backgroundColor: '#3FA86B',
-    borderWidth: 2.5,
-    borderColor: '#123924',
-    boxShadow: '3px 3px 0px #123924',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    borderWidth: 0,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4, alignItems: 'center',
+    justifyContent: 'center' },
   fabPressed: {
-    boxShadow: '0px 0px 0px #123924',
-    transform: [{ translateX: 2 }, { translateY: 2 }],
-  },
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4, transform: [{ translateX: 2 }, { translateY: 2 }] },
   fabLabel: {
     fontSize: 12,
     fontFamily: 'Nunito_800ExtraBold',
     color: 'transparent',
-    marginTop: 2,
-  }
+    marginTop: 2 }
 });

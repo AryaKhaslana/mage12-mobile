@@ -93,6 +93,15 @@ export default function TanibotScreen() {
   const [isSending, setIsSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
+
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -240,7 +249,7 @@ export default function TanibotScreen() {
         </View>
 
         {/* INPUT AREA */}
-        <View style={styles.inputArea}>
+        <View style={[styles.inputArea, isKeyboardVisible && { paddingBottom: 16 }]}>
           <TextInput
             style={styles.inputField}
             placeholder="Tanya TaniBot..."

@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
-    borderBottomWidth: 2,
+    
     borderBottomColor: '#E8E5DA' },
   headerTitle: {
     fontSize: 20,
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 24,
     paddingTop: 12,
-    borderTopWidth: 2,
+    
     borderTopColor: '#E8E5DA' },
   actionButton: {
     flexDirection: 'row',
@@ -612,8 +612,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     padding: 16,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 2,
-    borderTopColor: '#123924',
+    
+    
     gap: 12 },
   inputField: {
     flex: 1,

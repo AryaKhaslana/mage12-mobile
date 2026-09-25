@@ -650,7 +650,7 @@ export default function DetailTanamanModal() {
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.95)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, overflow: 'hidden', borderWidth: 0, borderColor: '#FFB627', paddingBottom: 24, shadowColor: '#FFB627', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 }}>
             
-            <View style={{ backgroundColor: '#FFB627', paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', borderBottomWidth: 4 }}>
+            <View style={{ backgroundColor: '#FFB627', paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>Sertifikat Lulus Panen </Text>
             </View>
 
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
-    borderBottomWidth: 2,
+    
     borderBottomColor: '#E8E5DA' },
   headerTitle: {
     fontSize: 20,
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    
     borderBottomColor: '#E8E5DA' },
   pickerItemActive: {
     backgroundColor: '#3FA86B' },
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
   btnGreenText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
   historySection: { paddingHorizontal: 20 },
   historySectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F5C3D', marginBottom: 12 },
-  historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: '#123924' },
+  historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12,  },
   historyImage: { width: 40, height: 40, borderRadius: 8, borderWidth: 0,  marginRight: 12, backgroundColor: '#e5e2db' },
   historyTextCol: { flex: 1 },
   historyTitle: { fontSize: 12, fontWeight: '700', color: '#123924' },

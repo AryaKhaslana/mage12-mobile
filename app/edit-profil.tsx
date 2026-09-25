@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 2,
+    
     borderBottomColor: '#E8E5DA',
     backgroundColor: '#FFFFFF' },
   headerTitle: {
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   bottomBar: {
     padding: 20,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 2,
+    
     borderTopColor: '#E8E5DA' },
   saveButton: {
     backgroundColor: '#3FA86B',

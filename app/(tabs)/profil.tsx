@@ -391,7 +391,7 @@ export default function ProfilScreen() {
       <Modal visible={showRiwayatPanen} animationType="slide" transparent={false}>
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, borderBottomWidth: 4,  backgroundColor: '#FF7D6B' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top,   backgroundColor: '#FF7D6B' }}>
             <View>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Piala Panen 🏆</Text>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Tanaman yang sukses kamu rawat!</Text>
@@ -640,8 +640,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5E9',
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: '#123924',
+    
+    
   },
   plantNameContainer: {
     padding: 8,
@@ -695,8 +695,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: '#123924',
+    
+    
   },
   menuText: {
     flex: 1,

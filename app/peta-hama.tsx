@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     padding: 24, 
-    borderBottomWidth: 4, 
+     
      
     backgroundColor: '#FFECEB' 
   },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     padding: 24,
     paddingBottom: 16,
-    borderBottomWidth: 4, 
+     
     
     backgroundColor: '#FFFFFF'
   },

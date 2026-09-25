@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 2,
+    
     borderBottomColor: '#E8E5DA',
     backgroundColor: '#FFFFFF' },
   headerTitle: {
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderBottomWidth: 1,
+    
     borderBottomColor: '#E8E5DA' },
   menuLeft: {
     flexDirection: 'row',

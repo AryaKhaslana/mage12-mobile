@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 12,
-    borderTopWidth: 2,
+    
     borderTopColor: '#E8E5DA' },
   actionBar: {
     flexDirection: 'row',

@@ -566,7 +566,7 @@ export default function DashboardScreen() {
       >
       {/* HEADER BACKGROUND: Melengkung biasa */}
       {/* HEADER BACKGROUND: Mentok Atas */}
-      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, borderBottomWidth: 4, zIndex: 0 }} />
+      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48,  zIndex: 0 }} />
       {/* HEADER */}
       <View style={[styles.header, { backgroundColor: 'transparent', paddingTop: 16 + insets.top }]}>
         <View style={styles.profileSection}>
@@ -1164,7 +1164,7 @@ export default function DashboardScreen() {
       <Modal visible={showGamification} animationType="slide" transparent={false}>
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, borderBottomWidth: 4, backgroundColor: '#FFB627' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top,  backgroundColor: '#FFB627' }}>
             <View>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Peta Perjalanan Tani</Text>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Lv.{userData?.level || 1} • {userData?.streak || 0} Streak</Text>
@@ -1186,7 +1186,7 @@ export default function DashboardScreen() {
                 </Text>
               </View>
               <View style={{ height: 16, backgroundColor: '#E8F5E9', borderRadius: 8, overflow: 'hidden' }}>
-                <View style={{ width: `${(userData?.exp || 0) % 100}%`, height: '100%', backgroundColor: '#3FA86B', borderRightWidth: 2 }} />
+                <View style={{ width: `${(userData?.exp || 0) % 100}%`, height: '100%', backgroundColor: '#3FA86B', }} />
               </View>
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: '#5C5A4F', marginTop: 8, textAlign: 'center' }}>
                 Naikin level dengan rajin panen dan jaga streak harian!

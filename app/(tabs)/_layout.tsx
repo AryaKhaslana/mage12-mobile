@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 28,
     borderWidth: 2.5,
-    borderColor: '#123924',
+    
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: 'row',
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: '#3FA86B',
     borderWidth: 2.5,
-    borderColor: '#123924',
+    
     boxShadow: '3px 3px 0px #123924',
     alignItems: 'center',
     justifyContent: 'center' },

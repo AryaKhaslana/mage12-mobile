@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 2,
+    
     borderBottomColor: '#E8E5DA',
     backgroundColor: '#FFFFFF' },
   headerTitle: {
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     padding:16,
     paddingBottom: 110,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 2,
+    
     borderTopColor: '#E8E5DA',
     gap: 12 },
   inputField: {

@@ -57,6 +57,12 @@
       "eas": {
         "projectId": "b959b0da-c5e9-4ad2-b886-49b5c979a64c"
       }
+    },
+    "icon": "./assets/images/icontampilanawal/icon-aplikasi.png",
+    "splash": {
+      "image": "./assets/images/icontampilanawal/icon-aplikasi.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FBF8F0"
     }
   }
 }

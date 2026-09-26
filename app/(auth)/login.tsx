@@ -74,7 +74,7 @@ export default function LoginScreen() {
         <Svg height="100%" width="100%">
           <Path 
             d={`M 0,0 L ${width},0 L ${width - 33},250 Q ${width - 40},300 ${width - 90},300 L 90,300 Q 40,300 33,250 Z`} 
-            fill="#3FA86B" 
+            fill="#e9f3ee" 
             stroke="#123924" 
             strokeWidth="4" 
           />
@@ -82,7 +82,7 @@ export default function LoginScreen() {
       </View>
 
       {/* MASCOT: In the middle of the green trapezoid */}
-      <View style={{ position: 'absolute', top: 15, width: '100%', alignItems: 'center', zIndex: 1 }}>
+      <View style={{ position: 'absolute', top: 48, width: '100%', alignItems: 'center', zIndex: 1 }}>
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.svg")}
           style={{ width: 480, height: 480 }}
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   
   fixedHeader: {
     position: 'absolute',
-    top: 250, // Enough clearance from the mascot
+    top: 450, // Enough clearance from the mascot
     left: 0,
     right: 0,
     alignItems: 'center',

@@ -91,17 +91,21 @@ export default function LoginScreen() {
       </View>
 
       <SafeAreaView style={{ flex: 1, zIndex: 2 }}>
+
+        {/* Fixed Header Title */}
+        <View style={styles.fixedHeader} pointerEvents="none">
+          <Text style={styles.title}>Selamat datang balik!</Text>
+          <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu </Text>
+        </View>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
         >
-          <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
+          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
             
-            {/* Header Title moved down so it sits nicely below or inside the card */}
-            <View style={styles.headerContainer}>
-              <Text style={styles.title}>Selamat datang balik!</Text>
-              <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu </Text>
-            </View>
+            {/* Spacer so card starts below the absolute header */}
+            <View style={{ height: 280 }} />
 
             {/* Main Form Card */}
             <View style={styles.wallCard}>
@@ -208,6 +212,15 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end", 
     paddingHorizontal: 24,
     paddingBottom: 24
+  },
+  
+  fixedHeader: {
+    position: 'absolute',
+    top: 250, // Enough clearance from the mascot
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1,
   },
   headerContainer: {
     marginTop: 220, // Ditarik ke atas biar ga LDR

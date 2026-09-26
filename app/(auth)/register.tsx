@@ -137,17 +137,21 @@ export default function RegisterScreen() {
       </View>
 
       <SafeAreaView style={{ flex: 1, zIndex: 2 }}>
+
+        {/* Fixed Header Title */}
+        <View style={styles.fixedHeader} pointerEvents="none">
+          <Text style={styles.title}>Bikin akun baru</Text>
+          <Text style={styles.subtitle}>Mulai perjalanan berkebunmu </Text>
+        </View>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
         >
-          <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false} bounces={false}>
+          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false} bounces={false}>
             
-            {/* Header Title */}
-            <View style={styles.headerContainer}>
-              <Text style={styles.title}>Bikin akun baru</Text>
-              <Text style={styles.subtitle}>Mulai perjalanan berkebunmu </Text>
-            </View>
+            {/* Spacer so card starts below the absolute header */}
+            <View style={{ height: 280 }} />
 
             {/* Main Form Card */}
             <View style={styles.wallCard}>
@@ -298,6 +302,15 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end", 
     paddingHorizontal: 24,
     paddingBottom: 24
+  },
+  
+  fixedHeader: {
+    position: 'absolute',
+    top: 250, // Enough clearance from the mascot
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1,
   },
   headerContainer: {
     marginTop: 220,

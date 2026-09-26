@@ -74,7 +74,7 @@ export default function LoginScreen() {
         <Svg height="100%" width="100%">
           <Path 
             d={`M 0,0 L ${width},0 L ${width - 33},250 Q ${width - 40},300 ${width - 90},300 L 90,300 Q 40,300 33,250 Z`} 
-            fill="#3FA86B" 
+            fill="#e9f3ee" 
             stroke="#123924" 
             strokeWidth="4" 
           />
@@ -82,7 +82,7 @@ export default function LoginScreen() {
       </View>
 
       {/* MASCOT: In the middle of the green trapezoid */}
-      <View style={{ position: 'absolute', top: 15, width: '100%', alignItems: 'center', zIndex: 1 }}>
+      <View style={{ position: 'absolute', top: 48, width: '100%', alignItems: 'center', zIndex: 1 }}>
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.svg")}
           style={{ width: 480, height: 480 }}
@@ -91,17 +91,21 @@ export default function LoginScreen() {
       </View>
 
       <SafeAreaView style={{ flex: 1, zIndex: 2 }}>
+
+        {/* Fixed Header Title */}
+        <View style={styles.fixedHeader} pointerEvents="none">
+          <Text style={styles.title}>Selamat datang balik!</Text>
+          <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu </Text>
+        </View>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
         >
-          <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
+          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
             
-            {/* Header Title moved down so it sits nicely below or inside the card */}
-            <View style={styles.headerContainer}>
-              <Text style={styles.title}>Selamat datang balik!</Text>
-              <Text style={styles.subtitle}>Yuk lanjut rawat tanamanmu </Text>
-            </View>
+            {/* Spacer so card starts below the absolute header */}
+            <View style={{ height: 280 }} />
 
             {/* Main Form Card */}
             <View style={styles.wallCard}>
@@ -208,6 +212,15 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end", 
     paddingHorizontal: 24,
     paddingBottom: 24
+  },
+  
+  fixedHeader: {
+    position: 'absolute',
+    top: 450, // Enough clearance from the mascot
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1,
   },
   headerContainer: {
     marginTop: 220, // Ditarik ke atas biar ga LDR

@@ -112,7 +112,7 @@ export default function RegisterScreen() {
         <Svg height="100%" width="100%">
           <Path 
             d={`M 0,0 L ${width},0 L ${width - 33},250 Q ${width - 40},300 ${width - 90},300 L 90,300 Q 40,300 33,250 Z`} 
-            fill="#3FA86B" 
+            fill="#e9f3ee" 
             stroke="#123924" 
             strokeWidth="4" 
           />
@@ -128,7 +128,7 @@ export default function RegisterScreen() {
       </TouchableOpacity>
 
       {/* MASCOT: In the middle of the green trapezoid */}
-      <View style={{ position: 'absolute', top: 60, width: '100%', alignItems: 'center', zIndex: 1 }}>
+      <View style={{ position: 'absolute', top: 90, width: '100%', alignItems: 'center', zIndex: 1 }}>
         <Image
           source={require("../../assets/images/icontampilanawal/seedling-ngintip.svg")}
           style={{ width: 400, height: 400 }}
@@ -137,17 +137,21 @@ export default function RegisterScreen() {
       </View>
 
       <SafeAreaView style={{ flex: 1, zIndex: 2 }}>
+
+        {/* Fixed Header Title */}
+        <View style={styles.fixedHeader} pointerEvents="none">
+          <Text style={styles.title}>Bikin akun baru</Text>
+          <Text style={styles.subtitle}>Mulai perjalanan berkebunmu </Text>
+        </View>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
         >
-          <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false} bounces={false}>
+          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false} bounces={false}>
             
-            {/* Header Title */}
-            <View style={styles.headerContainer}>
-              <Text style={styles.title}>Bikin akun baru</Text>
-              <Text style={styles.subtitle}>Mulai perjalanan berkebunmu </Text>
-            </View>
+            {/* Spacer so card starts below the absolute header */}
+            <View style={{ height: 280 }} />
 
             {/* Main Form Card */}
             <View style={styles.wallCard}>
@@ -298,6 +302,15 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end", 
     paddingHorizontal: 24,
     paddingBottom: 24
+  },
+  
+  fixedHeader: {
+    position: 'absolute',
+    top: 400, // Enough clearance from the mascot
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1,
   },
   headerContainer: {
     marginTop: 220,

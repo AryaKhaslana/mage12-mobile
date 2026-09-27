@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { ActivityIndicator, Animated, FlatList, Image, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -6,8 +6,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
-import { useNotification } from '../../components/NotificationContext';
-import api, { CommunityPost, getCommunityPosts, getMyCommunityPosts } from '../../services/api';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
@@ -17,49 +15,108 @@ const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, 
     {ctaText && onCtaPress && (
       <Pressable onPress={onCtaPress} style={({ pressed }) => [
         { marginTop: 24, backgroundColor: '#3FA86B', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 100, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-        pressed && { shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1, transform: [{ scale: 0.98 }] }
+        pressed && { opacity: 0.8 }
       ]}>
-        <Text style={{ color: '#FFFFFF', fontSize: 14, fontFamily: 'Nunito_700Bold' }}>{ctaText}</Text>
+        <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#FFFFFF' }}>{ctaText}</Text>
       </Pressable>
     )}
   </View>
 );
 
-const getRelativeTime = (isoString: string) => {
-  const date = new Date(isoString);
-  const diffMs = Date.now() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 60) return `${Math.max(1, diffMins)} mnt lalu`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} jam lalu`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays} hari lalu`;
-  return date.toLocaleDateString("id-ID");
-};
+import { useNotification } from "../../components/NotificationContext";
 
+export interface PostType {
+  id: string | number;
+  authorName: string;
+  streak: number;
+  timeText: string;
+  avatarUrl: string;
+  postImageUrl?: string | null;
+  tipe: "UPDATE" | "TANYA" | "BARTER" | "DONASI";
+  judul: string;
+  isi: string;
+  lokasiNama: string;
+  tags: string;
+}
+
+const DUMMY_POSTS: PostType[] = [
+  {
+    id: "1",
+    authorName: "Budi Santoso",
+    streak: 12,
+    timeText: "2 jam yang lalu",
+    avatarUrl: "",
+    postImageUrl: "https://images.unsplash.com/photo-1592424001806-0361361c4627?auto=format&fit=crop&w=800&q=80",
+    tipe: "UPDATE",
+    judul: "Panen Tomat Pertama!",
+    isi: "Alhamdulillah setelah 3 bulan akhirnya tomat yang ditanam di halaman belakang bisa dipanen. Rasanya manis banget!",
+    lokasiNama: "Surabaya",
+    tags: "Tomat, Panen"
+  },
+  {
+    id: "2",
+    authorName: "Siti Rahma",
+    streak: 5,
+    timeText: "5 jam yang lalu",
+    avatarUrl: "",
+    tipe: "TANYA",
+    judul: "Daun Menguning, Kenapa Ya?",
+    isi: "Halo semua, ada yang tau kenapa daun tanaman cabai saya tiba-tiba menguning dan rontok? Padahal rutin disiram.",
+    lokasiNama: "Sidoarjo",
+    tags: "Cabai, Hama"
+  },
+  {
+    id: "3",
+    authorName: "Agus Pratama",
+    streak: 20,
+    timeText: "1 hari yang lalu",
+    avatarUrl: "",
+    postImageUrl: "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=800&q=80",
+    tipe: "BARTER",
+    judul: "Barter Bibit Kangkung",
+    isi: "Saya punya kelebihan bibit kangkung nih, ada yang mau barter sama bibit bayam cabut?",
+    lokasiNama: "Jakarta",
+    tags: "Bibit, Barter"
+  },
+  {
+    id: "4",
+    authorName: "Dewi Lestari",
+    streak: 8,
+    timeText: "2 hari yang lalu",
+    avatarUrl: "",
+    tipe: "DONASI",
+    judul: "Berbagi Pupuk Kompos",
+    isi: "Saya bikin pupuk kompos sendiri dan lumayan banyak sisanya. Buat yang di sekitar Malang, boleh ambil gratis ke rumah ya.",
+    lokasiNama: "Malang",
+    tags: "Pupuk, Gratis"
+  },
+  {
+    id: "5",
+    authorName: "Rudi Heryanto",
+    streak: 15,
+    timeText: "3 hari yang lalu",
+    avatarUrl: "",
+    postImageUrl: "https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?auto=format&fit=crop&w=800&q=80",
+    tipe: "UPDATE",
+    judul: "Sistem Hidroponik Sederhana",
+    isi: "Baru selesai setup hidroponik pakai pipa bekas. Semoga lancar tanam seladanya!",
+    lokasiNama: "Bandung",
+    tags: "Hidroponik, Selada"
+  }
+];
 
 const PostSkeleton = () => {
-  const fadeAnim = useRef(new Animated.Value(0.45)).current;
-
+  const fadeAnim = useRef(new Animated.Value(0.3)).current;
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(fadeAnim, { toValue: 0.45, duration: 800, useNativeDriver: true })
+        Animated.timing(fadeAnim, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.3, duration: 800, useNativeDriver: true })
       ])
     ).start();
-  }, [fadeAnim]);
-
+  }, []);
   return (
-    <Animated.View style={[{
-      backgroundColor: '#FFFFFF',
-      borderRadius: 24,
-      borderWidth: 0,
-      
-      padding: 16,
-      opacity: fadeAnim, 
-      marginBottom: 16 
-    }]}>
+    <Animated.View style={[styles.postCard, { opacity: fadeAnim, marginBottom: 16 }]}>
       <View style={styles.postHeader}>
         <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E8E5DA' }} />
         <View style={{ flex: 1, gap: 4 }}>
@@ -80,31 +137,35 @@ const PostSkeleton = () => {
 
 export default function KomunitasScreen() {
   const { showNotification } = useNotification();
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [isError, setIsError] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [coords, setCoords] = useState<{ latitude: number, longitude: number } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery) return DUMMY_POSTS;
+    const lower = searchQuery.toLowerCase();
+    return DUMMY_POSTS.filter((p) => 
+      p.judul.toLowerCase().includes(lower) || 
+      p.isi.toLowerCase().includes(lower) || 
+      p.lokasiNama.toLowerCase().includes(lower) || 
+      p.tipe.toLowerCase().includes(lower)
+    );
+  }, [searchQuery]);
+
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState<"semua" | "saya">("semua");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const limit = 10;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [tipePost, setTipePost] = useState<"progress_update" | "panen_surplus" | "pertanyaan">("progress_update");
   const [deskripsi, setDeskripsi] = useState("");
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showLocationModal, setShowLocationModal] = useState(false);
-  const [locationErrorMsg, setLocationErrorMsg] = useState("");
 
   const handlePickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.7 });
+      quality: 0.7 
+    });
     if (!result.canceled) {
       setFoto(result.assets[0]);
     }
@@ -116,683 +177,298 @@ export default function KomunitasScreen() {
       return;
     }
     setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append("tipePost", tipePost);
-      formData.append("deskripsi", deskripsi);
-      if (foto) {
-        formData.append("foto", {
-          uri: foto.uri,
-          name: "foto.jpg",
-          type: "image/jpeg" } as any);
-      }
-
-      await api.post("/community", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data" } });
-
+    setTimeout(() => {
       showNotification("Mantap!", "Berhasil posting broskie!", "success");
       setIsModalVisible(false);
       setDeskripsi("");
       setFoto(null);
       setTipePost("progress_update");
-      handleRefresh();
-    } catch (error: any) {
-      const msg = error.response?.data?.message || "Gagal memposting.";
-      if (msg.toLowerCase().includes("lokasi")) {
-        setLocationErrorMsg(msg);
-        setShowLocationModal(true);
-      } else {
-        showNotification("Gagal", msg, "error");
-      }
-    } finally {
       setIsSubmitting(false);
-    }
+    }, 1000);
   };
-
-  const fetchUserLocationAndPosts = async () => {
-    if (posts.length > 0) return; // Prevent destructive reset of scroll position & paginated data
-    setIsLoading(true);
-    setIsError(false);
-    try {
-      const meRes = await api.get("/user/me").catch(() => null);
-      const userData = meRes?.data?.data;
-      if (userData?.id) {
-        setCurrentUserId(userData.id);
-      }
-      const lat = userData?.latitude;
-      const lon = userData?.longitude;
-      
-      if (lat != null && lon != null) {
-        setCoords({ latitude: lat, longitude: lon });
-        const commRes = activeTab === "semua" 
-          ? await getCommunityPosts(lat, lon, 1, limit) 
-          : await getMyCommunityPosts(1, limit);
-        setPosts(commRes.data);
-        setPage(commRes.meta.halamanSekarang);
-        setHasMore(commRes.data.length >= limit);
-      } else {
-        setCoords(null);
-      }
-    } catch (e) {
-      console.error("Komunitas fetch error:", e);
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchUserLocationAndPosts();
-    }, [])
-  );
-
-  useEffect(() => {
-    if (coords) {
-      setIsLoading(true);
-      setPosts([]);
-      setPage(1);
-      
-      const fetchNewTab = async () => {
-        try {
-          const commRes = activeTab === "semua" 
-            ? await getCommunityPosts(coords.latitude, coords.longitude, 1, limit) 
-            : await getMyCommunityPosts(1, limit);
-          setPosts(commRes.data);
-          setPage(commRes.meta.halamanSekarang);
-          setHasMore(commRes.data.length >= limit);
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      fetchNewTab();
-    }
-  }, [activeTab]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    try {
-      if (coords) {
-        const commRes = activeTab === "semua"
-          ? await getCommunityPosts(coords.latitude, coords.longitude, 1, limit).catch(() => null)
-          : await getMyCommunityPosts(1, limit).catch(() => null);
-        if (commRes?.data) {
-          setPosts(commRes.data);
-          setPage(commRes.meta.halamanSekarang);
-          setHasMore(commRes.data.length >= limit);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsRefreshing(false);
-    }
+    setTimeout(() => setIsRefreshing(false), 800);
   };
 
-  const handleLoadMore = async () => {
-    if (!hasMore || isLoadingMore || !coords) return;
-    setIsLoadingMore(true);
-    try {
-      const nextPage = page + 1;
-      const commRes = activeTab === "semua"
-        ? await getCommunityPosts(coords.latitude, coords.longitude, nextPage, limit).catch(() => null)
-        : await getMyCommunityPosts(nextPage, limit).catch(() => null);
-      if (commRes?.data) {
-        setPosts(prev => [...prev, ...commRes.data]);
-        setPage(commRes.meta.halamanSekarang);
-        setHasMore(commRes.data.length >= limit);
-      } else {
-        setHasMore(false);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
-
-
-
-  if (isLoading && !isRefreshing && posts.length === 0) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Komunitas</Text>
-            <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital </Text>
-          </View>
-          <View style={styles.scrollContent}>
-            <PostSkeleton />
-            <PostSkeleton />
-            <PostSkeleton />
-          </View>
-        </View>
-      
-    </SafeAreaView>
-    );
-  }
+  const handleLoadMore = () => {};
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-                <View style={styles.header}>
+        <View style={styles.header}>
           <Text style={styles.headerTitle}>Komunitas</Text>
-          <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital </Text>
-        </View>
-
-        {!coords ? (
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <EmptyHint
-              icon="location-off"
-              title="Lokasimu belum disetel "
-              subtitle="Komunitas butuh lokasimu buat nampilin postingan petani di sekitar."
-              ctaText="Set Lokasi Sekarang"
-              onCtaPress={() => router.push('/(auth)/location-setup')}
+          <Text style={styles.headerSubtitle}>Tempat nongkrongnya petani digital 🌱</Text>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#FFFFFF',
+            borderWidth: 2,
+            borderColor: '#123924',
+            borderRadius: 16,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            marginTop: 16,
+            shadowColor: "#123924", shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4
+          }}>
+            <MaterialIcons name="search" size={24} color="#123924" />
+            <TextInput
+              style={{ flex: 1, marginLeft: 8, fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }}
+              placeholder="Cari postingan, lokasi, tipe..."
+              placeholderTextColor="#5C5A4F"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
           </View>
-        ) : (
-          <>
-                {/* TABS */}
-      <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, marginTop: 16, gap: 12 }}>
-        <Pressable 
-          onPress={() => setActiveTab('semua')}
-          style={({pressed}) => [
-            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
-            activeTab === 'semua' ? { backgroundColor: '#3FA86B', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
-            pressed && { opacity: 0.5 }
-          ]}
-        >
-          <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'semua' ? '#FFFFFF' : '#123924' }}>Semua Postingan</Text>
-        </Pressable>
-        <Pressable 
-          onPress={() => setActiveTab('saya')}
-          style={({pressed}) => [
-            { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
-            activeTab === 'saya' ? { backgroundColor: '#FFB627', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
-            pressed && { opacity: 0.5 }
-          ]}
-        >
-          <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'saya' ? '#123924' : '#123924' }}>Postingan Anda</Text>
-        </Pressable>
-      </View>
+        </View>
 
-      <FlatList
-            data={posts}
-            keyExtractor={item => item.id.toString()}
-            contentContainerStyle={styles.scrollContent}
-            refreshControl={
-              <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={["#3FA86B"]} />
-            }
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.5}
-            ListEmptyComponent={
-              !isLoading ? (
-                isError ? (
-                  <ErrorState onRetry={fetchUserLocationAndPosts} />
-                ) : (
-                  <EmptyHint
-                    icon="groups"
-                    title="Belum ada postingan di sekitarmu "
-                    subtitle="Jadilah petani pertama yang berbagi di sini!"
-                  />
-                )
-              ) : null
-            }
-            ListFooterComponent={
-              isLoadingMore ? <ActivityIndicator size="small" color="#3FA86B" style={{ marginVertical: 16 }} /> : null
-            }
-            renderItem={({ item }) => {
-              let badgeText = "";
-              let badgeBg = "";
-              let badgeColor = "";
-              if (item.tipePost === "progress_update") {
-                badgeText = "Progress ";
-                badgeBg = "#E8F5E9";
-                badgeColor = "#3FA86B";
-              } else if (item.tipePost === "panen_surplus") {
-                badgeText = "Panen Surplus ";
-                badgeBg = "#FFF9E6";
-                badgeColor = "#B8860B";
-              } else if (item.tipePost === "pertanyaan") {
-                badgeText = "Pertanyaan ❓";
-                badgeBg = "#FFECEB";
-                badgeColor = "#FF6B5C";
-              }
-
-              return (
-                <View style={styles.postCard}>
-                  <View style={styles.postHeader}>
-                    <View style={styles.avatarContainer}>
-                      <Text style={styles.avatarInitials}>{((item.user_nama || (item.author && item.author.nama) || (item.user && item.user.nama) || "P")).charAt(0).toUpperCase()}</Text>
-                    </View>
-                    <View style={styles.postMeta}>
-                      <Text style={styles.authorName} numberOfLines={1}>{item.user_nama || (item.author && item.author.nama) || (item.user && item.user.nama) || "Petani TaniSync"}</Text>
-                      <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
-                    </View>
-                    {badgeText ? (
-                      <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-                        <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
-                      </View>
-                    ) : null}
-
-                  </View>
-
-                  <Pressable 
-                    onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: item.id } } as any)}
-                    style={({pressed}) => [pressed && {opacity: 0.8}]}
-                  >
-                  <Text style={styles.postCaption}>{item.deskripsi}</Text>
-
-                  {item.fotoUrl && (
-                    <Pressable style={styles.postImageContainer} onPress={() => setSelectedImage(item.fotoUrl)}>
-                      <Image source={{ uri: item.fotoUrl }} style={styles.postImage} />
-                    </Pressable>
-                  )}
-
-                  <View style={styles.locationRow}>
-                    <MaterialIcons name="place" size={12} color="#5C5A4F" />
-                    <Text style={styles.distanceText}>{item.distance != null ? item.distance.toFixed(1) + " km" : "Lokasi Anda"}</Text>
-                  </View>
-                  </Pressable>
-                </View>
-              );
-            }}
-          />
-          </>
-        )}
-      </View>
-
-        {coords && (
+        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, marginTop: 16, gap: 12 }}>
           <Pressable 
-            style={({ pressed }) => [
-              styles.fab,
-              pressed && styles.pressedShadow4
+            onPress={() => setActiveTab('semua')}
+            style={({pressed}) => [
+              { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
+              activeTab === 'semua' ? { backgroundColor: '#3FA86B', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+              pressed && { opacity: 0.5 }
             ]}
-            onPress={() => setIsModalVisible(true)}
           >
-            <MaterialIcons name="add" size={28} color="#FFFFFF" />
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'semua' ? '#FFFFFF' : '#123924' }}>Terbaru</Text>
           </Pressable>
-        )}
+          <Pressable 
+            onPress={() => setActiveTab('saya')}
+            style={({pressed}) => [
+              { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
+              activeTab === 'saya' ? { backgroundColor: '#FFB627', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+              pressed && { opacity: 0.5 }
+            ]}
+          >
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'saya' ? '#123924' : '#123924' }}>Terdekat</Text>
+          </Pressable>
+        </View>
+  
+        <FlatList
+          data={filteredPosts}
+          keyExtractor={item => item.id.toString()}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={["#3FA86B"]} />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            <EmptyHint
+              icon="groups"
+              title="Postingan tidak ditemukan"
+              subtitle="Coba cari dengan kata kunci lain."
+            />
+          }
+          renderItem={({ item }: { item: PostType }) => {
+            let badgeBg = "#E8E5DA";
+            let badgeColor = "#123924";
+            if (item.tipe === "UPDATE") {
+              badgeBg = "#E8F5E9";
+              badgeColor = "#3FA86B";
+            } else if (item.tipe === "TANYA") {
+              badgeBg = "#FFECEB";
+              badgeColor = "#FF6B5C";
+            } else if (item.tipe === "BARTER") {
+              badgeBg = "#E3F2FD";
+              badgeColor = "#1E88E5";
+            } else if (item.tipe === "DONASI") {
+              badgeBg = "#FFF9E6";
+              badgeColor = "#B8860B";
+            }
 
-        <Modal
-          visible={isModalVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => !isSubmitting && setIsModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalDragIndicator} />
-              <View style={styles.modalHeader}>
-                <View>
-                  <Text style={styles.modalTitle}>Mau bahas apa? </Text>
-                  <Text style={styles.modalSubtitle}>Bagikan ceritamu ke petani lain!</Text>
-                </View>
-                <Pressable 
-                  style={styles.closeModalButton}
-                  onPress={() => !isSubmitting && setIsModalVisible(false)}
-                >
-                  <MaterialIcons name="close" size={20} color="#123924" />
-                </Pressable>
-              </View>
-
-              <View style={styles.chipRow}>
-                {[
-                  { label: "Progress ", value: "progress_update" },
-                  { label: "Panen Surplus ", value: "panen_surplus" },
-                  { label: "Pertanyaan ❓", value: "pertanyaan" }
-                ].map(chip => (
-                  <Pressable
-                    key={chip.value}
-                    style={[styles.chip, tipePost === chip.value ? styles.chipActive : styles.chipInactive]}
-                    onPress={() => setTipePost(chip.value as any)}
-                  >
-                    <Text style={[styles.chipText, tipePost === chip.value ? styles.chipTextActive : styles.chipTextInactive]}>
-                      {chip.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.textInput}
-                  multiline
-                  placeholder="Ceritakan panenmu, tanya sesuatu..."
-                  placeholderTextColor="#bdcabd"
-                  value={deskripsi}
-                  onChangeText={setDeskripsi}
-                  maxLength={500}
-                />
-                <Text style={styles.counterText}>{deskripsi.length}/500</Text>
-              </View>
-
-              {!foto ? (
-                <Pressable 
-                  style={({ pressed }) => [
-                    styles.photoDashedButton,
-                    pressed && { backgroundColor: '#F4F6F0' }
-                  ]} 
-                  onPress={handlePickImage}
-                >
-                  <View style={styles.photoIconWrapper}>
-                    <MaterialIcons name="add-a-photo" size={24} color="#123924" />
+            return (
+              <View style={styles.postCard}>
+                <View style={styles.postHeader}>
+                  <View style={styles.avatarContainer}>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#FFFFFF' }}>{item.authorName.charAt(0).toUpperCase()}</Text>
                   </View>
-                  <Text style={styles.photoDashedText}>Tambahin foto biar makin asik!</Text>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', fontSize: 16 }} numberOfLines={1}>{item.authorName}</Text>
+                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#3FA86B', backgroundColor: '#E8F5E9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>#{item.lokasiNama}</Text>
+                    </View>
+                    <Text style={{ fontFamily: 'Nunito_500Medium', color: '#5C5A4F', fontSize: 12 }}>{item.timeText}</Text>
+                  </View>
+                  
+                  <View style={{ backgroundColor: badgeBg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: badgeColor, shadowColor: badgeColor, shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0 }}>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: badgeColor }}>{item.tipe}</Text>
+                  </View>
+                </View>
+
+                <Pressable 
+                  onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: item.id } } as any)}
+                  style={({pressed}) => [pressed && {opacity: 0.8}]}
+                >
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 4, fontSize: 16 }}>{item.judul}</Text>
+                  <Text style={{ fontFamily: 'Nunito_500Medium', color: '#123924', fontSize: 14, marginBottom: 12, lineHeight: 22 }}>{item.isi}</Text>
+                  {item.tags && (
+                    <Text style={{ fontFamily: 'Nunito_700Bold', color: '#3FA86B', marginBottom: 12 }}>{item.tags}</Text>
+                  )}
+                  {item.postImageUrl ? (
+                    <Image source={{ uri: item.postImageUrl }} style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 12, resizeMode: 'cover' }} />
+                  ) : null}
                 </Pressable>
-              ) : (
-                <View style={styles.previewContainer}>
-                  <Image source={{ uri: foto.uri }} style={styles.previewImage} />
-                  <Pressable style={styles.removePhotoButton} onPress={() => setFoto(null)}>
-                    <MaterialIcons name="close" size={16} color="#FFFFFF" />
+                
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 4 }}>
+                  <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialIcons name="favorite-border" size={24} color="#123924" />
+                    <Text style={{ fontFamily: 'Nunito_700Bold', color: '#123924' }}>0</Text>
+                  </Pressable>
+                  <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialIcons name="chat-bubble-outline" size={24} color="#123924" />
+                    <Text style={{ fontFamily: 'Nunito_700Bold', color: '#123924' }}>0</Text>
+                  </Pressable>
+                  <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialIcons name="share" size={24} color="#123924" />
                   </Pressable>
                 </View>
-              )}
+              </View>
+            );
+          }}
+        />
+      </View>
 
+      <Pressable 
+        style={({ pressed }) => [
+          styles.fab,
+          pressed && { opacity: 0.8 }
+        ]}
+        onPress={() => setIsModalVisible(true)}
+      >
+        <MaterialIcons name="add" size={28} color="#FFFFFF" />
+      </Pressable>
+
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => !isSubmitting && setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalDragIndicator} />
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Mau bahas apa? </Text>
+                <Text style={styles.modalSubtitle}>Bagikan ceritamu ke petani lain!</Text>
+              </View>
               <Pressable 
-                style={styles.submitButton}
-                onPress={handleSubmitPost}
-                disabled={isSubmitting}
+                style={styles.closeModalButton}
+                onPress={() => !isSubmitting && setIsModalVisible(false)}
               >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Kirim Sekarang </Text>
-                )}
+                <MaterialIcons name="close" size={20} color="#123924" />
               </Pressable>
             </View>
+
+            <View style={styles.chipRow}>
+              {[
+                { label: "Progress ", value: "progress_update" },
+                { label: "Panen Surplus ", value: "panen_surplus" },
+                { label: "Pertanyaan 🤔", value: "pertanyaan" }
+              ].map(chip => (
+                <Pressable
+                  key={chip.value}
+                  style={[styles.chip, tipePost === chip.value ? styles.chipActive : styles.chipInactive]}
+                  onPress={() => setTipePost(chip.value as any)}
+                >
+                  <Text style={[styles.chipText, tipePost === chip.value ? styles.chipTextActive : styles.chipTextInactive]}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.textInput}
+                multiline
+                placeholder="Ceritakan panenmu, tanya sesuatu..."
+                placeholderTextColor="#bdcabd"
+                value={deskripsi}
+                onChangeText={setDeskripsi}
+                maxLength={500}
+              />
+              <Text style={styles.counterText}>{deskripsi.length}/500</Text>
+            </View>
+
+            {!foto ? (
+              <Pressable 
+                style={({ pressed }) => [
+                  styles.photoDashedButton,
+                  pressed && { backgroundColor: '#F4F6F0' }
+                ]} 
+                onPress={handlePickImage}
+              >
+                <View style={styles.photoIconWrapper}>
+                  <MaterialIcons name="add-a-photo" size={24} color="#123924" />
+                </View>
+                <Text style={styles.photoDashedText}>Tambahin foto biar makin asik!</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.previewContainer}>
+                <Image source={{ uri: foto.uri }} style={styles.previewImage} />
+                <Pressable style={styles.removePhotoButton} onPress={() => setFoto(null)}>
+                  <MaterialIcons name="close" size={16} color="#FFFFFF" />
+                </Pressable>
+              </View>
+            )}
+
+            <Pressable 
+              style={styles.submitButton}
+              onPress={handleSubmitPost}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitButtonText}>Kirim Sekarang </Text>
+              )}
+            </Pressable>
           </View>
-        </Modal>
-    
-      {/* IMAGE ZOOM MODAL */}
-      <Modal visible={!!selectedImage} transparent={true} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.95)', justifyContent: 'center', alignItems: 'center' }}>
-          <Pressable style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#FFFFFF', padding: 8, borderRadius: 100, borderWidth: 0 }} onPress={() => setSelectedImage(null)}>
-            <MaterialIcons name="close" size={28} color="#123924" />
-          </Pressable>
-          {selectedImage && (
-            <Image source={{ uri: selectedImage }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
-          )}
         </View>
       </Modal>
-
+  
     </SafeAreaView>
-
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FBF8F0' },
-  container: {
-    flex: 1 },
-  scrollContent: {
-    paddingBottom: 140,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    
-    gap: 16 },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 24 },
-  headerTitle: {
-    fontSize: 32,
-    fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924' },
-  headerSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Nunito_500Medium',
-    color: '#5C5A4F',
-    marginTop: 4 },
-  postCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    borderWidth: 0,
-    
-    padding: 16,
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12 },
-  avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#3FA86B',
-    alignItems: 'center',
-    justifyContent: 'center' },
-  avatarInitials: {
-    color: '#FFFFFF',
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16 },
-  postMeta: {
-    flex: 1 },
-  authorName: {
-    fontSize: 14,
-    fontFamily: 'Nunito_700Bold',
-    color: '#123924' },
-  timeText: {
-    fontSize: 10,
-    color: '#5C5A4F',
-    fontFamily: 'Nunito_500Medium' },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 100,
-    borderWidth: 0 },
-  badgeText: {
-    fontSize: 10,
-    fontFamily: 'Nunito_700Bold' },
-  postCaption: {
-    fontSize: 14,
-    fontFamily: 'Nunito_500Medium',
-    color: '#123924',
-    lineHeight: 20,
-    marginBottom: 12 },
-  postImageContainer: {
-    width: '100%',
-    aspectRatio: 4/3,
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 12 },
-  postImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover' },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    
-    borderTopColor: '#E8E5DA' },
-  actionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16 },
-  actionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6 },
-  actionText: {
-    fontSize: 13,
-    fontFamily: 'Nunito_700Bold',
-    color: '#5C5A4F' },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4 },
-  distanceText: {
-    fontSize: 10,
-    color: '#5C5A4F',
-    fontFamily: 'Nunito_500Medium' },
-  fab: {
-    position: 'absolute',
-    bottom: 120,
-    right: 24,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#3FA86B',
-    borderWidth: 0,
-    
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
-    zIndex: 50 },
-  pressedShadow4: {
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
-    transform: [{ scale: 0.98 }] },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(18,57,36,0.5)',
-    justifyContent: 'flex-end' },
-  modalDragIndicator: {
-    width: 48,
-    height: 6,
-    backgroundColor: '#bdcabd',
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 20 },
-  modalContent: {
-    backgroundColor: '#FBF8F0',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    borderWidth: 0,
-    
-    borderBottomWidth: 0,
-    padding: 24,
-    paddingTop: 16,
-    maxHeight: '85%' },
-  closeModalButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0,
-    
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-  modalSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Nunito_500Medium',
-    color: '#5C5A4F',
-    marginTop: 2 },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20 },
-  modalTitle: {
-    fontSize: 20,
-    fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924' },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16 },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 100,
-    borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-  chipActive: {
-    backgroundColor: '#3FA86B' },
-  chipInactive: {
-    backgroundColor: '#FFFFFF' },
-  chipText: {
-    fontSize: 12,
-    fontFamily: 'Nunito_700Bold' },
-  chipTextActive: {
-    color: '#FFFFFF' },
-  chipTextInactive: {
-    color: '#3e4a40' },
-  inputContainer: {
-    marginBottom: 16 },
-  textInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0,
-    
-    borderRadius: 16,
-    padding: 16,
-    height: 120,
-    fontFamily: 'Nunito_500Medium',
-    fontSize: 14,
-    color: '#123924',
-    textAlignVertical: 'top',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-  counterText: {
-    fontFamily: 'Nunito_500Medium',
-    fontSize: 10,
-    color: '#5C5A4F',
-    textAlign: 'right',
-    marginTop: 4 },
-  photoDashedButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0,
-    
-    borderStyle: 'dashed',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-  photoIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E8F5E9',
-    borderWidth: 0,
-    
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12 },
-  photoDashedText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 14,
-    color: '#123924' },
-  previewContainer: {
-    width: 120,
-    aspectRatio: 4/3,
-    borderRadius: 16,
-    borderWidth: 0,
-    
-    overflow: 'hidden',
-    marginBottom: 24 },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover' },
-  removePhotoButton: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(18,57,36,0.7)',
-    borderRadius: 12,
-    padding: 4 },
-  submitButton: {
-    backgroundColor: '#1F5C3D',
-    borderRadius: 30,
-    borderWidth: 0,
-    
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 16 }
+  safeArea: { flex: 1, backgroundColor: '#FBF8F0' },
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: 140, paddingHorizontal: 20, paddingTop: 16, gap: 16 },
+  header: { paddingHorizontal: 20, paddingTop: 24 },
+  headerTitle: { fontSize: 32, fontFamily: 'Nunito_800ExtraBold', color: '#123924' },
+  headerSubtitle: { fontSize: 14, fontFamily: 'Nunito_500Medium', color: '#5C5A4F', marginTop: 4 },
+  postCard: { backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, padding: 16, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+  postHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  avatarContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3FA86B', alignItems: 'center', justifyContent: 'center' },
+  fab: { position: 'absolute', bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: '#123924', alignItems: 'center', justifyContent: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 6 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FBF8F0', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 16 },
+  modalDragIndicator: { width: 48, height: 6, backgroundColor: '#bdcabd', borderRadius: 3, alignSelf: 'center', marginBottom: 24 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontFamily: 'Nunito_800ExtraBold', color: '#123924' },
+  modalSubtitle: { fontSize: 14, fontFamily: 'Nunito_500Medium', color: '#5C5A4F', marginTop: 2 },
+  closeModalButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E8E5DA', alignItems: 'center', justifyContent: 'center' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 100, borderWidth: 2 },
+  chipActive: { backgroundColor: '#3FA86B', borderColor: '#3FA86B' },
+  chipInactive: { backgroundColor: 'transparent', borderColor: '#bdcabd' },
+  chipText: { fontSize: 14, fontFamily: 'Nunito_700Bold' },
+  chipTextActive: { color: '#FFFFFF' },
+  chipTextInactive: { color: '#5C5A4F' },
+  inputContainer: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 2, borderColor: '#123924', marginBottom: 16, height: 120 },
+  textInput: { flex: 1, fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#123924', textAlignVertical: 'top' },
+  counterText: { fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5C5A4F', textAlign: 'right', marginTop: 8 },
+  photoDashedButton: { borderWidth: 2, borderColor: '#bdcabd', borderStyle: 'dashed', borderRadius: 20, padding: 24, alignItems: 'center', gap: 12, marginBottom: 24 },
+  photoIconWrapper: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', alignItems: 'center', justifyContent: 'center' },
+  photoDashedText: { fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#5C5A4F' },
+  previewContainer: { width: '100%', height: 200, borderRadius: 20, overflow: 'hidden', marginBottom: 24, borderWidth: 2, borderColor: '#123924' },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  removePhotoButton: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: '#FF6B5C', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#123924' },
+  submitButton: { backgroundColor: '#123924', paddingVertical: 18, borderRadius: 20, alignItems: 'center' },
+  submitButtonText: { fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }
 });

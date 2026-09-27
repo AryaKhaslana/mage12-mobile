@@ -490,12 +490,17 @@ export default function DashboardScreen() {
         tipeValidasi: "button_only" });
       if (response.data?.status === "success") {
         const d = response.data.data;
-        setUserData((prev: any) => prev ? { 
-          ...prev, 
-          exp: d.expSekarang !== undefined ? d.expSekarang : (prev.exp || 0) + (d.expDidapat || 0), 
-          level: d.level !== undefined ? d.level : prev.level, 
-          streak: d.streak !== undefined ? d.streak : prev.streak 
-        } : prev);
+        setUserData((prev: any) => {
+          if (!prev) return prev;
+          const updated = { 
+            ...prev, 
+            exp: d.expSekarang !== undefined ? d.expSekarang : (prev.exp || 0) + (d.expDidapat || 0), 
+            level: d.level !== undefined ? d.level : prev.level, 
+            streak: d.streak !== undefined ? d.streak : prev.streak 
+          };
+          SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
+          return updated;
+        });
         if (d.levelUp) {
           showNotification(
             "Mantap!",

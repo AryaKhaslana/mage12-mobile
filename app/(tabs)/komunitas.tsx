@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   postCard: { backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, padding: 16, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
   postHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   avatarContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3FA86B', alignItems: 'center', justifyContent: 'center' },
-  fab: { position: 'absolute', bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: '#123924', alignItems: 'center', justifyContent: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 6 },
+  fab: { position: 'absolute', bottom: 110, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: '#123924', alignItems: 'center', justifyContent: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 6 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.4)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#FBF8F0', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 16 },
   modalDragIndicator: { width: 48, height: 6, backgroundColor: '#bdcabd', borderRadius: 3, alignSelf: 'center', marginBottom: 24 },

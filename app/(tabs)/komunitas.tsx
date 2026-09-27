@@ -448,114 +448,16 @@ export default function KomunitasScreen() {
           <Text style={styles.headerSubtitle}>
             Tempat nongkrongnya petani digital 🌱
           </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "#FFFFFF",
-              borderWidth: 2,
-              borderColor: "#123924",
-              borderRadius: 16,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              marginTop: 16,
-              shadowColor: "#123924",
-              shadowOffset: { width: 3, height: 3 },
-              shadowOpacity: 1,
-              shadowRadius: 0,
-              elevation: 4,
-            }}
-          >
-            <MaterialIcons name="search" size={24} color="#123924" />
-            <TextInput
-              style={{
-                flex: 1,
-                marginLeft: 8,
-                fontFamily: "Nunito_700Bold",
-                fontSize: 16,
-                color: "#123924",
-              }}
-              placeholder="Cari postingan, lokasi, tipe..."
-              placeholderTextColor="#5C5A4F"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+          
+          <View style={{ flexDirection: "row", marginTop: 16, gap: 12 }}>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 12, borderRadius: 20, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4 }}>
+              <MaterialIcons name="search" size={24} color="#5C5A4F" />
+              <TextInput style={{ flex: 1, marginLeft: 8, fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }} placeholder="Cari postingan, lokasi..." placeholderTextColor="#5C5A4F" value={searchQuery} onChangeText={setSearchQuery} />
+            </View>
+            <Pressable onPress={() => setIsFilterModalVisible(true)} style={({ pressed }) => [{ backgroundColor: '#FFB627', width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }, pressed && { opacity: 0.7 }]}>
+              <MaterialIcons name="tune" size={24} color="#123924" />
+            </Pressable>
           </View>
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            paddingHorizontal: 16,
-            marginBottom: 16,
-            marginTop: 16,
-            gap: 12,
-          }}
-        >
-          <Pressable
-            onPress={() => setActiveTab("terbaru")}
-            style={({ pressed }) => [
-              {
-                flex: 1,
-                paddingVertical: 12,
-                alignItems: "center",
-                borderRadius: 24,
-                borderWidth: 0,
-              },
-              activeTab === "terbaru"
-                ? {
-                    backgroundColor: "#3FA86B",
-                    shadowColor: "#123924",
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 14,
-                    elevation: 4,
-                  }
-                : { backgroundColor: "#FFFFFF", opacity: 0.7 },
-              pressed && { opacity: 0.5 },
-            ]}
-          >
-            <Text
-              style={{
-                fontFamily: "Nunito_800ExtraBold",
-                color: activeTab === "terbaru" ? "#FFFFFF" : "#123924",
-              }}
-            >
-              Terbaru
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setActiveTab("terdekat")}
-            style={({ pressed }) => [
-              {
-                flex: 1,
-                paddingVertical: 12,
-                alignItems: "center",
-                borderRadius: 24,
-                borderWidth: 0,
-              },
-              activeTab === "terdekat"
-                ? {
-                    backgroundColor: "#FFB627",
-                    shadowColor: "#123924",
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 14,
-                    elevation: 4,
-                  }
-                : { backgroundColor: "#FFFFFF", opacity: 0.7 },
-              pressed && { opacity: 0.5 },
-            ]}
-          >
-            <Text
-              style={{
-                fontFamily: "Nunito_800ExtraBold",
-                color: activeTab === "terdekat" ? "#123924" : "#123924",
-              }}
-            >
-              Terdekat
-            </Text>
-          </Pressable>
         </View>
 
         <FlatList

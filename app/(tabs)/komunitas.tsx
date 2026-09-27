@@ -303,24 +303,24 @@ export default function KomunitasScreen() {
 
         <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, marginTop: 16, gap: 12 }}>
           <Pressable 
-            onPress={() => setActiveTab('semua')}
+            onPress={() => setActiveTab('terbaru')}
             style={({pressed}) => [
               { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
-              activeTab === 'semua' ? { backgroundColor: '#3FA86B', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+              activeTab === 'terbaru' ? { backgroundColor: '#3FA86B', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
               pressed && { opacity: 0.5 }
             ]}
           >
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'semua' ? '#FFFFFF' : '#123924' }}>Terbaru</Text>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'terbaru' ? '#FFFFFF' : '#123924' }}>Terbaru</Text>
           </Pressable>
           <Pressable 
-            onPress={() => setActiveTab('saya')}
+            onPress={() => setActiveTab('terdekat')}
             style={({pressed}) => [
               { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24, borderWidth: 0 },
-              activeTab === 'saya' ? { backgroundColor: '#FFB627', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
+              activeTab === 'terdekat' ? { backgroundColor: '#FFB627', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 } : { backgroundColor: '#FFFFFF', opacity: 0.7 },
               pressed && { opacity: 0.5 }
             ]}
           >
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'saya' ? '#123924' : '#123924' }}>Terdekat</Text>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: activeTab === 'terdekat' ? '#123924' : '#123924' }}>Terdekat</Text>
           </Pressable>
         </View>
   

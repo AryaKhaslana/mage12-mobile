@@ -27,7 +27,7 @@ import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import {
   createCommunityPost,
-  getCommunityPosts
+  getCommunityPosts, getMyCommunityPosts
 } from "../../services/api";
 
 const EmptyHint = ({
@@ -308,6 +308,9 @@ export default function KomunitasScreen() {
   const [activeTab, setActiveTab] = useState<"terbaru" | "terdekat">("terbaru");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [userFilter, setUserFilter] = useState<"semua" | "saya">("semua");
+
 
   // Form State
   const [tipePost, setTipePost] = useState<
@@ -343,13 +346,12 @@ export default function KomunitasScreen() {
         }
       }
 
-      const response = await getCommunityPosts(
-        lat,
-        lng,
-        pageNum,
-        10,
-        debouncedSearch,
-      );
+      let response;
+      if (userFilter === "saya") {
+        response = await getMyCommunityPosts(pageNum, 10);
+      } else {
+        response = await getCommunityPosts(lat, lng, pageNum, 10, debouncedSearch);
+      }
 
       if (shouldRefresh || pageNum === 1) {
         setPosts(response.data);
@@ -984,6 +986,52 @@ export default function KomunitasScreen() {
         </View>
       </KeyboardAvoidingView>
       </Modal>
+
+      {/* FILTER MODAL */}
+      <Modal visible={isFilterModalVisible} transparent={true} animationType="fade" onRequestClose={() => setIsFilterModalVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40 }}>
+            <View style={{ width: 48, height: 6, backgroundColor: '#bdcabd', borderRadius: 3, alignSelf: 'center', marginBottom: 24 }} />
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924' }}>Filter Postingan</Text>
+              <Pressable onPress={() => setIsFilterModalVisible(false)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E8E5DA', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="close" size={20} color="#123924" />
+              </Pressable>
+            </View>
+
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 12, fontSize: 14 }}>Tampilkan</Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+              <Pressable onPress={() => setUserFilter('semua')} style={[{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24 }, userFilter === 'semua' ? { backgroundColor: '#3FA86B' } : { backgroundColor: '#FFFFFF' }]}>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: userFilter === 'semua' ? '#FFFFFF' : '#123924' }}>Semua Orang</Text>
+              </Pressable>
+              <Pressable onPress={() => setUserFilter('saya')} style={[{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24 }, userFilter === 'saya' ? { backgroundColor: '#3FA86B' } : { backgroundColor: '#FFFFFF' }]}>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: userFilter === 'saya' ? '#FFFFFF' : '#123924' }}>Postingan Saya</Text>
+              </Pressable>
+            </View>
+
+            {userFilter === 'semua' && (
+              <>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 12, fontSize: 14 }}>Urutkan</Text>
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+                  <Pressable onPress={() => setActiveTab('terbaru')} style={[{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24 }, activeTab === 'terbaru' ? { backgroundColor: '#FFB627' } : { backgroundColor: '#FFFFFF' }]}>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924' }}>Terbaru</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setActiveTab('terdekat')} style={[{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24 }, activeTab === 'terdekat' ? { backgroundColor: '#FFB627' } : { backgroundColor: '#FFFFFF' }]}>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924' }}>Terdekat</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            <Pressable onPress={() => setIsFilterModalVisible(false)} style={{ backgroundColor: '#123924', paddingVertical: 16, borderRadius: 24, alignItems: 'center', marginTop: 12 }}>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#FFFFFF', fontSize: 16 }}>Terapkan Filter</Text>
+            </Pressable>
+
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }

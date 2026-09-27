@@ -442,6 +442,32 @@ export default function KomunitasScreen() {
               </Pressable>
             </View>
 
+            {/* 1. UPLOAD FOTO (PINDAH KE ATAS) */}
+            {!foto ? (
+              <Pressable 
+                style={({ pressed }) => [
+                  styles.photoDashedButton,
+                  pressed && { backgroundColor: '#F4F6F0' },
+                  { marginBottom: 20 }
+                ]} 
+                onPress={handlePickImage}
+              >
+                <View style={styles.photoIconWrapper}>
+                  <MaterialIcons name="add-a-photo" size={24} color="#123924" />
+                </View>
+                <Text style={styles.photoDashedText}>Tambahin foto biar makin asik!</Text>
+              </Pressable>
+            ) : (
+              <View style={[styles.previewContainer, { marginBottom: 20 }]}>
+                <Image source={{ uri: foto.uri }} style={styles.previewImage} />
+                <Pressable style={styles.removePhotoButton} onPress={() => setFoto(null)}>
+                  <MaterialIcons name="close" size={16} color="#FFFFFF" />
+                </Pressable>
+              </View>
+            )}
+
+            {/* 2. CHIPS KATEGORI (TAGAR) */}
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 8, fontSize: 14 }}>Pilih Kategori / Tagar *</Text>
             <View style={styles.chipRow}>
               {[
                 { label: "Progress ", value: "progress_update" },
@@ -460,56 +486,50 @@ export default function KomunitasScreen() {
               ))}
             </View>
 
-            <View style={{ gap: 12, marginBottom: 16 }}>
-              <TextInput
-                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 0, height: 50 }]}
-                placeholder="Judul (opsional)"
-                placeholderTextColor="#bdcabd"
-                value={judul}
-                onChangeText={setJudul}
-              />
-              <TextInput
-                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 0, height: 50 }]}
-                placeholder="Kota/Daerah (opsional)"
-                placeholderTextColor="#bdcabd"
-                value={lokasiNama}
-                onChangeText={setLokasiNama}
-              />
-              <View style={[styles.inputContainer, { marginBottom: 0 }]}>
+            {/* 3. INPUT FORM DENGAN LABEL JELAS */}
+            <View style={{ gap: 16, marginBottom: 24 }}>
+              
+              {/* DESKRIPSI UTAMA */}
+              <View>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 8, fontSize: 14 }}>Cerita / Pertanyaanmu *</Text>
+                <View style={[styles.inputContainer, { marginBottom: 0 }]}>
+                  <TextInput
+                    style={styles.textInput}
+                    multiline
+                    placeholder="Ceritakan progres panenmu, atau tanya sesuatu..."
+                    placeholderTextColor="#bdcabd"
+                    value={deskripsi}
+                    onChangeText={setDeskripsi}
+                    maxLength={500}
+                  />
+                  <Text style={styles.counterText}>{deskripsi.length}/500</Text>
+                </View>
+              </View>
+
+              {/* JUDUL */}
+              <View>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 8, fontSize: 14 }}>Judul Postingan (Opsional)</Text>
                 <TextInput
-                  style={styles.textInput}
-                  multiline
-                  placeholder="Ceritakan panenmu, tanya sesuatu..."
+                  style={[styles.textInput, { padding: 16, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 0, height: 52 }]}
+                  placeholder="Misal: Panen Tomat Hari Ini!"
                   placeholderTextColor="#bdcabd"
-                  value={deskripsi}
-                  onChangeText={setDeskripsi}
-                  maxLength={500}
+                  value={judul}
+                  onChangeText={setJudul}
                 />
-                <Text style={styles.counterText}>{deskripsi.length}/500</Text>
+              </View>
+
+              {/* LOKASI */}
+              <View>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 8, fontSize: 14 }}>Lokasi / Daerah (Opsional)</Text>
+                <TextInput
+                  style={[styles.textInput, { padding: 16, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 0, height: 52 }]}
+                  placeholder="Misal: Surabaya Timur..."
+                  placeholderTextColor="#bdcabd"
+                  value={lokasiNama}
+                  onChangeText={setLokasiNama}
+                />
               </View>
             </View>
-
-            {!foto ? (
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.photoDashedButton,
-                  pressed && { backgroundColor: '#F4F6F0' }
-                ]} 
-                onPress={handlePickImage}
-              >
-                <View style={styles.photoIconWrapper}>
-                  <MaterialIcons name="add-a-photo" size={24} color="#123924" />
-                </View>
-                <Text style={styles.photoDashedText}>Tambahin foto biar makin asik!</Text>
-              </Pressable>
-            ) : (
-              <View style={styles.previewContainer}>
-                <Image source={{ uri: foto.uri }} style={styles.previewImage} />
-                <Pressable style={styles.removePhotoButton} onPress={() => setFoto(null)}>
-                  <MaterialIcons name="close" size={16} color="#FFFFFF" />
-                </Pressable>
-              </View>
-            )}
 
             <Pressable 
               style={styles.submitButton}

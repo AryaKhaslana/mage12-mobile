@@ -303,7 +303,7 @@ export default function DashboardScreen() {
   // Check Pelindung Streak Pop-up
   useEffect(() => {
     const checkPopup = async () => {
-      if (userData && userData.streak === 0 && userData.pelindung_streak && userData.pelindung_streak >= 1) {
+      if (userData && userData.streak === 0 && (userData.exp || 0) > 0 && userData.pelindung_streak && userData.pelindung_streak >= 1) {
         try {
           const todayStr = new Date().toISOString().split('T')[0];
           const key = `pelindung_popup_shown_${todayStr}`;
@@ -597,7 +597,7 @@ export default function DashboardScreen() {
                 {getGreeting()}, {userData?.nama || "Petani"}
               </Text>
             </Pressable>
-            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat kebunmu hari ini!</Text>
+            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat tanamanmu hari ini!</Text>
           </View>
         </View>
       </View>
@@ -712,7 +712,12 @@ export default function DashboardScreen() {
               {userData?.streak || 0} hari streak!
             </Text>
             <Text style={styles.heroSubtitle}>
-              Kamu lagi on fire, jangan putus ya
+              {(() => {
+                const streak = userData?.streak || 0;
+                if (streak === 0) return "Yuk, mulai rutinitas sirammu hari ini";
+                if (streak >= 3) return "Kamu lagi on fire nih, jangan putus ya!!";
+                return "Semangat, terus siram tanamanmu tiap hari!";
+              })()}
             </Text>
           </View>
           <MaterialIcons

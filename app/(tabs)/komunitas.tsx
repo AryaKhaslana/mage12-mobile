@@ -462,14 +462,14 @@ export default function KomunitasScreen() {
 
             <View style={{ gap: 12, marginBottom: 16 }}>
               <TextInput
-                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: '#123924', height: 50 }]}
+                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 0, height: 50 }]}
                 placeholder="Judul (opsional)"
                 placeholderTextColor="#bdcabd"
                 value={judul}
                 onChangeText={setJudul}
               />
               <TextInput
-                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: '#123924', height: 50 }]}
+                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 0, height: 50 }]}
                 placeholder="Kota/Daerah (opsional)"
                 placeholderTextColor="#bdcabd"
                 value={lokasiNama}
@@ -551,19 +551,19 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 100, borderWidth: 2 },
   chipActive: { backgroundColor: '#3FA86B', borderColor: '#3FA86B' },
-  chipInactive: { backgroundColor: 'transparent', borderColor: '#bdcabd' },
+  chipInactive: { backgroundColor: 'transparent', borderColor: 'transparent' },
   chipText: { fontSize: 14, fontFamily: 'Nunito_700Bold' },
   chipTextActive: { color: '#FFFFFF' },
   chipTextInactive: { color: '#5C5A4F' },
-  inputContainer: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 2, borderColor: '#123924', marginBottom: 16, height: 120 },
+  inputContainer: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 0, marginBottom: 16, height: 120 },
   textInput: { flex: 1, fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#123924', textAlignVertical: 'top' },
   counterText: { fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5C5A4F', textAlign: 'right', marginTop: 8 },
-  photoDashedButton: { borderWidth: 2, borderColor: '#bdcabd', borderStyle: 'dashed', borderRadius: 20, padding: 24, alignItems: 'center', gap: 12, marginBottom: 24 },
+  photoDashedButton: { borderWidth: 2, borderColor: 'transparent', borderStyle: 'dashed', borderRadius: 20, padding: 24, alignItems: 'center', gap: 12, marginBottom: 24 },
   photoIconWrapper: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', alignItems: 'center', justifyContent: 'center' },
   photoDashedText: { fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#5C5A4F' },
-  previewContainer: { width: '100%', height: 200, borderRadius: 20, overflow: 'hidden', marginBottom: 24, borderWidth: 2, borderColor: '#123924' },
+  previewContainer: { width: '100%', height: 200, borderRadius: 20, overflow: 'hidden', marginBottom: 24, borderWidth: 0 },
   previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  removePhotoButton: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: '#FF6B5C', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#123924' },
+  removePhotoButton: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: '#FF6B5C', alignItems: 'center', justifyContent: 'center', borderWidth: 0 },
   submitButton: { backgroundColor: '#123924', paddingVertical: 18, borderRadius: 20, alignItems: 'center' },
   submitButtonText: { fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }
 });

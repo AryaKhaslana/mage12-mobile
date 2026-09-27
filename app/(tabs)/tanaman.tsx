@@ -340,7 +340,19 @@ export default function TanamanScreen() {
           }
         />
               </View>
-        <Modal
+        
+      {/* FAB */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.fab,
+          pressed && { opacity: 0.8 }
+        ]}
+        onPress={() => setModalVisible(true)}
+      >
+        <MaterialIcons name="add" size={32} color="#FFFFFF" />
+      </Pressable>
+
+      <Modal
           animationType="slide"
           transparent={true}
           visible={modalVisible}

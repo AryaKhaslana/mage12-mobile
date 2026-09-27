@@ -95,10 +95,7 @@ export default function ProfilScreen() {
         <View style={[styles.headerBackground, { paddingTop: 40 + insets.top }]}>
 
 
-          <Pressable 
-            style={styles.avatarWrapper}
-            onPress={() => router.push("/edit-profil")}
-          >
+          <View style={styles.avatarWrapper}>
             <View style={styles.avatarContainer}>
               {avatarUrl ? (
                 <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" />
@@ -111,7 +108,7 @@ export default function ProfilScreen() {
             <View style={styles.editBadge}>
               <MaterialIcons name="edit" size={14} color="#123924" />
             </View>
-          </Pressable>
+          </View>
 
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />

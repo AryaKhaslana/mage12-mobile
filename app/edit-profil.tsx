@@ -110,7 +110,7 @@ export default function EditProfilScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={25}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         
         {/* HEADER */}
         <View style={styles.header}>
@@ -285,9 +285,9 @@ const styles = StyleSheet.create({
     color: '#123924',
     marginBottom: 8 },
   inputField: {
-    backgroundColor: '#F4F6F0',
-    borderWidth: 1,
-    borderColor: '#E8E5DA',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0,
+    
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,

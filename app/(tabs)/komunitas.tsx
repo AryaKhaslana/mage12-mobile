@@ -6,6 +6,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import ErrorState from '../../components/ErrorState';
+import { getCommunityPosts, createCommunityPost, toggleCommunityLike } from '../../services/api';
+import * as SecureStore from 'expo-secure-store';
 
 const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: { icon: any, title: string, subtitle: string, ctaText?: string, onCtaPress?: () => void }) => (
   <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
@@ -139,26 +141,77 @@ export default function KomunitasScreen() {
   const { showNotification } = useNotification();
   
   const [searchQuery, setSearchQuery] = useState("");
-  const filteredPosts = useMemo(() => {
-    if (!searchQuery) return DUMMY_POSTS;
-    const lower = searchQuery.toLowerCase();
-    return DUMMY_POSTS.filter((p) => 
-      p.judul.toLowerCase().includes(lower) || 
-      p.isi.toLowerCase().includes(lower) || 
-      p.lokasiNama.toLowerCase().includes(lower) || 
-      p.tipe.toLowerCase().includes(lower)
-    );
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"semua" | "saya">("semua");
+  const [activeTab, setActiveTab] = useState<"terbaru" | "terdekat">("terbaru");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  
+  // Form State
   const [tipePost, setTipePost] = useState<"progress_update" | "panen_surplus" | "pertanyaan">("progress_update");
+  const [judul, setJudul] = useState("");
+  const [lokasiNama, setLokasiNama] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchPosts = async (pageNum = 1, shouldRefresh = false) => {
+    try {
+      if (shouldRefresh) setIsRefreshing(true);
+      const userDataStr = await SecureStore.getItemAsync("userData");
+      let lat = undefined;
+      let lng = undefined;
+      
+      if (activeTab === "terdekat" && userDataStr) {
+        const user = JSON.parse(userDataStr);
+        if (user.latitude && user.longitude) {
+          lat = user.latitude;
+          lng = user.longitude;
+        } else {
+          showNotification("Lokasi Kosong", "Lengkapi lokasi di profil dulu broskie!", "error");
+          setIsLoading(false);
+          setIsRefreshing(false);
+          return;
+        }
+      }
+
+      const response = await getCommunityPosts(lat, lng, pageNum, 10, debouncedSearch);
+      
+      if (shouldRefresh || pageNum === 1) {
+        setPosts(response.data);
+      } else {
+        setPosts(prev => [...prev, ...response.data]);
+      }
+      
+      setHasMore(response.meta.halamanSekarang < response.meta.totalHalaman);
+      setPage(pageNum);
+    } catch (error) {
+      console.error(error);
+      showNotification("Error", "Gagal memuat feed", "error");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      fetchPosts(1, false);
+    }, [activeTab, debouncedSearch])
+  );
 
   const handlePickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -173,26 +226,51 @@ export default function KomunitasScreen() {
 
   const handleSubmitPost = async () => {
     if (!deskripsi.trim()) {
-      showNotification("Error", "Deskripsi belum diisi broskie", "error");
+      showNotification("Error", "Isi belum diisi broskie", "error");
       return;
     }
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append('tipePost', tipePost);
+      formData.append('deskripsi', deskripsi);
+      if (judul) formData.append('judul', judul);
+      if (lokasiNama) formData.append('lokasiNama', lokasiNama);
+      
+      if (foto) {
+        formData.append('foto', {
+          uri: foto.uri,
+          name: 'photo.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+      
+      await createCommunityPost(formData);
       showNotification("Mantap!", "Berhasil posting broskie!", "success");
       setIsModalVisible(false);
+      setJudul("");
+      setLokasiNama("");
       setDeskripsi("");
       setFoto(null);
       setTipePost("progress_update");
+      fetchPosts(1, true); // Refresh feed
+    } catch (e: any) {
+      console.error(e);
+      showNotification("Gagal", e.response?.data?.message || "Gagal posting", "error");
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 800);
+    await fetchPosts(1, true);
   };
 
-  const handleLoadMore = () => {};
+  const handleLoadMore = () => {
+    if (!isLoading && !isRefreshing && hasMore) {
+      fetchPosts(page + 1, false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -247,7 +325,7 @@ export default function KomunitasScreen() {
         </View>
   
         <FlatList
-          data={filteredPosts}
+          data={posts}
           keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.scrollContent}
           refreshControl={
@@ -262,39 +340,40 @@ export default function KomunitasScreen() {
               subtitle="Coba cari dengan kata kunci lain."
             />
           }
-          renderItem={({ item }: { item: PostType }) => {
+          renderItem={({ item }: { item: any }) => {
             let badgeBg = "#E8E5DA";
             let badgeColor = "#123924";
-            if (item.tipe === "UPDATE") {
+            let labelTipe = "INFO";
+            if (item.tipePost === "progress_update") {
               badgeBg = "#E8F5E9";
               badgeColor = "#3FA86B";
-            } else if (item.tipe === "TANYA") {
+              labelTipe = "UPDATE";
+            } else if (item.tipePost === "pertanyaan") {
               badgeBg = "#FFECEB";
               badgeColor = "#FF6B5C";
-            } else if (item.tipe === "BARTER") {
+              labelTipe = "TANYA";
+            } else if (item.tipePost === "panen_surplus") {
               badgeBg = "#E3F2FD";
               badgeColor = "#1E88E5";
-            } else if (item.tipe === "DONASI") {
-              badgeBg = "#FFF9E6";
-              badgeColor = "#B8860B";
+              labelTipe = "PANEN";
             }
 
             return (
               <View style={styles.postCard}>
                 <View style={styles.postHeader}>
                   <View style={styles.avatarContainer}>
-                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#FFFFFF' }}>{item.authorName.charAt(0).toUpperCase()}</Text>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#FFFFFF' }}>{item.author?.nama || item.user_nama.charAt(0).toUpperCase()}</Text>
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', fontSize: 16 }} numberOfLines={1}>{item.authorName}</Text>
+                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', fontSize: 16 }} numberOfLines={1}>{item.author?.nama || item.user_nama}</Text>
                       <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#3FA86B', backgroundColor: '#E8F5E9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden' }}>#{item.lokasiNama}</Text>
                     </View>
-                    <Text style={{ fontFamily: 'Nunito_500Medium', color: '#5C5A4F', fontSize: 12 }}>{item.timeText}</Text>
+                    <Text style={{ fontFamily: 'Nunito_500Medium', color: '#5C5A4F', fontSize: 12 }}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                   </View>
                   
                   <View style={{ backgroundColor: badgeBg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: badgeColor, shadowColor: badgeColor, shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0 }}>
-                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: badgeColor }}>{item.tipe}</Text>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: badgeColor }}>{labelTipe}</Text>
                   </View>
                 </View>
 
@@ -303,12 +382,12 @@ export default function KomunitasScreen() {
                   style={({pressed}) => [pressed && {opacity: 0.8}]}
                 >
                   <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 4, fontSize: 16 }}>{item.judul}</Text>
-                  <Text style={{ fontFamily: 'Nunito_500Medium', color: '#123924', fontSize: 14, marginBottom: 12, lineHeight: 22 }}>{item.isi}</Text>
+                  <Text style={{ fontFamily: 'Nunito_500Medium', color: '#123924', fontSize: 14, marginBottom: 12, lineHeight: 22 }}>{item.deskripsi}</Text>
                   {item.tags && (
-                    <Text style={{ fontFamily: 'Nunito_700Bold', color: '#3FA86B', marginBottom: 12 }}>{item.tags}</Text>
+                    <Text style={{ fontFamily: 'Nunito_700Bold', color: '#3FA86B', marginBottom: 12 }}>{item.lokasiNama ? `#${item.lokasiNama}` : ''}</Text>
                   )}
-                  {item.postImageUrl ? (
-                    <Image source={{ uri: item.postImageUrl }} style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 12, resizeMode: 'cover' }} />
+                  {item.fotoUrl ? (
+                    <Image source={{ uri: item.fotoUrl }} style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 12, resizeMode: 'cover' }} />
                   ) : null}
                 </Pressable>
                 
@@ -381,17 +460,33 @@ export default function KomunitasScreen() {
               ))}
             </View>
 
-            <View style={styles.inputContainer}>
+            <View style={{ gap: 12, marginBottom: 16 }}>
               <TextInput
-                style={styles.textInput}
-                multiline
-                placeholder="Ceritakan panenmu, tanya sesuatu..."
+                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: '#123924', height: 50 }]}
+                placeholder="Judul (opsional)"
                 placeholderTextColor="#bdcabd"
-                value={deskripsi}
-                onChangeText={setDeskripsi}
-                maxLength={500}
+                value={judul}
+                onChangeText={setJudul}
               />
-              <Text style={styles.counterText}>{deskripsi.length}/500</Text>
+              <TextInput
+                style={[styles.textInput, { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: '#123924', height: 50 }]}
+                placeholder="Kota/Daerah (opsional)"
+                placeholderTextColor="#bdcabd"
+                value={lokasiNama}
+                onChangeText={setLokasiNama}
+              />
+              <View style={[styles.inputContainer, { marginBottom: 0 }]}>
+                <TextInput
+                  style={styles.textInput}
+                  multiline
+                  placeholder="Ceritakan panenmu, tanya sesuatu..."
+                  placeholderTextColor="#bdcabd"
+                  value={deskripsi}
+                  onChangeText={setDeskripsi}
+                  maxLength={500}
+                />
+                <Text style={styles.counterText}>{deskripsi.length}/500</Text>
+              </View>
             </View>
 
             {!foto ? (

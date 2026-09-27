@@ -211,6 +211,8 @@ export interface CommunityPost {
   user_nama?: string;
   author?: { id?: number, nama?: string, avatarUrl?: string };
   user?: { nama?: string };
+  judul?: string;
+  lokasiNama?: string;
   tipePost: "progress_update" | "panen_surplus" | "pertanyaan";
   deskripsi: string;
   fotoUrl: string | null;
@@ -232,8 +234,8 @@ export const createCommunityPost = async (formData: FormData): Promise<any> => {
   return response.data;
 };
 
-export const getCommunityPosts = async (latitude: number, longitude: number, page: number = 1, limit: number = 10) => {
-  const response = await api.get("/community", { params: { latitude, longitude, page, limit } });
+export const getCommunityPosts = async (latitude?: number, longitude?: number, page: number = 1, limit: number = 10, search?: string) => {
+  const response = await api.get("/community", { params: { latitude, longitude, page, limit, search } });
   return response.data;
 };
 

@@ -313,11 +313,9 @@ export default function KomunitasScreen() {
 
 
   // Form State
-  const [tipePost, setTipePost] = useState<
-    "progress_update" | "panen_surplus" | "pertanyaan"
-  >("progress_update");
+  const [tipePost, setTipePost] = useState<string>("progress_update");
   const [judul, setJudul] = useState("");
-  const [lokasiNama, setLokasiNama] = useState("");
+  const [lokasiNama, setLokasiNama] = useState("📍 Sidoarjo");
   const [deskripsi, setDeskripsi] = useState("");
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -718,175 +716,172 @@ export default function KomunitasScreen() {
             <View style={styles.modalDragIndicator} />
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Mau bahas apa? </Text>
+                <Text style={styles.modalTitle}>Mau bahas apa?</Text>
                 <Text style={styles.modalSubtitle}>
                   Bagikan ceritamu ke petani lain!
                 </Text>
               </View>
               <Pressable
-                style={styles.closeModalButton}
+                style={({ pressed }) => [
+                  styles.neoCloseButton,
+                  pressed && styles.neoPressed,
+                ]}
                 onPress={() => !isSubmitting && setIsModalVisible(false)}
               >
                 <MaterialIcons name="close" size={20} color="#123924" />
               </Pressable>
             </View>
 
-            {/* 1. UPLOAD FOTO (PINDAH KE ATAS) */}
+            {/* 2. FOTO UPLOAD AREA */}
             {!foto ? (
               <Pressable
                 style={({ pressed }) => [
-                  styles.photoDashedButton,
-                  pressed && { backgroundColor: "#F4F6F0" },
-                  { marginBottom: 20 },
+                  styles.neoPhotoUpload,
+                  pressed && styles.neoPressed,
                 ]}
                 onPress={handlePickImage}
               >
-                <View style={styles.photoIconWrapper}>
-                  <MaterialIcons name="add-a-photo" size={24} color="#123924" />
-                </View>
-                <Text style={styles.photoDashedText}>
+                <MaterialIcons name="camera-alt" size={32} color="#123924" style={{ marginBottom: 8 }} />
+                <Text style={styles.neoPhotoText}>
                   Tambahin foto biar makin asik!
                 </Text>
               </Pressable>
             ) : (
-              <View style={[styles.previewContainer, { marginBottom: 20 }]}>
-                <Image source={{ uri: foto.uri }} style={styles.previewImage} />
+              <View style={styles.neoPreviewContainer}>
+                <Image source={{ uri: foto.uri }} style={styles.neoPreviewImage} />
                 <Pressable
-                  style={styles.removePhotoButton}
+                  style={({ pressed }) => [
+                    styles.neoRemovePhoto,
+                    pressed && styles.neoPressed,
+                  ]}
                   onPress={() => setFoto(null)}
                 >
-                  <MaterialIcons name="close" size={16} color="#FFFFFF" />
+                  <MaterialIcons name="close" size={16} color="#123924" />
                 </Pressable>
               </View>
             )}
 
-            {/* 2. CHIPS KATEGORI (TAGAR) */}
-            <Text
-              style={{
-                fontFamily: "Nunito_800ExtraBold",
-                color: "#123924",
-                marginBottom: 8,
-                fontSize: 14,
-              }}
-            >
-              Pilih Kategori / Tagar *
-            </Text>
-            <View style={styles.chipRow}>
-              {[
-                { label: "Progress ", value: "progress_update" },
-                { label: "Panen Surplus ", value: "panen_surplus" },
-                { label: "Pertanyaan 🤔", value: "pertanyaan" },
-              ].map((chip) => (
-                <Pressable
-                  key={chip.value}
-                  style={[
-                    styles.chip,
-                    tipePost === chip.value
-                      ? styles.chipActive
-                      : styles.chipInactive,
-                  ]}
-                  onPress={() => setTipePost(chip.value as any)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      tipePost === chip.value
-                        ? styles.chipTextActive
-                        : styles.chipTextInactive,
+            {/* 3. KATEGORI */}
+            <Text style={styles.neoLabel}>Kategori *</Text>
+            <View style={{ marginBottom: 20 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 4, paddingRight: 4 }}>
+                {[
+                  { label: "📢 Update", value: "progress_update" },
+                  { label: "❓ Tanya", value: "pertanyaan" },
+                  { label: "🤝 Barter", value: "barter" },
+                  { label: "🎁 Donasi", value: "donasi" },
+                ].map((chip) => (
+                  <Pressable
+                    key={chip.value}
+                    style={({ pressed }) => [
+                      styles.neoChip,
+                      tipePost === chip.value && styles.neoChipActive,
+                      pressed && styles.neoPressed,
                     ]}
+                    onPress={() => setTipePost(chip.value)}
                   >
-                    {chip.label}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.neoChipText,
+                        tipePost === chip.value && styles.neoChipTextActive,
+                      ]}
+                    >
+                      {chip.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* 4. JUDUL POSTINGAN */}
+            <Text style={styles.neoLabel}>Judul Postingan *</Text>
+            <View style={{ marginBottom: 20 }}>
+              <TextInput
+                style={styles.neoInput}
+                placeholder="Misal: Panen Tomat Hari Ini!"
+                placeholderTextColor="#5C5A4F"
+                value={judul}
+                onChangeText={setJudul}
+              />
+            </View>
+
+            {/* 5. CERITA / DESKRIPSI */}
+            <Text style={styles.neoLabel}>Cerita / Deskripsi *</Text>
+            <View style={{ marginBottom: 20 }}>
+              <TextInput
+                style={[styles.neoInput, { minHeight: 100, textAlignVertical: "top" }]}
+                multiline
+                placeholder="Ceritakan progres panenmu, atau tanya sesuatu..."
+                placeholderTextColor="#5C5A4F"
+                value={deskripsi}
+                onChangeText={setDeskripsi}
+                maxLength={500}
+              />
+              <Text style={styles.neoCounterText}>{deskripsi.length}/500</Text>
+            </View>
+
+            {/* 6. TAGAR */}
+            <Text style={styles.neoLabel}>Tagar (Populer)</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+              {["#Hidroponik", "#KutuPutih", "#Panen"].map((tag) => (
+                <Pressable
+                  key={tag}
+                  style={({ pressed }) => [
+                    styles.neoTagChip,
+                    pressed && styles.neoPressed,
+                  ]}
+                  onPress={() => setDeskripsi((prev) => prev ? `${prev} ${tag}` : tag)}
+                >
+                  <Text style={styles.neoTagText}>{tag}</Text>
                 </Pressable>
               ))}
             </View>
 
-            {/* 3. INPUT FORM DENGAN LABEL JELAS */}
-            <View style={{ gap: 16, marginBottom: 24 }}>
-              {/* DESKRIPSI UTAMA */}
-              <View>
-                <Text
-                  style={{
-                    fontFamily: "Nunito_800ExtraBold",
-                    color: "#123924",
-                    marginBottom: 8,
-                    fontSize: 14,
-                  }}
-                >
-                  Cerita / Pertanyaanmu *
-                </Text>
-                <View style={[styles.inputContainer, { marginBottom: 0 }]}>
-                  <TextInput
-                    style={styles.textInput}
-                    multiline
-                    placeholder="Ceritakan progres panenmu, atau tanya sesuatu..."
-                    placeholderTextColor="#bdcabd"
-                    value={deskripsi}
-                    onChangeText={setDeskripsi}
-                    maxLength={500}
-                  />
-                  <Text style={styles.counterText}>{deskripsi.length}/500</Text>
-                </View>
-              </View>
-
-              {/* JUDUL */}
-              <View>
-                <Text
-                  style={{
-                    fontFamily: "Nunito_800ExtraBold",
-                    color: "#123924",
-                    marginBottom: 8,
-                    fontSize: 14,
-                  }}
-                >
-                  Judul Postingan (Opsional)
-                </Text>
+            {/* 7. LOKASI / DAERAH */}
+            <Text style={styles.neoLabel}>Lokasi / Daerah (Opsional)</Text>
+            <View style={{ marginBottom: 24, flexDirection: "row", alignItems: "center" }}>
+              <View style={styles.neoLocationInputContainer}>
                 <TextInput
-                  style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#123924', paddingHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 16, height: 52 }}
-                  placeholder="Misal: Panen Tomat Hari Ini!"
-                  placeholderTextColor="#bdcabd"
-                  value={judul}
-                  onChangeText={setJudul}
-                />
-              </View>
-
-              {/* LOKASI */}
-              <View>
-                <Text
-                  style={{
-                    fontFamily: "Nunito_800ExtraBold",
-                    color: "#123924",
-                    marginBottom: 8,
-                    fontSize: 14,
-                  }}
-                >
-                  Lokasi / Daerah (Opsional)
-                </Text>
-                <TextInput
-                  style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#123924', paddingHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 16, height: 52 }}
-                  placeholder="Misal: Surabaya Timur..."
-                  placeholderTextColor="#bdcabd"
+                  style={styles.neoLocationInput}
+                  placeholder="Ketik lokasimu..."
+                  placeholderTextColor="#5C5A4F"
                   value={lokasiNama}
                   onChangeText={setLokasiNama}
                 />
+                {lokasiNama.length > 0 && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.neoLocationClear,
+                      pressed && { opacity: 0.7 }
+                    ]}
+                    onPress={() => setLokasiNama("")}
+                  >
+                    <MaterialIcons name="close" size={14} color="#FFFFFF" />
+                  </Pressable>
+                )}
               </View>
             </View>
 
+            {/* 8. SUBMIT BUTTON */}
             <Pressable
-              style={styles.submitButton}
+              style={({ pressed }) => [
+                styles.neoSubmitBtn,
+                pressed && styles.neoSubmitPressed,
+              ]}
               onPress={handleSubmitPost}
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color="#123924" />
               ) : (
-                <Text style={styles.submitButtonText}>Kirim Sekarang </Text>
+                <Text style={styles.neoSubmitText}>Kirim Sekarang</Text>
               )}
             </Pressable>
+
           </View>
-        </ScrollView>
+          </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* FILTER MODAL */}
@@ -1043,99 +1038,164 @@ const styles = StyleSheet.create({
     color: "#5C5A4F",
     marginTop: 2,
   },
-  closeModalButton: {
+  neoPressed: {
+    transform: [{ translateX: 3 }, { translateY: 3 }],
+    boxShadow: "0px 0px 0px #123924",
+    elevation: 0,
+  },
+  neoCloseButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#E8E5DA",
+    backgroundColor: "#FBF8F0",
+    borderWidth: 2,
+    borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
+    boxShadow: "2px 2px 0px #123924",
+    elevation: 2,
   },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 100,
+  neoPhotoUpload: {
     borderWidth: 2,
-  },
-  chipActive: { backgroundColor: "#3FA86B", borderColor: "#3FA86B" },
-  chipInactive: { backgroundColor: "transparent", borderColor: "transparent" },
-  chipText: { fontSize: 14, fontFamily: "Nunito_700Bold" },
-  chipTextActive: { color: "#FFFFFF" },
-  chipTextInactive: { color: "#5C5A4F" },
-  inputContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 0,
-    marginBottom: 16,
-    height: 120,
-  },
-  textInput: {
-    flex: 1,
-    fontFamily: "Nunito_500Medium",
-    fontSize: 16,
-    color: "#123924",
-    textAlignVertical: "top",
-  },
-  counterText: {
-    fontFamily: "Nunito_700Bold",
-    fontSize: 12,
-    color: "#5C5A4F",
-    textAlign: "right",
-    marginTop: 8,
-  },
-  photoDashedButton: {
-    borderWidth: 2,
-    borderColor: "transparent",
+    borderColor: "#123924",
     borderStyle: "dashed",
-    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     padding: 24,
     alignItems: "center",
-    gap: 12,
-    marginBottom: 24,
+    marginBottom: 20,
+    boxShadow: "3px 3px 0px #123924",
+    elevation: 3,
   },
-  photoIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#E8E5DA",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoDashedText: {
+  neoPhotoText: {
     fontFamily: "Nunito_700Bold",
     fontSize: 16,
-    color: "#5C5A4F",
+    color: "#123924",
   },
-  previewContainer: {
+  neoPreviewContainer: {
     width: "100%",
     height: 200,
-    borderRadius: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#123924",
+    marginBottom: 20,
     overflow: "hidden",
-    marginBottom: 24,
-    borderWidth: 0,
+    boxShadow: "3px 3px 0px #123924",
+    elevation: 3,
   },
-  previewImage: { width: "100%", height: "100%", resizeMode: "cover" },
-  removePhotoButton: {
+  neoPreviewImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  neoRemovePhoto: {
     position: "absolute",
     top: 12,
     right: 12,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#FF6B5C",
+    backgroundColor: "#FBF8F0",
+    borderWidth: 2,
+    borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 0,
+    boxShadow: "2px 2px 0px #123924",
+    elevation: 2,
   },
-  submitButton: {
-    backgroundColor: "#123924",
-    paddingVertical: 18,
-    borderRadius: 20,
+  neoLabel: {
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#123924",
+    marginBottom: 8,
+    fontSize: 14,
+  },
+  neoChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: "#123924",
+    backgroundColor: "#FFFFFF",
+    boxShadow: "2px 2px 0px #123924",
+    elevation: 2,
+  },
+  neoChipActive: { backgroundColor: "#3FA86B" },
+  neoChipText: { fontSize: 14, fontFamily: "Nunito_700Bold", color: "#123924" },
+  neoChipTextActive: { color: "#FFFFFF" },
+  neoInput: {
+    fontFamily: "Nunito_500Medium",
+    fontSize: 16,
+    color: "#123924",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#123924",
+    boxShadow: "3px 3px 0px #123924",
+    elevation: 3,
+  },
+  neoCounterText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 12,
+    color: "#5C5A4F",
+    textAlign: "right",
+    marginTop: 8,
+  },
+  neoTagChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#123924",
+    boxShadow: "2px 2px 0px #123924",
+    elevation: 2,
+  },
+  neoTagText: {
+    fontFamily: "Nunito_700Bold",
+    color: "#123924",
+    fontSize: 14,
+  },
+  neoLocationInputContainer: {
+    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#123924",
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    height: 52,
+    boxShadow: "3px 3px 0px #123924",
+    elevation: 3,
   },
-  submitButtonText: {
+  neoLocationInput: {
+    flex: 1,
+    fontFamily: "Nunito_700Bold",
+    fontSize: 16,
+    color: "#123924",
+  },
+  neoLocationClear: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#123924",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  neoSubmitBtn: {
+    backgroundColor: "#3FA86B",
+    paddingVertical: 18,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#123924",
+    alignItems: "center",
+    boxShadow: "4px 4px 0px #123924",
+    elevation: 4,
+  },
+  neoSubmitPressed: {
+    transform: [{ translateX: 4 }, { translateY: 4 }],
+    boxShadow: "0px 0px 0px #123924",
+    elevation: 0,
+  },
+  neoSubmitText: {
     fontFamily: "Nunito_800ExtraBold",
     fontSize: 16,
     color: "#FFFFFF",

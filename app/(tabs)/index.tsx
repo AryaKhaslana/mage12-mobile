@@ -303,7 +303,7 @@ export default function DashboardScreen() {
   // Check Pelindung Streak Pop-up
   useEffect(() => {
     const checkPopup = async () => {
-      if (userData && userData.streak === 0 && userData.pelindung_streak && userData.pelindung_streak >= 1) {
+      if (userData && userData.streak === 0 && (userData.exp || 0) > 0 && userData.pelindung_streak && userData.pelindung_streak >= 1) {
         try {
           const todayStr = new Date().toISOString().split('T')[0];
           const key = `pelindung_popup_shown_${todayStr}`;

@@ -13,7 +13,7 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
+    TouchableOpacity, Pressable,
     View } from "react-native";
 import Animated, {
     useAnimatedStyle,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   
   fixedHeader: {
     position: 'absolute',
-    top: 400, // Enough clearance from the mascot
+    top: 330, // Enough clearance from the mascot
     left: 0,
     right: 0,
     alignItems: 'center',

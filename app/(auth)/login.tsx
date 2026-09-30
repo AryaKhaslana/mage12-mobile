@@ -159,8 +159,11 @@ export default function LoginScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              <TouchableOpacity
-                style={styles.googleButton}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.googleButton,
+                  pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }
+                ]}
                 onPress={async () => {
                   try {
                     setIsLoading(true);
@@ -186,7 +189,7 @@ export default function LoginScreen() {
                     <Text style={styles.googleButtonText}>Masuk dengan Google</Text>
                   </>
                 )}
-              </TouchableOpacity>
+              </Pressable>
 
               <TouchableOpacity
                 style={styles.footerLink}
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
   
   fixedHeader: {
     position: 'absolute',
-    top: 450, // Enough clearance from the mascot
+    top: 410, // Enough clearance from the mascot
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
-    marginBottom: 12 },
+    marginBottom: 12},
   subtitle: {
     fontSize: 16,
     fontFamily: "Nunito_500Medium",
@@ -292,11 +295,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     height: 56,
     borderRadius: 30,
-    borderWidth: 0,
-    
+    borderWidth: 1,
+    borderColor: "#E8E5DA",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24 },
+    marginBottom: 24,
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
   googleLogo: {
     width: 24,
     height: 24,

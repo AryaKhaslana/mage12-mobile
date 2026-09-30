@@ -723,8 +723,8 @@ export default function KomunitasScreen() {
               </View>
               <Pressable
                 style={({ pressed }) => [
-                  styles.neoCloseButton,
-                  pressed && styles.neoPressed,
+                  styles.clayCloseButton,
+                  pressed && styles.clayPressed,
                 ]}
                 onPress={() => !isSubmitting && setIsModalVisible(false)}
               >
@@ -736,23 +736,23 @@ export default function KomunitasScreen() {
             {!foto ? (
               <Pressable
                 style={({ pressed }) => [
-                  styles.neoPhotoUpload,
-                  pressed && styles.neoPressed,
+                  styles.clayPhotoUpload,
+                  pressed && styles.clayPressed,
                 ]}
                 onPress={handlePickImage}
               >
                 <MaterialIcons name="camera-alt" size={32} color="#123924" style={{ marginBottom: 8 }} />
-                <Text style={styles.neoPhotoText}>
+                <Text style={styles.clayPhotoText}>
                   Tambahin foto biar makin asik!
                 </Text>
               </Pressable>
             ) : (
-              <View style={styles.neoPreviewContainer}>
-                <Image source={{ uri: foto.uri }} style={styles.neoPreviewImage} />
+              <View style={styles.clayPreviewContainer}>
+                <Image source={{ uri: foto.uri }} style={styles.clayPreviewImage} />
                 <Pressable
                   style={({ pressed }) => [
-                    styles.neoRemovePhoto,
-                    pressed && styles.neoPressed,
+                    styles.clayRemovePhoto,
+                    pressed && styles.clayPressed,
                   ]}
                   onPress={() => setFoto(null)}
                 >
@@ -762,7 +762,7 @@ export default function KomunitasScreen() {
             )}
 
             {/* 3. KATEGORI */}
-            <Text style={styles.neoLabel}>Kategori *</Text>
+            <Text style={styles.clayLabel}>Kategori *</Text>
             <View style={{ marginBottom: 20 }}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 4, paddingRight: 4 }}>
                 {[
@@ -774,16 +774,16 @@ export default function KomunitasScreen() {
                   <Pressable
                     key={chip.value}
                     style={({ pressed }) => [
-                      styles.neoChip,
-                      tipePost === chip.value && styles.neoChipActive,
-                      pressed && styles.neoPressed,
+                      styles.clayChip,
+                      tipePost === chip.value && styles.clayChipActive,
+                      pressed && styles.clayPressed,
                     ]}
                     onPress={() => setTipePost(chip.value)}
                   >
                     <Text
                       style={[
-                        styles.neoChipText,
-                        tipePost === chip.value && styles.neoChipTextActive,
+                        styles.clayChipText,
+                        tipePost === chip.value && styles.clayChipTextActive,
                       ]}
                     >
                       {chip.label}
@@ -794,10 +794,10 @@ export default function KomunitasScreen() {
             </View>
 
             {/* 4. JUDUL POSTINGAN */}
-            <Text style={styles.neoLabel}>Judul Postingan *</Text>
+            <Text style={styles.clayLabel}>Judul Postingan *</Text>
             <View style={{ marginBottom: 20 }}>
               <TextInput
-                style={styles.neoInput}
+                style={styles.clayInput}
                 placeholder="Misal: Panen Tomat Hari Ini!"
                 placeholderTextColor="#5C5A4F"
                 value={judul}
@@ -806,10 +806,10 @@ export default function KomunitasScreen() {
             </View>
 
             {/* 5. CERITA / DESKRIPSI */}
-            <Text style={styles.neoLabel}>Cerita / Deskripsi *</Text>
+            <Text style={styles.clayLabel}>Cerita / Deskripsi *</Text>
             <View style={{ marginBottom: 20 }}>
               <TextInput
-                style={[styles.neoInput, { minHeight: 100, textAlignVertical: "top" }]}
+                style={[styles.clayInput, { minHeight: 100, textAlignVertical: "top" }]}
                 multiline
                 placeholder="Ceritakan progres panenmu, atau tanya sesuatu..."
                 placeholderTextColor="#5C5A4F"
@@ -817,32 +817,32 @@ export default function KomunitasScreen() {
                 onChangeText={setDeskripsi}
                 maxLength={500}
               />
-              <Text style={styles.neoCounterText}>{deskripsi.length}/500</Text>
+              <Text style={styles.clayCounterText}>{deskripsi.length}/500</Text>
             </View>
 
             {/* 6. TAGAR */}
-            <Text style={styles.neoLabel}>Tagar (Populer)</Text>
+            <Text style={styles.clayLabel}>Tagar (Populer)</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
               {["#Hidroponik", "#KutuPutih", "#Panen"].map((tag) => (
                 <Pressable
                   key={tag}
                   style={({ pressed }) => [
-                    styles.neoTagChip,
-                    pressed && styles.neoPressed,
+                    styles.clayTagChip,
+                    pressed && styles.clayPressed,
                   ]}
                   onPress={() => setDeskripsi((prev) => prev ? `${prev} ${tag}` : tag)}
                 >
-                  <Text style={styles.neoTagText}>{tag}</Text>
+                  <Text style={styles.clayTagText}>{tag}</Text>
                 </Pressable>
               ))}
             </View>
 
             {/* 7. LOKASI / DAERAH */}
-            <Text style={styles.neoLabel}>Lokasi / Daerah (Opsional)</Text>
+            <Text style={styles.clayLabel}>Lokasi / Daerah (Opsional)</Text>
             <View style={{ marginBottom: 24, flexDirection: "row", alignItems: "center" }}>
-              <View style={styles.neoLocationInputContainer}>
+              <View style={styles.clayLocationInputContainer}>
                 <TextInput
-                  style={styles.neoLocationInput}
+                  style={styles.clayLocationInput}
                   placeholder="Ketik lokasimu..."
                   placeholderTextColor="#5C5A4F"
                   value={lokasiNama}
@@ -851,7 +851,7 @@ export default function KomunitasScreen() {
                 {lokasiNama.length > 0 && (
                   <Pressable
                     style={({ pressed }) => [
-                      styles.neoLocationClear,
+                      styles.clayLocationClear,
                       pressed && { opacity: 0.7 }
                     ]}
                     onPress={() => setLokasiNama("")}
@@ -865,8 +865,8 @@ export default function KomunitasScreen() {
             {/* 8. SUBMIT BUTTON */}
             <Pressable
               style={({ pressed }) => [
-                styles.neoSubmitBtn,
-                pressed && styles.neoSubmitPressed,
+                styles.claySubmitBtn,
+                pressed && styles.clayPressed,
               ]}
               onPress={handleSubmitPost}
               disabled={isSubmitting}
@@ -874,7 +874,7 @@ export default function KomunitasScreen() {
               {isSubmitting ? (
                 <ActivityIndicator color="#123924" />
               ) : (
-                <Text style={styles.neoSubmitText}>Kirim Sekarang</Text>
+                <Text style={styles.claySubmitText}>Kirim Sekarang</Text>
               )}
             </Pressable>
 
@@ -1038,87 +1038,77 @@ const styles = StyleSheet.create({
     color: "#5C5A4F",
     marginTop: 2,
   },
-  neoPressed: {
-    transform: [{ translateX: 3 }, { translateY: 3 }],
-    boxShadow: "0px 0px 0px #123924",
-    elevation: 0,
+  clayPressed: {
+    transform: [{ scale: 0.98 }],
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  neoCloseButton: {
+  clayCloseButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: "#FBF8F0",
-    borderWidth: 2,
-    borderColor: "#123924",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "2px 2px 0px #123924",
-    elevation: 2,
   },
-  neoPhotoUpload: {
+  clayPhotoUpload: {
     borderWidth: 2,
-    borderColor: "#123924",
+    borderColor: "#bdcabd",
     borderStyle: "dashed",
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
     marginBottom: 20,
-    boxShadow: "3px 3px 0px #123924",
-    elevation: 3,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoPhotoText: {
+  clayPhotoText: {
     fontFamily: "Nunito_700Bold",
     fontSize: 16,
     color: "#123924",
   },
-  neoPreviewContainer: {
+  clayPreviewContainer: {
     width: "100%",
     height: 200,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#123924",
+    borderWidth: 0,
     marginBottom: 20,
     overflow: "hidden",
-    boxShadow: "3px 3px 0px #123924",
-    elevation: 3,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoPreviewImage: { width: "100%", height: "100%", resizeMode: "cover" },
-  neoRemovePhoto: {
+  clayPreviewImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  clayRemovePhoto: {
     position: "absolute",
     top: 12,
     right: 12,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#FBF8F0",
-    borderWidth: 2,
-    borderColor: "#123924",
+    backgroundColor: "#FF6B5C",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "2px 2px 0px #123924",
-    elevation: 2,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoLabel: {
+  clayLabel: {
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
     marginBottom: 8,
     fontSize: 14,
   },
-  neoChip: {
+  clayChip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 100,
-    borderWidth: 2,
-    borderColor: "#123924",
     backgroundColor: "#FFFFFF",
-    boxShadow: "2px 2px 0px #123924",
-    elevation: 2,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoChipActive: { backgroundColor: "#3FA86B" },
-  neoChipText: { fontSize: 14, fontFamily: "Nunito_700Bold", color: "#123924" },
-  neoChipTextActive: { color: "#FFFFFF" },
-  neoInput: {
+  clayChipActive: { backgroundColor: "#3FA86B" },
+  clayChipText: { fontSize: 14, fontFamily: "Nunito_700Bold", color: "#123924" },
+  clayChipTextActive: { color: "#FFFFFF" },
+  clayInput: {
     fontFamily: "Nunito_500Medium",
     fontSize: 16,
     color: "#123924",
@@ -1126,76 +1116,59 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "3px 3px 0px #123924",
-    elevation: 3,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoCounterText: {
+  clayCounterText: {
     fontFamily: "Nunito_700Bold",
     fontSize: 12,
     color: "#5C5A4F",
     textAlign: "right",
     marginTop: 8,
   },
-  neoTagChip: {
+  clayTagChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
-    boxShadow: "2px 2px 0px #123924",
-    elevation: 2,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoTagText: {
+  clayTagText: {
     fontFamily: "Nunito_700Bold",
     color: "#123924",
     fontSize: 14,
   },
-  neoLocationInputContainer: {
+  clayLocationInputContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#123924",
     borderRadius: 100,
     paddingHorizontal: 16,
     height: 52,
-    boxShadow: "3px 3px 0px #123924",
-    elevation: 3,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoLocationInput: {
+  clayLocationInput: {
     flex: 1,
     fontFamily: "Nunito_700Bold",
     fontSize: 16,
     color: "#123924",
   },
-  neoLocationClear: {
+  clayLocationClear: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#123924",
+    backgroundColor: "#E8E5DA",
     alignItems: "center",
     justifyContent: "center",
   },
-  neoSubmitBtn: {
+  claySubmitBtn: {
     backgroundColor: "#3FA86B",
     paddingVertical: 18,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#123924",
     alignItems: "center",
-    boxShadow: "4px 4px 0px #123924",
-    elevation: 4,
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  neoSubmitPressed: {
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-    boxShadow: "0px 0px 0px #123924",
-    elevation: 0,
-  },
-  neoSubmitText: {
+  claySubmitText: {
     fontFamily: "Nunito_800ExtraBold",
     fontSize: 16,
     color: "#FFFFFF",

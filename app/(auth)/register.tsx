@@ -13,7 +13,8 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity, Pressable,
+    TouchableOpacity,
+    Pressable, Pressable,
     View } from "react-native";
 import Animated, {
     useAnimatedStyle,

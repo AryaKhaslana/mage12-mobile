@@ -313,11 +313,26 @@ export default function KomunitasScreen() {
 
 
   // Form State
-  const [tipePost, setTipePost] = useState<string>("progress_update");
   const [judul, setJudul] = useState("");
-  const [lokasiNama, setLokasiNama] = useState("📍 Sidoarjo");
+  const [lokasiNama, setLokasiNama] = useState("Sidoarjo");
   const [deskripsi, setDeskripsi] = useState("");
-  const [customTag, setCustomTag] = useState("");
+  const [cursorPos, setCursorPos] = useState({ start: 0, end: 0 });
+  
+  const DUMMY_HASHTAGS = [
+    { tag: "#Panen", count: 120 },
+    { tag: "#Pupuk", count: 85 },
+    { tag: "#TanamanHias", count: 320 },
+    { tag: "#Tomat", count: 45 },
+    { tag: "#Hidroponik", count: 210 },
+    { tag: "#Hama", count: 65 },
+    { tag: "#PetaniMuda", count: 500 }
+  ];
+
+  const textBeforeCursor = deskripsi.substring(0, cursorPos.start);
+  const tagMatch = textBeforeCursor.match(/(#[a-zA-Z0-9_]+)$/);
+  const activeTagQuery = tagMatch ? tagMatch[1].toLowerCase() : null;
+  const tagSuggestions = activeTagQuery ? DUMMY_HASHTAGS.filter(t => t.tag.toLowerCase().startsWith(activeTagQuery)) : [];
+
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -395,7 +410,7 @@ export default function KomunitasScreen() {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("tipePost", tipePost);
+
       formData.append("deskripsi", deskripsi);
       if (judul) formData.append("judul", judul);
       if (lokasiNama) formData.append("lokasiNama", lokasiNama);
@@ -415,7 +430,7 @@ export default function KomunitasScreen() {
       setLokasiNama("");
       setDeskripsi("");
       setFoto(null);
-      setTipePost("progress_update");
+
       fetchPosts(1, true); // Refresh feed
     } catch (e: any) {
       console.error(e);
@@ -762,39 +777,7 @@ export default function KomunitasScreen() {
               </View>
             )}
 
-            {/* 3. KATEGORI */}
-            <Text style={styles.clayLabel}>Kategori *</Text>
-            <View style={{ marginBottom: 20 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 4, paddingRight: 4 }}>
-                {[
-                  { label: "📢 Update", value: "progress_update" },
-                  { label: "❓ Tanya", value: "pertanyaan" },
-                  { label: "🤝 Barter", value: "barter" },
-                  { label: "🎁 Donasi", value: "donasi" },
-                ].map((chip) => (
-                  <Pressable
-                    key={chip.value}
-                    style={({ pressed }) => [
-                      styles.clayChip,
-                      tipePost === chip.value && styles.clayChipActive,
-                      pressed && styles.clayPressed,
-                    ]}
-                    onPress={() => setTipePost(chip.value)}
-                  >
-                    <Text
-                      style={[
-                        styles.clayChipText,
-                        tipePost === chip.value && styles.clayChipTextActive,
-                      ]}
-                    >
-                      {chip.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* 4. JUDUL POSTINGAN */}
+            {/* 3. JUDUL POSTINGAN */}
             <Text style={styles.clayLabel}>Judul Postingan *</Text>
             <View style={{ marginBottom: 20 }}>
               <TextInput
@@ -805,66 +788,47 @@ export default function KomunitasScreen() {
                 onChangeText={setJudul}
               />
             </View>
-
-            {/* 5. CERITA / DESKRIPSI */}
+            {/* 4. CERITA / DESKRIPSI */}
             <Text style={styles.clayLabel}>Cerita / Deskripsi *</Text>
             <View style={{ marginBottom: 20 }}>
               <TextInput
                 style={[styles.clayInput, { minHeight: 100, textAlignVertical: "top" }]}
                 multiline
-                placeholder="Ceritakan progres panenmu, atau tanya sesuatu..."
+                placeholder="Ceritakan progres panenmu, atau ketik # untuk tagar..."
                 placeholderTextColor="#5C5A4F"
                 value={deskripsi}
                 onChangeText={setDeskripsi}
+                onSelectionChange={(e) => setCursorPos(e.nativeEvent.selection)}
                 maxLength={500}
               />
               <Text style={styles.clayCounterText}>{deskripsi.length}/500</Text>
             </View>
 
-            {/* 6. TAGAR */}
-            <Text style={styles.clayLabel}>Tagar (Populer)</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
-                {["#Hidroponik", "#KutuPutih", "#Panen"].map((tag) => (
-                  <Pressable
-                    key={tag}
-                    style={({ pressed }) => [
-                      styles.clayTagChip,
-                      pressed && styles.clayPressed,
-                    ]}
-                    onPress={() => setDeskripsi((prev) => prev ? `${prev} ${tag}` : tag)}
-                  >
-                    <Text style={styles.clayTagText}>{tag}</Text>
+            {activeTagQuery && (
+              <View style={{ backgroundColor: "#FFFFFF", borderRadius: 16, padding: 8, marginBottom: 20, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }}>
+                {tagSuggestions.length > 0 ? tagSuggestions.map(t => (
+                  <Pressable key={t.tag} onPress={() => {
+                    const before = deskripsi.substring(0, cursorPos.start - activeTagQuery.length);
+                    const after = deskripsi.substring(cursorPos.start);
+                    setDeskripsi(before + t.tag + " " + after);
+                  }} style={({pressed}) => [{ padding: 12, borderBottomWidth: 1, borderBottomColor: "#F4F6F0", flexDirection: "row", justifyContent: "space-between" }, pressed && { backgroundColor: "#F4F6F0" }]}>
+                    <Text style={{ fontFamily: "Nunito_700Bold", color: "#123924" }}>{t.tag}</Text>
+                    <Text style={{ fontFamily: "Nunito_500Medium", color: "#5C5A4F" }}>{t.count} postingan</Text>
                   </Pressable>
-                ))}
+                )) : (
+                  <Pressable onPress={() => {
+                    const before = deskripsi.substring(0, cursorPos.start - activeTagQuery.length);
+                    const after = deskripsi.substring(cursorPos.start);
+                    setDeskripsi(before + tagMatch?.[1] + " " + after);
+                  }} style={({pressed}) => [{ padding: 12, flexDirection: "row", justifyContent: "space-between" }, pressed && { backgroundColor: "#F4F6F0" }]}>
+                    <Text style={{ fontFamily: "Nunito_700Bold", color: "#123924" }}>{tagMatch?.[1]}</Text>
+                    <Text style={{ fontFamily: "Nunito_500Medium", color: "#5C5A4F" }}>Tambah tagar baru</Text>
+                  </Pressable>
+                )}
               </View>
+            )}
 
-              <Text style={styles.clayLabel}>Buat Tagar Sendiri</Text>
-              <View style={{ flexDirection: "row", gap: 8, marginBottom: 20 }}>
-                <TextInput
-                  style={[styles.clayInput, { flex: 1, paddingVertical: 10 }]}
-                  placeholder="Ketik tagar (contoh: Tomat)"
-                  placeholderTextColor="#5C5A4F"
-                  value={customTag}
-                  onChangeText={setCustomTag}
-                />
-                <Pressable
-                  style={({ pressed }) => [
-                    { backgroundColor: '#3FA86B', justifyContent: 'center', paddingHorizontal: 16, borderRadius: 16, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-                    pressed && styles.clayPressed,
-                  ]}
-                  onPress={() => {
-                    if (customTag.trim()) {
-                      const newTag = customTag.trim().startsWith('#') ? customTag.trim() : `#${customTag.trim()}`;
-                      setDeskripsi((prev) => prev ? `${prev} ${newTag}` : newTag);
-                      setCustomTag("");
-                    }
-                  }}
-                >
-                  <Text style={{ fontFamily: "Nunito_700Bold", color: "#FFFFFF" }}>Tambah</Text>
-                </Pressable>
-              </View>
-
-            {/* 7. LOKASI / DAERAH */}
+            {/* 5. LOKASI / DAERAH */}
             <Text style={styles.clayLabel}>Lokasi / Daerah (Opsional)</Text>
             <View style={{ marginBottom: 24, flexDirection: "row", alignItems: "center" }}>
               <View style={styles.clayLocationInputContainer}>

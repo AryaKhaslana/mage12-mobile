@@ -317,6 +317,7 @@ export default function KomunitasScreen() {
   const [judul, setJudul] = useState("");
   const [lokasiNama, setLokasiNama] = useState("📍 Sidoarjo");
   const [deskripsi, setDeskripsi] = useState("");
+  const [customTag, setCustomTag] = useState("");
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -822,20 +823,46 @@ export default function KomunitasScreen() {
 
             {/* 6. TAGAR */}
             <Text style={styles.clayLabel}>Tagar (Populer)</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
-              {["#Hidroponik", "#KutuPutih", "#Panen"].map((tag) => (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+                {["#Hidroponik", "#KutuPutih", "#Panen"].map((tag) => (
+                  <Pressable
+                    key={tag}
+                    style={({ pressed }) => [
+                      styles.clayTagChip,
+                      pressed && styles.clayPressed,
+                    ]}
+                    onPress={() => setDeskripsi((prev) => prev ? `${prev} ${tag}` : tag)}
+                  >
+                    <Text style={styles.clayTagText}>{tag}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.clayLabel}>Buat Tagar Sendiri</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 20 }}>
+                <TextInput
+                  style={[styles.clayInput, { flex: 1, paddingVertical: 10 }]}
+                  placeholder="Ketik tagar (contoh: Tomat)"
+                  placeholderTextColor="#5C5A4F"
+                  value={customTag}
+                  onChangeText={setCustomTag}
+                />
                 <Pressable
-                  key={tag}
                   style={({ pressed }) => [
-                    styles.clayTagChip,
+                    { backgroundColor: '#3FA86B', justifyContent: 'center', paddingHorizontal: 16, borderRadius: 16, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
                     pressed && styles.clayPressed,
                   ]}
-                  onPress={() => setDeskripsi((prev) => prev ? `${prev} ${tag}` : tag)}
+                  onPress={() => {
+                    if (customTag.trim()) {
+                      const newTag = customTag.trim().startsWith('#') ? customTag.trim() : `#${customTag.trim()}`;
+                      setDeskripsi((prev) => prev ? `${prev} ${newTag}` : newTag);
+                      setCustomTag("");
+                    }
+                  }}
                 >
-                  <Text style={styles.clayTagText}>{tag}</Text>
+                  <Text style={{ fontFamily: "Nunito_700Bold", color: "#FFFFFF" }}>Tambah</Text>
                 </Pressable>
-              ))}
-            </View>
+              </View>
 
             {/* 7. LOKASI / DAERAH */}
             <Text style={styles.clayLabel}>Lokasi / Daerah (Opsional)</Text>

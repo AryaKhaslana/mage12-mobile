@@ -122,6 +122,14 @@ export interface PostType {
   tags: string;
 }
 
+
+const INDONESIAN_CITIES = [
+  "Jakarta Pusat", "Jakarta Selatan", "Jakarta Barat", "Jakarta Timur", "Jakarta Utara",
+  "Bogor", "Depok", "Tangerang", "Tangerang Selatan", "Bekasi",
+  "Bandung", "Semarang", "Yogyakarta", "Surabaya", "Sidoarjo",
+  "Malang", "Medan", "Palembang", "Makassar", "Denpasar", "Balikpapan"
+];
+
 const DUMMY_POSTS: PostType[] = [
   {
     id: "1",
@@ -315,6 +323,20 @@ export default function KomunitasScreen() {
   // Form State
   const [judul, setJudul] = useState("");
   const [lokasiNama, setLokasiNama] = useState("Sidoarjo");
+  const [filteredCities, setFilteredCities] = useState<string[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleLocationChange = (text: string) => {
+    setLokasiNama(text);
+    if (!text.trim()) {
+      setShowDropdown(false);
+      setFilteredCities([]);
+      return;
+    }
+    const matches = INDONESIAN_CITIES.filter(city => city.toLowerCase().includes(text.toLowerCase()));
+    setFilteredCities(matches);
+    setShowDropdown(true);
+  };
   const [deskripsi, setDeskripsi] = useState("");
   const [cursorPos, setCursorPos] = useState({ start: 0, end: 0 });
   
@@ -827,30 +849,100 @@ export default function KomunitasScreen() {
                 )}
               </View>
             )}
-
             {/* 5. LOKASI / DAERAH */}
-            <Text style={styles.clayLabel}>Lokasi / Daerah (Opsional)</Text>
-            <View style={{ marginBottom: 24, flexDirection: "row", alignItems: "center" }}>
-              <View style={styles.clayLocationInputContainer}>
+            <Text style={[styles.clayLabel, { zIndex: -1 }]}>Lokasi / Daerah (Opsional)</Text>
+            <View style={{ marginBottom: 24, zIndex: 50, position: 'relative' }}>
+              <View style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+                borderWidth: 2,
+                borderColor: "#123924",
+                borderRadius: 100,
+                paddingHorizontal: 16,
+                height: 52,
+                boxShadow: "3px 3px 0px #123924",
+                elevation: 3
+              }}>
+                <MaterialIcons name="place" size={20} color="#123924" style={{ marginRight: 8 }} />
                 <TextInput
-                  style={styles.clayLocationInput}
+                  style={{ flex: 1, fontFamily: "Nunito_700Bold", fontSize: 16, color: "#123924" }}
                   placeholder="Ketik lokasimu..."
                   placeholderTextColor="#5C5A4F"
                   value={lokasiNama}
-                  onChangeText={setLokasiNama}
+                  onChangeText={handleLocationChange}
+                  onFocus={() => {
+                    if (lokasiNama && filteredCities.length === 0) {
+                      handleLocationChange(lokasiNama);
+                    } else if (filteredCities.length > 0) {
+                      setShowDropdown(true);
+                    }
+                  }}
                 />
                 {lokasiNama.length > 0 && (
                   <Pressable
                     style={({ pressed }) => [
-                      styles.clayLocationClear,
+                      {
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        backgroundColor: "#123924",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
                       pressed && { opacity: 0.7 }
                     ]}
-                    onPress={() => setLokasiNama("")}
+                    onPress={() => {
+                      setLokasiNama("");
+                      setShowDropdown(false);
+                    }}
                   >
                     <MaterialIcons name="close" size={14} color="#FFFFFF" />
                   </Pressable>
                 )}
               </View>
+
+              {/* Autocomplete Dropdown */}
+              {showDropdown && filteredCities.length > 0 && (
+                <View style={{
+                  position: 'absolute',
+                  top: 60,
+                  left: 0,
+                  right: 0,
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 2,
+                  borderColor: '#123924',
+                  borderRadius: 16,
+                  maxHeight: 150,
+                  boxShadow: "4px 4px 0px #123924",
+                  elevation: 5,
+                  overflow: 'hidden',
+                  zIndex: 99
+                }}>
+                  <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                    {filteredCities.map((city, index) => (
+                      <Pressable
+                        key={city}
+                        style={({ pressed }) => [
+                          {
+                            paddingVertical: 12,
+                            paddingHorizontal: 16,
+                            borderBottomWidth: index < filteredCities.length - 1 ? 1 : 0,
+                            borderBottomColor: "#E8E5DA",
+                            backgroundColor: pressed ? "#F4F6F0" : "#FFFFFF"
+                          }
+                        ]}
+                        onPress={() => {
+                          setLokasiNama(city);
+                          setShowDropdown(false);
+                        }}
+                      >
+                        <Text style={{ fontFamily: "Nunito_700Bold", color: "#123924", fontSize: 16 }}>{city}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             {/* 8. SUBMIT BUTTON */}

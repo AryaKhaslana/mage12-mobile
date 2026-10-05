@@ -945,10 +945,10 @@ export default function KomunitasScreen() {
                   borderRadius: 16,
                   maxHeight: 150,
                   shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
-                  overflow: 'hidden',
                   zIndex: 99
                 }}>
-                  <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                  <View style={{ borderRadius: 16, overflow: 'hidden', flex: 1 }}>
+                    <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
                     {filteredCities.map((city, index) => (
                       <Pressable
                         key={city.name}
@@ -972,6 +972,7 @@ export default function KomunitasScreen() {
                       </Pressable>
                     ))}
                   </ScrollView>
+                  </View>
                 </View>
               )}
             </View>
@@ -1252,7 +1253,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   clayLocationInputContainer: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",

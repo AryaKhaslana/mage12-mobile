@@ -271,7 +271,7 @@ export default function DetailKomunitasScreen() {
                   ? router.push("/(tabs)/profil")
                   : router.push({
                       pathname: "/profil-pengguna",
-                      params: { username: post.author?.username || "", nama: post.user_nama || post.author?.nama || "" },
+                      params: { username: post.username || post.author?.username || post.user_username || post.user_nama || "", nama: post.user_nama || post.author?.nama || "" },
                     } as any)
               }
               style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center' }, pressed && { opacity: 0.7 }]}

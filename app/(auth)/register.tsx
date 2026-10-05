@@ -26,6 +26,7 @@ export default function RegisterScreen() {
   const { showNotification } = useNotification();
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +40,7 @@ export default function RegisterScreen() {
   const [activeInput, setActiveInput] = useState<string | null>(null);
 
   const handleRegister = async () => {
-    if (!nama || !email || !password || !confirmPassword) {
+    if (!nama || !email || !username || !password || !confirmPassword) {
       showNotification("Waduh!", "Isi semua datanya dulu broskie biar bisa lanjut.", "info");
       return;
     }
@@ -67,6 +68,7 @@ export default function RegisterScreen() {
       const payload = {
         nama,
         email,
+        username,
         password,
         latitude: lat,
         longitude: lng,

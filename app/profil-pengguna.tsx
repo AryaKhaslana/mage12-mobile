@@ -82,9 +82,12 @@ const shadowFloat = {
 
 // ===== Helpers =====
 const getRankTitle = (level: number) => {
+  if (level >= 10) return "Dewa Tani";
   if (level >= 8) return "Sultan Hidroponik";
+  if (level >= 6) return "Master Kompos";
   if (level >= 4) return "Juragan Panen";
-  return "Petani Balkon";
+  if (level >= 2) return "Petani Magang";
+  return "Petani Pemula";
 };
 
 const formatCount = (n: number) => {

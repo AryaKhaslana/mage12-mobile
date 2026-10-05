@@ -455,6 +455,7 @@ export default function KomunitasScreen() {
       const formData = new FormData();
 
       formData.append("deskripsi", deskripsi);
+      formData.append("tipe", "PROGRESS");
       if (judul) formData.append("judul", judul);
       if (lokasiNama) formData.append("lokasiNama", lokasiNama);
       if (lokasiLat !== null) formData.append("latitude", lokasiLat.toString());

@@ -567,7 +567,7 @@ export default function KomunitasScreen() {
                       router.push({
                         pathname: "/profil-pengguna",
                         params: {
-                          userId: item.userId ?? item.author?.id,
+                          username: item.author?.username || "",
                           nama: item.author?.nama || item.user_nama || "",
                           avatarUrl: item.author?.avatarUrl || "",
                         },

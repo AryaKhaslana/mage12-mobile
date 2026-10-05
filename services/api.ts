@@ -220,7 +220,7 @@ export interface CommunityPost {
   id: number;
   userId: number;
   user_nama?: string;
-  author?: { id?: number, nama?: string, avatarUrl?: string };
+  author?: { id?: number, nama?: string, avatarUrl?: string, username?: string };
   user?: { nama?: string };
   judul?: string;
   lokasiNama?: string;
@@ -378,20 +378,20 @@ export interface PublicUserProfile {
 }
 
 /** GET /user/:id -> profil publik user lain */
-export const getPublicUserProfile = async (userId: number): Promise<PublicUserProfile> => {
-  const response = await api.get(`/user/${userId}`);
+export const getPublicUserProfile = async (username: string): Promise<PublicUserProfile> => {
+  const response = await api.get(`/user/profile/${username}`);
   return response.data.data ?? response.data;
 };
 
 /** GET /community/user/:id -> postingan milik user tertentu */
-export const getUserCommunityPosts = async (userId: number, page: number = 1, limit: number = 10) => {
-  const response = await api.get(`/community/user/${userId}`, { params: { page, limit } });
+export const getUserCommunityPosts = async (username: string, page: number = 1, limit: number = 10) => {
+  const response = await api.get(`/community/user/${username}`, { params: { page, limit } });
   return response.data as { meta?: any; data: CommunityPost[] };
 };
 
 /** GET /tanaman/user/:id -> tanaman publik milik user tertentu */
-export const getUserPublicTanaman = async (userId: number): Promise<TanamanDetail[]> => {
-  const response = await api.get(`/tanaman/user/${userId}`);
+export const getUserPublicTanaman = async (username: string): Promise<TanamanDetail[]> => {
+  const response = await api.get(`/tanaman/user/${username}`);
   return response.data.data ?? [];
 };
 

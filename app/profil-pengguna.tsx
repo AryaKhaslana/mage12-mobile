@@ -172,7 +172,7 @@ const SkeletonBlock = ({ style }: { style: any }) => {
 export default function ProfilPenggunaScreen() {
   const { showNotification } = useNotification();
   const params = useLocalSearchParams<{ userId: string; nama?: string; avatarUrl?: string; username?: string }>();
-  const userId = Number(params.userId);
+  const targetUsername = params.username;
 
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -189,11 +189,11 @@ export default function ProfilPenggunaScreen() {
   const [saved, setSaved] = useState<Record<number, boolean>>({});
 
   const fetchAll = useCallback(async () => {
-    if (!userId) return;
+    if (!targetUsername) return;
     const [profRes, postRes, plantRes] = await Promise.all([
-      getPublicUserProfile(userId).catch(() => null),
-      getUserCommunityPosts(userId, 1, 20).catch(() => null),
-      getUserPublicTanaman(userId).catch(() => null),
+      getPublicUserProfile(targetUsername).catch(() => null),
+      getUserCommunityPosts(targetUsername, 1, 20).catch(() => null),
+      getUserPublicTanaman(targetUsername).catch(() => null),
     ]);
 
     if (profRes) {
@@ -207,7 +207,7 @@ export default function ProfilPenggunaScreen() {
       Object.fromEntries(postList.map((p) => [p.id, { liked: !!p.isLiked, count: p.jumlahLike ?? 0 }])),
     );
     if (plantRes) setPlants(plantRes);
-  }, [userId]);
+  }, [targetUsername]);
 
   useEffect(() => {
     // Kalau yang dibuka ternyata profil sendiri, arahkan ke tab Profil
@@ -215,7 +215,7 @@ export default function ProfilPenggunaScreen() {
       try {
         const stored = await SecureStore.getItemAsync("userData");
         const me = stored ? JSON.parse(stored) : null;
-        if (me?.id && me.id === userId) {
+        if (me?.username && me.username === targetUsername) {
           router.replace("/(tabs)/profil");
           return;
         }
@@ -224,7 +224,7 @@ export default function ProfilPenggunaScreen() {
       await fetchAll();
       setIsLoading(false);
     })();
-  }, [userId, fetchAll]);
+  }, [targetUsername, fetchAll]);
 
   const onRefresh = async () => {
     setIsRefreshing(true);
@@ -252,7 +252,8 @@ export default function ProfilPenggunaScreen() {
     setFollowerCount(prevCount + (prevFollowing ? -1 : 1));
     setIsFollowBusy(true);
     try {
-      const res = await toggleFollowUser(userId);
+      if (!profile?.id) return;
+      const res = await toggleFollowUser(profile.id);
       setIsFollowing(res.following);
       if (typeof res.jumlahPengikut === "number") setFollowerCount(res.jumlahPengikut);
     } catch {

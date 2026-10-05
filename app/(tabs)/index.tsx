@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import ProfileOnboardingModal from "../../components/dashboard/ProfileOnboardingModal";
 import CoachMarkOverlay, { CoachMarkStep } from "../../components/CoachMarkOverlay";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
@@ -208,6 +209,7 @@ export default function DashboardScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBadgeInfo, setShowBadgeInfo] = useState(false);
   const [showRestorePopup, setShowRestorePopup] = useState(false);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const { showNotification } = useNotification();
 
@@ -771,6 +773,16 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      <ProfileOnboardingModal 
+        isVisible={showProfilePopup}
+        onClose={() => setShowProfilePopup(false)}
+        onSuccess={(newUsername: string) => {
+          setShowProfilePopup(false);
+          setUserData((prev: any) => prev ? { ...prev, username: newUsername } : prev);
+          showNotification("Cakep!", "Username lu berhasil disimpen.", "success");
+        }}
+      />
 
       <CoachMarkOverlay
         visible={showTutorial}

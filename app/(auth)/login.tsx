@@ -70,7 +70,7 @@ export default function LoginScreen() {
       <AuthHeader 
         isPasswordFocused={isPasswordFocused && !showPassword}
         
-        sub
+        
       />
 
       <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>

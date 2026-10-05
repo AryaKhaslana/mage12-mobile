@@ -5,7 +5,7 @@ import { WebView } from 'react-native-webview';
 import { router, useFocusEffect, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../services/api';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HeatmapCell {
   lat: number;
@@ -24,6 +24,8 @@ export default function PetaHamaScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [data, setData] = useState<HeatmapResponse | null>(null);
+
+  const insets = useSafeAreaInsets();
 
   const fetchHeatmap = async (selectedFilter: string) => {
     setIsLoading(true);
@@ -141,10 +143,10 @@ export default function PetaHamaScreen() {
   `;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable onPress={() => router.back()} style={({pressed}) => [styles.backBtn, pressed && styles.btnPressed]}>
           <MaterialIcons name="arrow-back" size={24} color="#123924" />
         </Pressable>
@@ -210,7 +212,7 @@ export default function PetaHamaScreen() {
           </View>
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -32,7 +32,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             target: route.key });
         };
 
-        const color = isFocused ? '#1F5C3D' : '#5C5A4F';
+        const color = isFocused ? '#3FA96B' : '#8F9B94';
 
         // Add button (FAB) - map it to 'tanibot' route
         if (route.name === 'tanibot') {
@@ -131,15 +131,18 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    borderWidth: 2.5,
-    
+    borderRadius: 36,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    boxShadow: '5px 5px 0px #123924' },
+    shadowColor: '#1B4332',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 8,
+  },
   tabItem: {
     flex: 1,
     alignItems: 'center',
@@ -161,26 +164,27 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: 6,
     height: 6,
-    backgroundColor: '#FFB627',
+    backgroundColor: '#3FA96B',
     borderRadius: 3 },
   fabWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center' },
   fab: {
-    width: 56,
-    height: 56,
-    marginTop: -32,
-    borderRadius: 28,
-    backgroundColor: '#3FA86B',
-    borderWidth: 2.5,
-    
-    boxShadow: '3px 3px 0px #123924',
+    width: 60,
+    height: 60,
+    marginTop: -28, // slightly popping up
+    borderRadius: 30,
+    backgroundColor: '#3FA96B',
+    shadowColor: '#3FA96B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
     alignItems: 'center',
     justifyContent: 'center' },
   fabPressed: {
-    boxShadow: '0px 0px 0px #123924',
-    transform: [{ translateX: 2 }, { translateY: 2 }] },
+    transform: [{ scale: 0.95 }] },
   fabLabel: {
     fontSize: 12,
     fontFamily: 'Nunito_800ExtraBold',

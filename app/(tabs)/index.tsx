@@ -28,6 +28,13 @@ const FALLBACK_THUMB =
 
 import { forwardRef } from 'react';
 import { Image } from 'expo-image';
+import FarmerScene from '../../components/FarmerScene';
+import StatCard from '../../components/dashboard/StatCard';
+import TaskCard from '../../components/dashboard/TaskCard';
+import HarvestCard from '../../components/dashboard/HarvestCard';
+import InfoCard from '../../components/dashboard/InfoCard';
+import HeroCard from '../../components/dashboard/HeroCard';
+
 
 const EmptyHint = forwardRef<View, {
   icon?: any;
@@ -144,29 +151,30 @@ const HomeSkeleton = () => {
   const pillStyles = { backgroundColor: '#E8E5DA' };
 
   return (
-    <Animated.View style={{ opacity: fadeAnim, paddingHorizontal: 20, paddingTop: 0, paddingBottom: 140 }}>
-      {/* STAT STRIP SKELETON */}
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
-        <View style={[{ flex: 1, height: 34, borderRadius: 100 }, pillStyles]} />
-        <View style={[{ flex: 1, height: 34, borderRadius: 100 }, pillStyles]} />
-      </View>
+    <Animated.View style={{ opacity: fadeAnim, paddingBottom: 140 }}>
+      {/* SCENE SKELETON */}
+      <View style={{ width: '100%', height: 280, backgroundColor: '#E8E5DA' }} />
+
+      {/* STAT CARD SKELETON (Overlaps scene) */}
+      <View style={{ marginHorizontal: 24, marginTop: -32, height: 80, borderRadius: 24, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 }} />
 
       {/* HERO CARD SKELETON */}
-      <View style={[{ width: '100%', height: 85, borderRadius: 28, marginBottom: 32 }, boxStyles]} />
+      <View style={{ marginHorizontal: 24, marginTop: 16, height: 80, borderRadius: 24, backgroundColor: '#E8E5DA' }} />
 
       {/* TUGAS HARI INI SKELETON */}
-      <View style={{ width: 100, height: 20, borderRadius: 10, backgroundColor: '#E8E5DA', marginBottom: 16 }} />
-      <View style={[{ width: '100%', height: 76, borderRadius: 24, marginBottom: 12 }, boxStyles]} />
-      <View style={[{ width: '100%', height: 76, borderRadius: 24, marginBottom: 32 }, boxStyles]} />
-
-      {/* KEBUNKU SKELETON */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <View style={{ width: 100, height: 20, borderRadius: 10, backgroundColor: '#E8E5DA' }} />
-        <View style={{ width: 60, height: 16, borderRadius: 8, backgroundColor: '#E8E5DA' }} />
+      <View style={{ paddingHorizontal: 24, marginTop: 32 }}>
+        <View style={{ width: 100, height: 24, borderRadius: 12, backgroundColor: '#E8E5DA', marginBottom: 16 }} />
+        <View style={{ width: '100%', height: 76, borderRadius: 24, backgroundColor: '#E8E5DA', marginBottom: 12 }} />
+        <View style={{ width: '100%', height: 76, borderRadius: 24, backgroundColor: '#E8E5DA', marginBottom: 32 }} />
       </View>
-      <View style={{ flexDirection: 'row', gap: 16 }}>
-        <View style={[{ width: 140, height: 200, borderRadius: 24 }, boxStyles]} />
-        <View style={[{ width: 140, height: 200, borderRadius: 24 }, boxStyles]} />
+
+      {/* PANEN TERDEKAT SKELETON */}
+      <View style={{ paddingHorizontal: 24 }}>
+        <View style={{ width: 120, height: 24, borderRadius: 12, backgroundColor: '#E8E5DA', marginBottom: 16 }} />
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ width: 140, height: 160, borderRadius: 24, backgroundColor: '#E8E5DA' }} />
+          <View style={{ width: 140, height: 160, borderRadius: 24, backgroundColor: '#E8E5DA' }} />
+        </View>
       </View>
     </Animated.View>
   );
@@ -554,619 +562,110 @@ export default function DashboardScreen() {
     });
 
   const { width } = Dimensions.get('window');
+
+  const upcomingHarvests = [...tanamanList].sort((a, b) => (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999));
   
+  const hasWateringTask = reminders.some(t => {
+      const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+      return t.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
+  });
+  const farmerState = weather?.kondisi === "HUJAN" || weather?.prediksiHujanHariIni ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1' }} edges={["right", "bottom", "left"]}>
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }]}
+        style={{ flex: 1 }}
+        contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }, { paddingBottom: 140 }]}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            colors={["#3FA86B"]}
-            refreshing={isRefreshing}
-            onRefresh={() => fetchDashboardData(true)}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchDashboardData(true)} />}
       >
-      {/* HEADER BACKGROUND: Melengkung biasa */}
-      {/* HEADER BACKGROUND: Mentok Atas */}
-      <View style={{ position: 'absolute', top: 0, width: '100%', height: 180 + insets.top, backgroundColor: '#3FA86B', borderBottomLeftRadius: 48, borderBottomRightRadius: 48,  zIndex: 0 }} />
-      {/* HEADER */}
-      <View style={[styles.header, { backgroundColor: 'transparent', paddingTop: 16 + insets.top }]}>
-        <View style={styles.profileSection}>
-          <Pressable 
-            onLongPress={() => {
-              setUserData((prev: any) => ({
-                ...prev,
-                level: 99,
-                streak: 365,
-                poin: 9999 }));
-              showNotification("GOD MODE ACTIVATED 🚀", "Level 99, Streak 365! Siap bantai presentasi!", "success");
-            }}
-            style={({pressed}) => [styles.avatar, pressed && {opacity: 0.7}]}
-          >
-            {userData?.avatarUrl ? (
-              <Image source={{ uri: userData.avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 24, resizeMode: 'cover' }} />
-            ) : (
-              <MaterialIcons name="person" size={24} color="#123924" />
-            )}
-          </Pressable>
-          <View>
-            <Pressable onLongPress={async () => {
-              const { resetTutorial } = require('../../utils/tutorial');
-              await resetTutorial();
-              showNotification("Reset", "Tutorial Tour di-reset! Silakan restart atau reload (R).", "success");
-            }}>
-              <Text style={[styles.greeting, { color: '#123924' }]}>
-                {getGreeting()}, {userData?.nama || "Petani"}
-              </Text>
-            </Pressable>
-            <Text style={[styles.subtitle, { color: '#123924', fontFamily: 'Nunito_700Bold' }]}>Yuk, rawat tanamanmu hari ini!</Text>
-          </View>
-        </View>
-      </View>
-        {/* Pembungkus konten stat & kebunku */}
-        <View style={[styles.contentContainer, { paddingTop: 24 }]}>
         {isLoading ? (
-          <HomeSkeleton />
+          <View style={{ padding: 24 }}><HomeSkeleton /></View>
         ) : isError ? (
-          <ErrorState onRetry={fetchDashboardData} />
+          <ErrorState onRetry={() => fetchDashboardData(true)} />
         ) : (
           <>
-        {/* STAT STRIP */}
-        <FadeInSlideUp delay={0}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 24,
-            gap: 8 }}
-        >
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#FFFFFF",
-              borderRadius: 100,
-              paddingVertical: 6,
-              gap: 4 }}
-          >
-            <MaterialIcons name="eco" size={16} color="#3FA86B" />
-            <Text
-              style={{
-                fontFamily: "Nunito_700Bold",
-                fontSize: 12,
-                color: "#123924" }}
-            >
-              {tanamanList.length} Tanaman
-            </Text>
-          </View>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#FFFFFF",
-              borderRadius: 100,
-              paddingVertical: 6,
-              gap: 4 }}
-          >
-            <MaterialIcons
-              name="local-fire-department"
-              size={16}
-              color="#FF6B5C"
+            {/* 1. Header Scene */}
+            <FarmerScene 
+              userName={userData?.nama || "Petani"}
+              avatarUrl={userData?.avatarUrl}
+              weatherCondition={weather?.kondisi || 'CERAH'}
+              temperature={weather?.suhu ? Math.round(weather.suhu) : 28}
+              farmerState={farmerState}
             />
-            <Text
-              style={{
-                fontFamily: "Nunito_700Bold",
-                fontSize: 12,
-                color: "#123924" }}
-            >
-              {userData?.streak || 0} Streak
-            </Text>
-          </View>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#FFFFFF",
-              borderRadius: 100,
-              paddingVertical: 6,
-              gap: 4 }}
-          >
-            <MaterialIcons name="star" size={16} color="#FFB627" />
-            <Text
-              style={{
-                fontFamily: "Nunito_700Bold",
-                fontSize: 12,
-                color: "#123924" }}
-            >
-              Level {userData?.level || 1}
-            </Text>
-          </View>
-        </View>
-        </FadeInSlideUp>
 
-        {/* STREAK HERO CARD */}
-        <FadeInSlideUp delay={100}>
-        <Pressable
-          ref={step1Ref}
-          style={({ pressed }) => [
-            styles.heroCard,
-            pressed && styles.pressedShadow4,
-          ]}
-          onPress={() => setShowGamification(true)}
-        >
-          {/* Faint Background Icon */}
-          <MaterialIcons name="local-fire-department" size={100} color="rgba(255,255,255,0.08)" style={{ position: 'absolute', right: 0, top: 0, transform: [{ rotate: '15deg' }] }} />
-          <View style={styles.fireIconContainer}>
-            <MaterialIcons
-              name="local-fire-department"
-              size={28}
-              color="#FFFFFF"
+            {/* 2. Stat Card (Overlaps Scene) */}
+            <View style={{ zIndex: 10 }}>
+              <StatCard 
+                userData={userData} 
+                tanamanCount={tanamanList.length} 
+                onBadgePress={() => setShowBadgeInfo(true)} 
+              />
+            </View>
+
+            {/* Streak Hero Card (Restored) */}
+            <HeroCard 
+              streak={userData?.streak || 0} 
+              onPress={() => setShowGamification(true)} 
             />
-          </View>
-          <View style={styles.heroTextContainer}>
-            <Text style={styles.heroTitle}>
-              {userData?.streak || 0} hari streak!
-            </Text>
-            <Text style={styles.heroSubtitle}>
-              Kamu lagi on fire, jangan putus ya
-            </Text>
-          </View>
-          <MaterialIcons
-            name="chevron-right"
-            size={28}
-            color="rgba(255,255,255,0.8)"
-          />
 
-          {userData?.pelindung_streak !== undefined && (
-            <Pressable 
-              style={({ pressed }) => [
-                {
-                  position: 'absolute',
-                  top: -8,
-                  right: -8,
-                  backgroundColor: '#FFB627',
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderRadius: 999,
-                  boxShadow: pressed ? '0px 0px 0px #123924' : '2px 2px 0px #123924',
-                  transform: [{ rotate: '5deg' }, { translateX: pressed ? 2 : 0 }, { translateY: pressed ? 2 : 0 }],
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                  opacity: userData.pelindung_streak === 0 ? 0.5 : 1
-                }
-              ]}
-              disabled={userData.pelindung_streak === 0}
-              onPress={(e) => {
-                e.stopPropagation();
-                setShowBadgeInfo(true);
-              }}
-            >
-              <Ionicons name="umbrella" size={14} color="#123924" />
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#123924' }}>
-                x{userData.pelindung_streak}
-              </Text>
-            </Pressable>
-          )}
-
-        </Pressable>
-
-        {/* PETA WABAH HAMA CARD */}
-        <Pressable
-          style={({ pressed }) => [
-            {
-              backgroundColor: '#FFECEB',
-              borderRadius: 24,
-              padding: 20,
-              marginBottom: 32,
-              flexDirection: 'row',
-              alignItems: 'center',
-              boxShadow: pressed ? '0px 0px 0px #123924' : '4px 4px 0px #123924',
-              transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [{ translateX: 0 }, { translateY: 0 }]
-            }
-          ]}
-          onPress={() => router.push('/peta-hama' as any)}
-        >
-          <View style={{ backgroundColor: '#FF6B5C', padding: 12, borderRadius: 100, marginRight: 16 }}>
-            <MaterialIcons name="map" size={24} color="#FFFFFF" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924', marginBottom: 4 }}>
-              🗺️ Peta Wabah Hama
-            </Text>
-            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F' }}>
-              Cek area rawan hama di sekitarmu!
-            </Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={24} color="#123924" />
-        </Pressable>
-
-        {/* PANEN TERDEKAT CARD */}
-        {(() => {
-          const panenTerdekat =
-            tanamanList.length > 0
-              ? [...tanamanList].sort(
-                  (a, b) => (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999),
-                )[0]
-              : null;
-
-          if (!panenTerdekat) return null;
-
-          const hariKe =
-            Math.floor(
-              (Date.now() - new Date(panenTerdekat.tanggalTanam).getTime()) /
-                86400000,
-            ) + 1;
-          const totalHari = hariKe + (panenTerdekat.sisaHariPanen ?? 999);
-          const persen = Math.min(100, Math.max(0, (hariKe / totalHari) * 100));
-
-          return (
-            <Pressable
-              style={({ pressed }) => [
-                {
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: 24,
-                  padding: 16,
-                  marginBottom: 16 },
-                pressed && styles.pressedShadow4,
-              ]}
-              onPress={() =>
-                router.push({
-                  pathname: "/detail-tanaman",
-                  params: { id: panenTerdekat.id } })
-              }
-            >
-              <Text
-                style={{
-                  fontFamily: "Nunito_800ExtraBold",
-                  fontSize: 12,
-                  color: "#5C5A4F",
-                  marginBottom: 4 }}
-              >
-                PANEN TERDEKAT
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "flex-end",
-                  marginBottom: 12 }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Nunito_700Bold",
-                    fontSize: 16,
-                    color: "#123924",
-                    flex: 1 }}
-                  numberOfLines={1}
-                >
-                  {panenTerdekat.nickname || panenTerdekat.jenisTanaman}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: "Nunito_800ExtraBold",
-                    fontSize: 32,
-                    color: "#1F5C3D",
-                    lineHeight: 36 }}
-                >
-                  {panenTerdekat.sisaHariPanen ?? 999}{" "}
-                  <Text style={{ fontSize: 14 }}>hari</Text>
-                </Text>
-              </View>
-              <View
-                style={{
-                  backgroundColor: "#E8F5E9",
-                  borderRadius: 100,
-                  height: 12,
-                  width: "100%",
-                  overflow: "hidden" }}
-              >
-                <View
-                  style={{
-                    backgroundColor: "#3FA86B",
-                    width: `${persen}%`,
-                    height: "100%",
-                    borderRadius: 100 }}
+            {/* 3. Tugas Hari Ini */}
+            <View style={{ paddingHorizontal: 24, marginTop: 32 }} ref={step2Ref}>
+              <Text style={{ fontSize: 18, fontFamily: 'Nunito_800ExtraBold', color: '#1B4332', marginBottom: 16 }}>Hari ini</Text>
+              
+              {reminders.length === 0 ? (
+                <EmptyHint
+                  ref={step3Ref}
+                  icon="emoji-emotions"
+                  title="Semua beres!"
+                  subtitle="Belum ada yang perlu disiram. Nikmati harimu!"
                 />
+              ) : (
+                reminders.map((tanaman) => {
+                  const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+                  const isWateringTask = tanaman.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
+
+                  return (
+                    <TaskCard 
+                      key={tanaman.id}
+                      task={tanaman}
+                      isWateringTask={isWateringTask}
+                      onTaskPress={() => {
+                        if (isWateringTask) {
+                          handleLogAktivitas(tanaman.id);
+                        } else {
+                          router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } });
+                        }
+                      }}
+                    />
+                  );
+                })
+              )}
+            </View>
+
+            {/* 4. Panen Terdekat */}
+            {upcomingHarvests.length > 0 && (
+              <View style={{ marginTop: 24, paddingLeft: 24 }}>
+                <Text style={{ fontSize: 18, fontFamily: 'Nunito_800ExtraBold', color: '#1B4332', marginBottom: 16 }}>Panen Terdekat</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 24, paddingBottom: 16 }}>
+                  {upcomingHarvests.map(tanaman => (
+                    <Pressable key={tanaman.id} onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}>
+                      <HarvestCard task={tanaman} />
+                    </Pressable>
+                  ))}
+                </ScrollView>
               </View>
-            </Pressable>
-          );
-        })()}
+            )}
 
-        {/* REMINDER LIST */}
-        <View style={styles.section} ref={step2Ref}>
-          <Text style={styles.sectionTitle}>Hari ini</Text>
+            {/* 5. Info Peta Wabah */}
+            <View style={{ paddingHorizontal: 24, marginTop: 8 }}>
+              <InfoCard onPress={() => router.push("/peta-hama" as any)} />
+            </View>
+          </>
+        )}
+      </ScrollView>
 
-          {/* WEATHER CARD */}
-          {weather &&
-            (() => {
-              let bg = "#FFF9E6";
-              let iconName = "wb-sunny";
-              let iconColor = "#FFB627";
-              let titleText = "Cerah hari ini, saatnya menyiram";
-
-              if (weather.kondisi === "BERAWAN") {
-                bg = "#F0F2F0";
-                iconName = "cloud";
-                iconColor = "#5C5A4F";
-                titleText = "Langit berawan hari ini";
-              } else if (weather.kondisi === "HUJAN") {
-                bg = "#E3F2FD";
-                iconName = "umbrella";
-                iconColor = "#3FA86B";
-                titleText = "Hujan diprediksi! Penyiraman ditunda ya";
-              }
-
-              return (
-                <Pressable
-                  onLongPress={() => {
-                    setWeather({
-                      suhu: 24.5,
-                      kelembapan: 88,
-                      kondisi: "HUJAN",
-                      deskripsi: "Hujan Lebat (Simulasi)",
-                      prediksiHujanHariIni: true
-                    });
-                    
-                    const updatedList = tanamanList.map(t => {
-                      if (t.statusPenyiraman === "PERLU_SIRAM") {
-                        return { ...t, statusPenyiraman: "DITUNDA_HUJAN" };
-                      }
-                      return t;
-                    });
-                    setTanamanList(updatedList);
-                    showNotification(
-                      "☔ Simulasi Hujan Diaktifkan!",
-                      "Sistem mendeteksi hujan lebat. Penyiraman ditunda!",
-                      "info"
-                    );
-                  }}
-                  style={{
-                    backgroundColor: bg,
-                    borderRadius: 24,
-                    padding: 16,
-                    marginBottom: 16 }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 8,
-                      marginBottom: 4 }}
-                  >
-                    <MaterialIcons
-                      name={iconName as any}
-                      size={24}
-                      color={iconColor}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      style={{
-                        fontFamily: "Nunito_700Bold",
-                        fontSize: 13,
-                        color: "#123924",
-                        flex: 1 }}
-                    >
-                      {titleText}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontFamily: "Nunito_500Medium",
-                      fontSize: 11,
-                      color: "#5C5A4F",
-                      marginLeft: 32 }}
-                  >
-                    {weather.deskripsi} • {Math.round(weather.suhu)}°C
-                  </Text>
-                  {weather.prediksiHujanHariIni && (
-                    <Text
-                      style={{
-                        fontFamily: "Nunito_500Medium",
-                        fontStyle: "italic",
-                        fontSize: 10,
-                        color: "#5C5A4F",
-                        marginLeft: 32,
-                        marginTop: 4 }}
-                    >
-                      Penyiraman beberapa tanaman mungkin ditunda sistem.
-                    </Text>
-                  )}
-                </Pressable>
-              );
-            })()}
-
-          {reminders.length === 0 ? (
-            <EmptyHint
-              ref={step3Ref}
-              icon="emoji-emotions"
-              title="Mantap! Semua tanaman aman hari ini"
-              subtitle="Belum ada yang perlu disiram. Nikmati harimu, petani hebat!"
-            />
-          ) : (
-            reminders.map((tanaman, index) => {
-              const sudahValidasiHariIni =
-                tanaman.logTerakhir &&
-                new Date(tanaman.logTerakhir.createdAt).toDateString() ===
-                  new Date().toDateString();
-              const isPenyiraman =
-                tanaman.statusPenyiraman === "PERLU_SIRAM" &&
-                !sudahValidasiHariIni;
-
-              return (
-                <Pressable
-                  key={tanaman.id}
-                  style={({ pressed }) => [
-                    styles.taskCard,
-                    pressed && styles.pressedShadow4,
-                  ]}
-                  onPress={() => {
-                    if (isPenyiraman) {
-                      handleLogAktivitas(tanaman.id);
-                    } else {
-                      router.push({
-                        pathname: "/detail-tanaman",
-                        params: { id: tanaman.id } });
-                    }
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.taskIconBox,
-                      { backgroundColor: isPenyiraman ? "#FF6B5C" : "#FFB627" },
-                    ]}
-                  >
-                    <MaterialIcons
-                      name={isPenyiraman ? "water-drop" : "eco"}
-                      size={24}
-                      color="#FFFFFF"
-                    />
-                  </View>
-                  <View style={styles.taskInfo}>
-                    <Text style={styles.taskName}>
-                      {tanaman.nickname || tanaman.jenisTanaman}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.taskStatus,
-                        { color: isPenyiraman ? "#FF6B5C" : "#5C5A4F" },
-                      ]}
-                    >
-                      {isPenyiraman
-                        ? "Perlu disiram sekarang"
-                        : `Masa panen tinggal ${tanaman.sisaHariPanen ?? 999} hari lagi!`}
-                    </Text>
-                  </View>
-                  <View
-                    ref={index === 0 ? step3Ref : undefined}
-                    style={[
-                      styles.checkbox,
-                      !isPenyiraman && styles.checkboxDoneAmber,
-                    ]}
-                  >
-                    {!isPenyiraman && (
-                      <MaterialIcons name="check" size={16} color="#FFFFFF" />
-                    )}
-                  </View>
-                </Pressable>
-              );
-            })
-          )}
-        </View>
-
-        {/* YOUR PLANTS SECTION */}
-        <View style={styles.section} ref={step4Ref}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Tanaman kamu</Text>
-          </View>
-          {tanamanList.length === 0 ? (
-            <EmptyHint
-              imageSource={require("../../assets/images/icontampilanawal/seedling-menanam.svg")}
-              title="Kebunmu masih kosong nih"
-              subtitle="Yuk mulai tanam tanaman pertamamu!"
-              ctaText="Tanam Sekarang"
-              onCtaPress={() => router.push("/(tabs)/tanaman")}
-            />
-          ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-          >
-            {tanamanList.map((tanaman) => {
-                const sudahValidasiHariIni =
-                  tanaman.logTerakhir &&
-                  new Date(tanaman.logTerakhir.createdAt).toDateString() ===
-                    new Date().toDateString();
-                const isSiapPanen = (tanaman.sisaHariPanen ?? 999) <= 0;
-                const badgeBg = isSiapPanen
-                  ? "#FFB627"
-                  : sudahValidasiHariIni
-                  ? "#3FA86B"
-                  : tanaman.statusPenyiraman === "PERLU_SIRAM"
-                    ? "#FFB627"
-                    : "#3FA86B";
-                const badgeTextCol = isSiapPanen
-                  ? "#123924"
-                  : sudahValidasiHariIni
-                  ? "#FFFFFF"
-                  : tanaman.statusPenyiraman === "PERLU_SIRAM"
-                    ? "#123924"
-                    : "#FFFFFF";
-                const badgeText = isSiapPanen
-                  ? "Siap Panen"
-                  : sudahValidasiHariIni
-                  ? "Sudah Disiram"
-                  : `${tanaman.sisaHariPanen ?? 999} hari lagi`;
-
-                return (
-                  <Pressable
-                    key={tanaman.id}
-                    style={({ pressed }) => [
-                      styles.plantCard,
-                      pressed && styles.pressedShadow4,
-                    ]}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/detail-tanaman",
-                        params: { id: tanaman.id } })
-                    }
-                  >
-                    <View
-                      style={[
-                        styles.plantImagePlaceholder,
-                        { overflow: "hidden" },
-                      ]}
-                    >
-                      {tanaman.logTerakhir?.fotoUrl ? (
-                        <Image
-                          source={{ uri: tanaman.logTerakhir.fotoUrl }}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            resizeMode: "cover" }}
-                        />
-                      ) : (
-                        <Image
-                          source={{ uri: FALLBACK_THUMB }}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            resizeMode: "cover" }}
-                        />
-                      )}
-                    </View>
-                    <View style={styles.plantCardBody}>
-                      <Text style={styles.plantName} numberOfLines={1}>
-                        {tanaman.nickname || tanaman.jenisTanaman}
-                      </Text>
-                      <View
-                        style={[styles.badge, { backgroundColor: badgeBg }]}
-                      >
-                        <Text
-                          style={[styles.badgeText, { color: badgeTextCol }]}
-                        >
-                          {badgeText}
-                        </Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                );
-              })
-            }
-          </ScrollView>
-          )}
-        
-      <Modal visible={showGamification} animationType="slide" transparent={false}>
+            <Modal visible={showGamification} animationType="slide" transparent={false}>
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top,  backgroundColor: '#FFB627' }}>
@@ -1272,16 +771,6 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
       </Modal>
-
-
-    </View>
-          </FadeInSlideUp>
-          </>
-        )}
-        </View>
-      </ScrollView>
-
-
 
       <CoachMarkOverlay
         visible={showTutorial}

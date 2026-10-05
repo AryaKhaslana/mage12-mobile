@@ -7,7 +7,7 @@ import * as SecureStore from "expo-secure-store";
 // Fix Fail-Safe URL: Jadikan production sebagai default jika env kosong
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://mage12-api-production.up.railway.app/api";
+  "https://mage12-api.vercel.app/api";
 
 const api = axios.create({
   baseURL: API_URL,

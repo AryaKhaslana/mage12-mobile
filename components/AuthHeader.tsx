@@ -59,7 +59,7 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
       <Animated.View style={[styles.mascotContainer, mascotStyle]}>
         <Image
           source={require("../assets/images/icontampilanawal/seedling-ngintip.svg")}
-          style={{ width: 200, height: 200 }}
+          style={{ width: 300, height: 300 }}
           contentFit="contain"
         />
       </Animated.View>
@@ -70,7 +70,7 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
           {/* Layer 1 (Back) */}
           <Path d={`M 0,50 Q ${width*0.6},180 ${width},40 L ${width},240 L 0,240 Z`} fill="#BFE3CD" />
           <Circle cx={width*-0.1} cy={50} r={60} fill="#BFE3CD" />
-          <Circle cx={width*0.2} cy={70} r={70} fill="#BFE3CD" />
+          <Circle cx={width*0.2} cy={70} r={55} fill="#BFE3CD" />
           <Circle cx={width*0.4} cy={120} r={55} fill="#BFE3CD" />
           <Circle cx={width*0.55} cy={150} r={80} fill="#BFE3CD" />
           <Circle cx={width*0.8} cy={110} r={50} fill="#BFE3CD" />
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   mascotContainer: {
     position: 'absolute',
-    bottom: 110, // Peeking from the bottom center valley
+    bottom: 20, // Peeking from the bottom center valley
     width: '100%',
     alignItems: 'center',
     zIndex: 1,
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0, 
     width: '100%',
-    height: 240,
+    height: 220,
     zIndex: 2,
   },
 });

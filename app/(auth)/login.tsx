@@ -80,9 +80,9 @@ export default function LoginScreen() {
         >
           <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
             {/* Title and Subtitle */}
-            <View style={ marginBottom: 24, paddingHorizontal: 8 }>
-              <Text style={ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4 }>Selamat datang balik!</Text>
-              <Text style={ fontSize: 16, fontFamily: "Nunito_500Medium", color: "#5C5A4F" }>Yuk lanjut rawat tanamanmu</Text>
+            <View style={{ marginBottom: 24, paddingHorizontal: 8 }}>
+              <Text style={{ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4 }}>Selamat datang balik!</Text>
+              <Text style={{ fontSize: 16, fontFamily: "Nunito_500Medium", color: "#5C5A4F" }}>Yuk lanjut rawat tanamanmu</Text>
             </View>
             
             {/* Main Form Card */}

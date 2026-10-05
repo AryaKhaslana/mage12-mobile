@@ -66,32 +66,35 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
 
       {/* Cloud Layers (U-Shape Valley of Clouds sitting at the bottom) */}
       <View style={styles.cloudWrapper}>
-        <Svg width={width} height="200" style={{ position: 'absolute', bottom: 0 }}>
-          
+        <Svg width={width} height="240" style={{ position: 'absolute', bottom: 0 }}>
           {/* Layer 1 (Back) */}
-          <Path d={`M 0,40 Q ${width/2},140 ${width},40 L ${width},200 L 0,200 Z`} fill="#BFE3CD" />
-          <Circle cx={0} cy={40} r={40} fill="#BFE3CD" />
-          <Circle cx={width*0.25} cy={90} r={55} fill="#BFE3CD" />
-          <Circle cx={width*0.5} cy={140} r={65} fill="#BFE3CD" />
-          <Circle cx={width*0.75} cy={90} r={55} fill="#BFE3CD" />
-          <Circle cx={width} cy={40} r={40} fill="#BFE3CD" />
+          <Path d={`M 0,50 Q ${width*0.6},180 ${width},40 L ${width},240 L 0,240 Z`} fill="#BFE3CD" />
+          <Circle cx={width*-0.1} cy={50} r={60} fill="#BFE3CD" />
+          <Circle cx={width*0.2} cy={70} r={70} fill="#BFE3CD" />
+          <Circle cx={width*0.4} cy={120} r={55} fill="#BFE3CD" />
+          <Circle cx={width*0.55} cy={150} r={80} fill="#BFE3CD" />
+          <Circle cx={width*0.8} cy={110} r={50} fill="#BFE3CD" />
+          <Circle cx={width*1.1} cy={60} r={75} fill="#BFE3CD" />
 
           {/* Layer 2 (Middle) */}
-          <Path d={`M 0,60 Q ${width/2},160 ${width},60 L ${width},200 L 0,200 Z`} fill="#D6EFE0" />
-          <Circle cx={0} cy={60} r={35} fill="#D6EFE0" />
-          <Circle cx={width*0.25} cy={110} r={50} fill="#D6EFE0" />
-          <Circle cx={width*0.5} cy={160} r={60} fill="#D6EFE0" />
-          <Circle cx={width*0.75} cy={110} r={50} fill="#D6EFE0" />
-          <Circle cx={width} cy={60} r={35} fill="#D6EFE0" />
+          <Path d={`M 0,80 Q ${width*0.45},200 ${width},70 L ${width},240 L 0,240 Z`} fill="#D6EFE0" />
+          <Circle cx={width*-0.05} cy={90} r={45} fill="#D6EFE0" />
+          <Circle cx={width*0.1} cy={120} r={65} fill="#D6EFE0" />
+          <Circle cx={width*0.35} cy={160} r={55} fill="#D6EFE0" />
+          <Circle cx={width*0.5} cy={185} r={65} fill="#D6EFE0" />
+          <Circle cx={width*0.7} cy={150} r={80} fill="#D6EFE0" />
+          <Circle cx={width*0.9} cy={110} r={45} fill="#D6EFE0" />
+          <Circle cx={width*1.05} cy={80} r={55} fill="#D6EFE0" />
 
           {/* Layer 3 (Front, matching cream background) */}
-          <Path d={`M 0,80 Q ${width/2},180 ${width},80 L ${width},200 L 0,200 Z`} fill="#FBF8F1" />
-          <Circle cx={0} cy={80} r={30} fill="#FBF8F1" />
-          <Circle cx={width*0.25} cy={130} r={45} fill="#FBF8F1" />
-          <Circle cx={width*0.5} cy={180} r={55} fill="#FBF8F1" />
-          <Circle cx={width*0.75} cy={130} r={45} fill="#FBF8F1" />
-          <Circle cx={width} cy={80} r={30} fill="#FBF8F1" />
-
+          <Path d={`M 0,110 Q ${width*0.4},220 ${width},100 L ${width},240 L 0,240 Z`} fill="#FBF8F1" />
+          <Circle cx={width*-0.05} cy={110} r={50} fill="#FBF8F1" />
+          <Circle cx={width*0.15} cy={150} r={45} fill="#FBF8F1" />
+          <Circle cx={width*0.3} cy={180} r={60} fill="#FBF8F1" />
+          <Circle cx={width*0.5} cy={205} r={50} fill="#FBF8F1" />
+          <Circle cx={width*0.65} cy={180} r={75} fill="#FBF8F1" />
+          <Circle cx={width*0.85} cy={130} r={55} fill="#FBF8F1" />
+          <Circle cx={width*1.05} cy={100} r={60} fill="#FBF8F1" />
         </Svg>
       </View>
     </View>
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
   },
   mascotContainer: {
     position: 'absolute',
-    bottom: 90, // Peeking from the bottom center valley
+    bottom: 110, // Peeking from the bottom center valley
     width: '100%',
     alignItems: 'center',
     zIndex: 1,
@@ -121,7 +124,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0, 
     width: '100%',
-    height: 200,
+    height: 240,
     zIndex: 2,
   },
 });

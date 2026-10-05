@@ -100,9 +100,9 @@ export default function RegisterScreen() {
         >
           <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
             {/* Title and Subtitle */}
-            <View style={{ marginBottom: 24, paddingHorizontal: 8 }}>
-              <Text style={{ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4 }}>Daftar TaniSync</Text>
-              <Text style={{ fontSize: 16, fontFamily: "Nunito_500Medium", color: "#5C5A4F" }}>Ayo mulai perjalanan bertanimu!</Text>
+            <View style={{ marginBottom: 24, paddingHorizontal: 8, alignItems: "center" }}>
+              <Text style={{ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4, textAlign: "center" }}>Daftar TaniSync</Text>
+              <Text style={{ fontSize: 16, fontFamily: "Nunito_500Medium", color: "#5C5A4F", textAlign: "center" }}>Ayo mulai perjalanan bertanimu!</Text>
             </View>
             
             {/* Main Form Card */}

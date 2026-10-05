@@ -17,6 +17,7 @@ export default function ProfilScreen() {
     return "Petani Balkon ";
   };
   const [showAbout, setShowAbout] = React.useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -350,30 +351,47 @@ export default function ProfilScreen() {
             styles.logoutButton,
             pressed && styles.pressedShadow3,
           ]}
-          onPress={() => {
-            Alert.alert(
-              "Konfirmasi Keluar",
-              "Beneran mau keluar nih broskie? Nanti harus login lagi loh.",
-              [
-                { text: "Batal", style: "cancel" },
-                { 
-                  text: "Ya, Keluar", 
-                  style: "destructive", 
-                  onPress: async () => {
+          onPress={() => setShowLogoutConfirm(true)}
+        >
+          <MaterialIcons name="logout" size={24} color="#FF6B5C" />
+          <Text style={styles.logoutText}>Keluar</Text>
+        </Pressable>
+
+        {/* LOGOUT CONFIRM MODAL */}
+        <Modal visible={showLogoutConfirm} transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <View style={{ backgroundColor: '#FFFFFF', padding: 24, borderRadius: 24, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, width: '100%', alignItems: 'center' }}>
+              <MaterialIcons name="logout" size={48} color="#FF6B5C" style={{ marginBottom: 12 }} />
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', marginBottom: 8, textAlign: 'center' }}>Konfirmasi Keluar</Text>
+              <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
+                Beneran mau keluar nih broskie? Nanti harus login lagi loh.
+              </Text>
+              
+              <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
+                <Pressable 
+                  onPress={() => setShowLogoutConfirm(false)}
+                  style={({ pressed }) => [{ flex: 1, backgroundColor: '#FBF8F0', paddingVertical: 14, borderRadius: 100, alignItems: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }, pressed && { transform: [{ scale: 0.98 }] }]}
+                >
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>Batal</Text>
+                </Pressable>
+                
+                <Pressable 
+                  onPress={async () => {
+                    setShowLogoutConfirm(false);
                     await SecureStore.deleteItemAsync("userToken");
                     await SecureStore.deleteItemAsync("userData");
                     await AsyncStorage.removeItem("dashboard_weather");
                     await AsyncStorage.removeItem("dashboard_tanaman");
                     router.replace("/(auth)/login");
-                  }
-                }
-              ]
-            );
-          }}
-        >
-          <MaterialIcons name="logout" size={24} color="#FF6B5C" />
-          <Text style={styles.logoutText}>Keluar</Text>
-        </Pressable>
+                  }}
+                  style={({ pressed }) => [{ flex: 1, backgroundColor: '#FF6B5C', paddingVertical: 14, borderRadius: 100, alignItems: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }, pressed && { transform: [{ scale: 0.98 }] }]}
+                >
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Keluar</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* ABOUT MODAL */}
         <Modal visible={showAbout} transparent animationType="fade">

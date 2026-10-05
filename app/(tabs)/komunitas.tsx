@@ -895,18 +895,7 @@ export default function KomunitasScreen() {
             {/* 5. LOKASI / DAERAH */}
             <Text style={[styles.clayLabel, { zIndex: -1 }]}>Lokasi / Daerah (Opsional)</Text>
             <View style={{ marginBottom: 24, zIndex: 50, position: 'relative' }}>
-              <View style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "#FFFFFF",
-                borderWidth: 2,
-                borderColor: "#123924",
-                borderRadius: 100,
-                paddingHorizontal: 16,
-                height: 52,
-                boxShadow: "3px 3px 0px #123924",
-                elevation: 3
-              }}>
+              <View style={styles.clayLocationInputContainer}>
                 <MaterialIcons name="place" size={20} color="#123924" style={{ marginRight: 8 }} />
                 <TextInput
                   style={{ flex: 1, fontFamily: "Nunito_700Bold", fontSize: 16, color: "#123924" }}
@@ -953,12 +942,9 @@ export default function KomunitasScreen() {
                   left: 0,
                   right: 0,
                   backgroundColor: '#FFFFFF',
-                  borderWidth: 2,
-                  borderColor: '#123924',
                   borderRadius: 16,
                   maxHeight: 150,
-                  boxShadow: "4px 4px 0px #123924",
-                  elevation: 5,
+                  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
                   overflow: 'hidden',
                   zIndex: 99
                 }}>

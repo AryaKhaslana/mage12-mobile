@@ -350,12 +350,25 @@ export default function ProfilScreen() {
             styles.logoutButton,
             pressed && styles.pressedShadow3,
           ]}
-          onPress={async () => {
-            await SecureStore.deleteItemAsync("userToken");
-            await SecureStore.deleteItemAsync("userData");
-            await AsyncStorage.removeItem("dashboard_weather");
-            await AsyncStorage.removeItem("dashboard_tanaman");
-            router.replace("/(auth)/login");
+          onPress={() => {
+            Alert.alert(
+              "Konfirmasi Keluar",
+              "Beneran mau keluar nih broskie? Nanti harus login lagi loh.",
+              [
+                { text: "Batal", style: "cancel" },
+                { 
+                  text: "Ya, Keluar", 
+                  style: "destructive", 
+                  onPress: async () => {
+                    await SecureStore.deleteItemAsync("userToken");
+                    await SecureStore.deleteItemAsync("userData");
+                    await AsyncStorage.removeItem("dashboard_weather");
+                    await AsyncStorage.removeItem("dashboard_tanaman");
+                    router.replace("/(auth)/login");
+                  }
+                }
+              ]
+            );
           }}
         >
           <MaterialIcons name="logout" size={24} color="#FF6B5C" />

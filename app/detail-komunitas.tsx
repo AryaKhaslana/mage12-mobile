@@ -265,6 +265,17 @@ export default function DetailKomunitasScreen() {
       <View style={{ paddingBottom: 16 }}>
         <View style={styles.postCard}>
           <View style={styles.postHeader}>
+            <Pressable
+              onPress={() =>
+                post.isOwner
+                  ? router.push("/(tabs)/profil")
+                  : router.push({
+                      pathname: "/profil-pengguna",
+                      params: { userId: post.userId, nama: post.user_nama || "" },
+                    } as any)
+              }
+              style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center' }, pressed && { opacity: 0.7 }]}
+            >
             <View style={styles.avatarContainer}>
               <Text style={styles.avatarInitials}>{post.user_nama?.charAt(0) || '?'.toUpperCase()}</Text>
             </View>
@@ -272,6 +283,7 @@ export default function DetailKomunitasScreen() {
               <Text style={styles.authorName}>{post.user_nama}</Text>
               <Text style={styles.timeText}>{getRelativeTime(post.createdAt)}</Text>
             </View>
+            </Pressable>
             {badgeText ? (
               <View style={[styles.badge, { backgroundColor: badgeBg }]}>
                 <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>

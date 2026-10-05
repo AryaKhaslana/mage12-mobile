@@ -347,3 +347,45 @@ export const updateTanaman = async (id: number, data: { jenisTanaman?: string; n
   const response = await api.put(`/tanaman/${id}`, data);
   return response.data.data;
 };
+
+// ===== PROFIL PUBLIK PENGGUNA LAIN =====
+// ⚠️ Endpoint di bawah BELUM ada di CONTRACT.md — diasumsikan, sesuaikan kalau backend beda.
+
+export interface PublicUserProfile {
+  id: number;
+  nama: string;
+  username?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  level?: number;
+  streak?: number;
+  jumlahTanaman?: number;
+  jumlahPengikut?: number;
+  jumlahMengikuti?: number;
+  isFollowing?: boolean;
+  createdAt?: string;
+}
+
+/** GET /user/:id -> profil publik user lain */
+export const getPublicUserProfile = async (userId: number): Promise<PublicUserProfile> => {
+  const response = await api.get(`/user/${userId}`);
+  return response.data.data ?? response.data;
+};
+
+/** GET /community/user/:id -> postingan milik user tertentu */
+export const getUserCommunityPosts = async (userId: number, page: number = 1, limit: number = 10) => {
+  const response = await api.get(`/community/user/${userId}`, { params: { page, limit } });
+  return response.data as { meta?: any; data: CommunityPost[] };
+};
+
+/** GET /tanaman/user/:id -> tanaman publik milik user tertentu */
+export const getUserPublicTanaman = async (userId: number): Promise<TanamanDetail[]> => {
+  const response = await api.get(`/tanaman/user/${userId}`);
+  return response.data.data ?? [];
+};
+
+/** POST /user/:id/follow (toggle) -> { following, jumlahPengikut } */
+export const toggleFollowUser = async (userId: number): Promise<{ following: boolean; jumlahPengikut?: number }> => {
+  const response = await api.post(`/user/${userId}/follow`);
+  return response.data.data ?? response.data;
+};

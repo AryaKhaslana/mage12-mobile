@@ -537,6 +537,22 @@ export default function KomunitasScreen() {
             return (
               <View style={styles.postCard}>
                 <View style={styles.postHeader}>
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: "/profil-pengguna",
+                        params: {
+                          userId: item.userId ?? item.author?.id,
+                          nama: item.author?.nama || item.user_nama || "",
+                          avatarUrl: item.author?.avatarUrl || "",
+                        },
+                      } as any)
+                    }
+                    style={({ pressed }) => [
+                      { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
                   <View style={styles.avatarContainer}>
                     <Text
                       style={{
@@ -544,8 +560,9 @@ export default function KomunitasScreen() {
                         color: "#FFFFFF",
                       }}
                     >
-                      {item.author?.nama ||
-                        item.user_nama.charAt(0).toUpperCase()}
+                      {(item.author?.nama || item.user_nama || "?")
+                        .charAt(0)
+                        .toUpperCase()}
                     </Text>
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
@@ -591,6 +608,7 @@ export default function KomunitasScreen() {
                       {new Date(item.createdAt).toLocaleDateString()}
                     </Text>
                   </View>
+                  </Pressable>
 
                   <View
                     style={{

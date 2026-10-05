@@ -10,7 +10,6 @@ import {
     TextInput,
     TouchableOpacity,
     Pressable,
-    Pressable,
     View,
     KeyboardAvoidingView,
     Platform,

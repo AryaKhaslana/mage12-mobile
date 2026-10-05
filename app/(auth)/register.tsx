@@ -15,7 +15,6 @@ import {
     TextInput,
     TouchableOpacity,
     Pressable,
-    Pressable,
     View } from "react-native";
 import Animated, {
     useAnimatedStyle,

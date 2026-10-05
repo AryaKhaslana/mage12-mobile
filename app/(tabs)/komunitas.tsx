@@ -123,11 +123,28 @@ export interface PostType {
 }
 
 
-const INDONESIAN_CITIES = [
-  "Jakarta Pusat", "Jakarta Selatan", "Jakarta Barat", "Jakarta Timur", "Jakarta Utara",
-  "Bogor", "Depok", "Tangerang", "Tangerang Selatan", "Bekasi",
-  "Bandung", "Semarang", "Yogyakarta", "Surabaya", "Sidoarjo",
-  "Malang", "Medan", "Palembang", "Makassar", "Denpasar", "Balikpapan"
+const INDONESIAN_LOCATIONS = [
+  { name: "Jakarta Pusat", lat: -6.1805, lng: 106.8284 },
+  { name: "Jakarta Selatan", lat: -6.2615, lng: 106.8106 },
+  { name: "Jakarta Barat", lat: -6.1683, lng: 106.7588 },
+  { name: "Jakarta Timur", lat: -6.2250, lng: 106.9004 },
+  { name: "Jakarta Utara", lat: -6.1214, lng: 106.8771 },
+  { name: "Bogor", lat: -6.5971, lng: 106.7915 },
+  { name: "Depok", lat: -6.4025, lng: 106.7942 },
+  { name: "Tangerang", lat: -6.1702, lng: 106.6403 },
+  { name: "Tangerang Selatan", lat: -6.2886, lng: 106.7179 },
+  { name: "Bekasi", lat: -6.2383, lng: 106.9756 },
+  { name: "Bandung", lat: -6.9175, lng: 107.6191 },
+  { name: "Semarang", lat: -6.9667, lng: 110.4167 },
+  { name: "Yogyakarta", lat: -7.7956, lng: 110.3695 },
+  { name: "Surabaya", lat: -7.2504, lng: 112.7688 },
+  { name: "Sidoarjo", lat: -7.4478, lng: 112.7183 },
+  { name: "Malang", lat: -7.9797, lng: 112.6304 },
+  { name: "Medan", lat: 3.5952, lng: 98.6722 },
+  { name: "Palembang", lat: -2.9909, lng: 104.7566 },
+  { name: "Makassar", lat: -5.1477, lng: 119.4327 },
+  { name: "Denpasar", lat: -8.6705, lng: 115.2126 },
+  { name: "Balikpapan", lat: -1.2379, lng: 116.8529 }
 ];
 
 const DUMMY_POSTS: PostType[] = [
@@ -322,18 +339,22 @@ export default function KomunitasScreen() {
 
   // Form State
   const [judul, setJudul] = useState("");
-  const [lokasiNama, setLokasiNama] = useState("Sidoarjo");
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
+  const [lokasiNama, setLokasiNama] = useState("");
+  const [lokasiLat, setLokasiLat] = useState<number | null>(null);
+  const [lokasiLng, setLokasiLng] = useState<number | null>(null);
+  const [filteredCities, setFilteredCities] = useState<typeof INDONESIAN_LOCATIONS>([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleLocationChange = (text: string) => {
     setLokasiNama(text);
+    setLokasiLat(null);
+    setLokasiLng(null);
     if (!text.trim()) {
       setShowDropdown(false);
       setFilteredCities([]);
       return;
     }
-    const matches = INDONESIAN_CITIES.filter(city => city.toLowerCase().includes(text.toLowerCase()));
+    const matches = INDONESIAN_LOCATIONS.filter(city => city.name.toLowerCase().includes(text.toLowerCase()));
     setFilteredCities(matches);
     setShowDropdown(true);
   };
@@ -436,6 +457,8 @@ export default function KomunitasScreen() {
       formData.append("deskripsi", deskripsi);
       if (judul) formData.append("judul", judul);
       if (lokasiNama) formData.append("lokasiNama", lokasiNama);
+      if (lokasiLat !== null) formData.append("latitude", lokasiLat.toString());
+      if (lokasiLng !== null) formData.append("longitude", lokasiLng.toString());
 
       if (foto) {
         formData.append("foto", {
@@ -450,6 +473,8 @@ export default function KomunitasScreen() {
       setIsModalVisible(false);
       setJudul("");
       setLokasiNama("");
+      setLokasiLat(null);
+      setLokasiLng(null);
       setDeskripsi("");
       setFoto(null);
 
@@ -940,7 +965,7 @@ export default function KomunitasScreen() {
                   <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
                     {filteredCities.map((city, index) => (
                       <Pressable
-                        key={city}
+                        key={city.name}
                         style={({ pressed }) => [
                           {
                             paddingVertical: 12,
@@ -951,11 +976,13 @@ export default function KomunitasScreen() {
                           }
                         ]}
                         onPress={() => {
-                          setLokasiNama(city);
+                          setLokasiNama(city.name);
+                          setLokasiLat(city.lat);
+                          setLokasiLng(city.lng);
                           setShowDropdown(false);
                         }}
                       >
-                        <Text style={{ fontFamily: "Nunito_700Bold", color: "#123924", fontSize: 16 }}>{city}</Text>
+                        <Text style={{ fontFamily: "Nunito_700Bold", color: "#123924", fontSize: 16 }}>{city.name}</Text>
                       </Pressable>
                     ))}
                   </ScrollView>

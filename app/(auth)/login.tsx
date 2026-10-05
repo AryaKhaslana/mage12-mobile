@@ -69,8 +69,8 @@ export default function LoginScreen() {
     <View style={{ flex: 1, backgroundColor: "#DFF3E6" }}>
       <AuthHeader 
         isPasswordFocused={isPasswordFocused && !showPassword}
-        title="Selamat datang balik!"
-        subtitle="Yuk lanjut rawat tanamanmu"
+        
+        sub
       />
 
       <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>
@@ -79,6 +79,12 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
+            {/* Title and Subtitle */}
+            <View style={ marginBottom: 24, paddingHorizontal: 8 }>
+              <Text style={ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4 }>Selamat datang balik!</Text>
+              <Text style={ fontSize: 16, fontFamily: "Nunito_500Medium", color: "#5C5A4F" }>Yuk lanjut rawat tanamanmu</Text>
+            </View>
+            
             {/* Main Form Card */}
             <View style={styles.wallCard}>
               <View style={styles.inputContainer}>

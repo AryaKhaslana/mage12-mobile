@@ -89,8 +89,8 @@ export default function RegisterScreen() {
     <View style={{ flex: 1, backgroundColor: "#DFF3E6" }}>
       <AuthHeader 
         isPasswordFocused={isPasswordFocused && !showPassword}
-        title="Daftar TaniSync"
-        subtitle="Ayo mulai perjalanan bertanimu!"
+        
+        sub
       />
 
       <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>
@@ -99,6 +99,12 @@ export default function RegisterScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
+            {/* Title and Subtitle */}
+            <View style={ marginBottom: 24, paddingHorizontal: 8 }>
+              <Text style={ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4 }>Daftar TaniSync</Text>
+              <Text style={ fontSize: 16, fontFamily: "Nunito_500Medium", color: "#5C5A4F" }>Ayo mulai perjalanan bertanimu!</Text>
+            </View>
+            
             {/* Main Form Card */}
             <View style={styles.wallCard}>
               <View style={styles.inputContainer}>

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Dimensions, StyleSheet } from 'react-native';
+import { View, Dimensions, StyleSheet } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import Animated, { 
   useSharedValue, 
@@ -15,11 +15,9 @@ const { width } = Dimensions.get('window');
 
 interface AuthHeaderProps {
   isPasswordFocused: boolean;
-  title: string;
-  subtitle: string;
 }
 
-export default function AuthHeader({ isPasswordFocused, title, subtitle }: AuthHeaderProps) {
+export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
 
@@ -51,10 +49,6 @@ export default function AuthHeader({ isPasswordFocused, title, subtitle }: AuthH
     };
   });
 
-  // To make the clouds curve in a U-shape (arch downwards), we use a base curved path
-  // and add circles along the curve to keep the "cloud" bumpy texture!
-  // We'll use 3 layers of clouds, transitioning from Soft Green to Cream.
-
   return (
     <View style={styles.headerContainer}>
       {/* Decorative Sparkles */}
@@ -65,41 +59,40 @@ export default function AuthHeader({ isPasswordFocused, title, subtitle }: AuthH
       <Animated.View style={[styles.mascotContainer, mascotStyle]}>
         <Image
           source={require("../assets/images/icontampilanawal/seedling-ngintip.svg")}
-          style={{ width: 180, height: 180 }}
+          style={{ width: 170, height: 170 }}
           contentFit="contain"
         />
       </Animated.View>
 
-      {/* Cloud Layers */}
+      {/* Cloud Layers (U-Shape Valley of Clouds sitting at the bottom) */}
       <View style={styles.cloudWrapper}>
-        <Svg width={width} height="240" style={{ position: 'absolute', bottom: 0 }}>
+        <Svg width={width} height="200" style={{ position: 'absolute', bottom: 0 }}>
           
           {/* Layer 1 (Back) */}
-          <Path d={`M -20,100 Q ${width/2},220 ${width+20},100 L ${width+20},240 L -20,240 Z`} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.1} cy={130} r={45} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.3} cy={155} r={65} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.7} cy={160} r={75} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.9} cy={120} r={55} fill="#E5F5EB" opacity={0.8} />
+          <Path d={`M 0,40 Q ${width/2},140 ${width},40 L ${width},200 L 0,200 Z`} fill="#E5F5EB" />
+          <Circle cx={0} cy={40} r={40} fill="#E5F5EB" />
+          <Circle cx={width*0.25} cy={90} r={55} fill="#E5F5EB" />
+          <Circle cx={width*0.5} cy={140} r={65} fill="#E5F5EB" />
+          <Circle cx={width*0.75} cy={90} r={55} fill="#E5F5EB" />
+          <Circle cx={width} cy={40} r={40} fill="#E5F5EB" />
 
           {/* Layer 2 (Middle) */}
-          <Path d={`M -20,130 Q ${width/2},240 ${width+20},130 L ${width+20},240 L -20,240 Z`} fill="#F0FAF4" opacity={0.9} />
-          <Circle cx={width * 0.2} cy={165} r={55} fill="#F0FAF4" opacity={0.9} />
-          <Circle cx={width * 0.5} cy={195} r={70} fill="#F0FAF4" opacity={0.9} />
-          <Circle cx={width * 0.8} cy={175} r={60} fill="#F0FAF4" opacity={0.9} />
+          <Path d={`M 0,60 Q ${width/2},160 ${width},60 L ${width},200 L 0,200 Z`} fill="#F0FAF4" />
+          <Circle cx={0} cy={60} r={35} fill="#F0FAF4" />
+          <Circle cx={width*0.25} cy={110} r={50} fill="#F0FAF4" />
+          <Circle cx={width*0.5} cy={160} r={60} fill="#F0FAF4" />
+          <Circle cx={width*0.75} cy={110} r={50} fill="#F0FAF4" />
+          <Circle cx={width} cy={60} r={35} fill="#F0FAF4" />
 
           {/* Layer 3 (Front, matching cream background) */}
-          <Path d={`M -20,160 Q ${width/2},260 ${width+20},160 L ${width+20},240 L -20,240 Z`} fill="#FBF8F1" />
-          <Circle cx={width * 0.15} cy={190} r={45} fill="#FBF8F1" />
-          <Circle cx={width * 0.45} cy={220} r={60} fill="#FBF8F1" />
-          <Circle cx={width * 0.85} cy={195} r={55} fill="#FBF8F1" />
-          <Circle cx={width * 1.05} cy={165} r={40} fill="#FBF8F1" />
-        </Svg>
-      </View>
+          <Path d={`M 0,80 Q ${width/2},180 ${width},80 L ${width},200 L 0,200 Z`} fill="#FBF8F1" />
+          <Circle cx={0} cy={80} r={30} fill="#FBF8F1" />
+          <Circle cx={width*0.25} cy={130} r={45} fill="#FBF8F1" />
+          <Circle cx={width*0.5} cy={180} r={55} fill="#FBF8F1" />
+          <Circle cx={width*0.75} cy={130} r={45} fill="#FBF8F1" />
+          <Circle cx={width} cy={80} r={30} fill="#FBF8F1" />
 
-      {/* Text Container */}
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        </Svg>
       </View>
     </View>
   );
@@ -107,41 +100,23 @@ export default function AuthHeader({ isPasswordFocused, title, subtitle }: AuthH
 
 const styles = StyleSheet.create({
   headerContainer: {
-    height: 380,
+    height: 320, // Reduced height since text is moved to ScrollView
     width: '100%',
     position: 'relative',
-    backgroundColor: '#DFF3E6', // Full Soft Green Background as requested
+    backgroundColor: '#DFF3E6', 
   },
   mascotContainer: {
     position: 'absolute',
-    bottom: 90, // Adjusted so it peeks out above the deeper curve
+    bottom: 80, // Peeking from the bottom center valley
     width: '100%',
     alignItems: 'center',
     zIndex: 1,
   },
   cloudWrapper: {
     position: 'absolute',
-    bottom: 40, // Increased to make room for the deep U-shape curve
-    width: '100%',
-    height: 240,
-    zIndex: 2,
-  },
-  textContainer: {
-    position: 'absolute',
     bottom: 0, 
     width: '100%',
-    alignItems: 'center',
-    zIndex: 3,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: "Nunito_800ExtraBold",
-    color: "#1B4332",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: "Nunito_500Medium",
-    color: "#5C5A4F",
+    height: 200,
+    zIndex: 2,
   },
 });

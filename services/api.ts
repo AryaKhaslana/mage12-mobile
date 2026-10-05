@@ -220,6 +220,9 @@ export interface CommunityPost {
   id: number;
   userId: number;
   user_nama?: string;
+  username?: string;
+  user_username?: string;
+  userAvatar?: string;
   author?: { id?: number, nama?: string, avatarUrl?: string, username?: string };
   user?: { nama?: string };
   judul?: string;

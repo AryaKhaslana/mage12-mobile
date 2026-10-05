@@ -72,27 +72,27 @@ export default function AuthHeader({ isPasswordFocused, title, subtitle }: AuthH
 
       {/* Cloud Layers */}
       <View style={styles.cloudWrapper}>
-        <Svg width={width} height="180" style={{ position: 'absolute', bottom: 0 }}>
+        <Svg width={width} height="240" style={{ position: 'absolute', bottom: 0 }}>
           
           {/* Layer 1 (Back) */}
-          <Path d={`M -20,100 Q ${width/2},200 ${width+20},100 L ${width+20},180 L -20,180 Z`} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.1} cy={120} r={40} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.3} cy={140} r={55} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.7} cy={145} r={65} fill="#E5F5EB" opacity={0.8} />
-          <Circle cx={width * 0.9} cy={110} r={45} fill="#E5F5EB" opacity={0.8} />
+          <Path d={`M -20,100 Q ${width/2},220 ${width+20},100 L ${width+20},240 L -20,240 Z`} fill="#E5F5EB" opacity={0.8} />
+          <Circle cx={width * 0.1} cy={130} r={45} fill="#E5F5EB" opacity={0.8} />
+          <Circle cx={width * 0.3} cy={155} r={65} fill="#E5F5EB" opacity={0.8} />
+          <Circle cx={width * 0.7} cy={160} r={75} fill="#E5F5EB" opacity={0.8} />
+          <Circle cx={width * 0.9} cy={120} r={55} fill="#E5F5EB" opacity={0.8} />
 
           {/* Layer 2 (Middle) */}
-          <Path d={`M -20,120 Q ${width/2},210 ${width+20},120 L ${width+20},180 L -20,180 Z`} fill="#F0FAF4" opacity={0.9} />
-          <Circle cx={width * 0.2} cy={145} r={45} fill="#F0FAF4" opacity={0.9} />
-          <Circle cx={width * 0.5} cy={165} r={60} fill="#F0FAF4" opacity={0.9} />
-          <Circle cx={width * 0.8} cy={150} r={50} fill="#F0FAF4" opacity={0.9} />
+          <Path d={`M -20,130 Q ${width/2},240 ${width+20},130 L ${width+20},240 L -20,240 Z`} fill="#F0FAF4" opacity={0.9} />
+          <Circle cx={width * 0.2} cy={165} r={55} fill="#F0FAF4" opacity={0.9} />
+          <Circle cx={width * 0.5} cy={195} r={70} fill="#F0FAF4" opacity={0.9} />
+          <Circle cx={width * 0.8} cy={175} r={60} fill="#F0FAF4" opacity={0.9} />
 
           {/* Layer 3 (Front, matching cream background) */}
-          <Path d={`M -20,140 Q ${width/2},220 ${width+20},140 L ${width+20},180 L -20,180 Z`} fill="#FBF8F1" />
-          <Circle cx={width * 0.15} cy={160} r={35} fill="#FBF8F1" />
-          <Circle cx={width * 0.45} cy={180} r={50} fill="#FBF8F1" />
-          <Circle cx={width * 0.85} cy={165} r={45} fill="#FBF8F1" />
-          <Circle cx={width * 1.05} cy={145} r={30} fill="#FBF8F1" />
+          <Path d={`M -20,160 Q ${width/2},260 ${width+20},160 L ${width+20},240 L -20,240 Z`} fill="#FBF8F1" />
+          <Circle cx={width * 0.15} cy={190} r={45} fill="#FBF8F1" />
+          <Circle cx={width * 0.45} cy={220} r={60} fill="#FBF8F1" />
+          <Circle cx={width * 0.85} cy={195} r={55} fill="#FBF8F1" />
+          <Circle cx={width * 1.05} cy={165} r={40} fill="#FBF8F1" />
         </Svg>
       </View>
 
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 40, // Increased to make room for the deep U-shape curve
     width: '100%',
-    height: 180,
+    height: 240,
     zIndex: 2,
   },
   textContainer: {

@@ -59,7 +59,7 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
       <Animated.View style={[styles.mascotContainer, mascotStyle]}>
         <Image
           source={require("../assets/images/icontampilanawal/seedling-ngintip.svg")}
-          style={{ width: 170, height: 170 }}
+          style={{ width: 200, height: 200 }}
           contentFit="contain"
         />
       </Animated.View>
@@ -69,20 +69,20 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
         <Svg width={width} height="200" style={{ position: 'absolute', bottom: 0 }}>
           
           {/* Layer 1 (Back) */}
-          <Path d={`M 0,40 Q ${width/2},140 ${width},40 L ${width},200 L 0,200 Z`} fill="#E5F5EB" />
-          <Circle cx={0} cy={40} r={40} fill="#E5F5EB" />
-          <Circle cx={width*0.25} cy={90} r={55} fill="#E5F5EB" />
-          <Circle cx={width*0.5} cy={140} r={65} fill="#E5F5EB" />
-          <Circle cx={width*0.75} cy={90} r={55} fill="#E5F5EB" />
-          <Circle cx={width} cy={40} r={40} fill="#E5F5EB" />
+          <Path d={`M 0,40 Q ${width/2},140 ${width},40 L ${width},200 L 0,200 Z`} fill="#BFE3CD" />
+          <Circle cx={0} cy={40} r={40} fill="#BFE3CD" />
+          <Circle cx={width*0.25} cy={90} r={55} fill="#BFE3CD" />
+          <Circle cx={width*0.5} cy={140} r={65} fill="#BFE3CD" />
+          <Circle cx={width*0.75} cy={90} r={55} fill="#BFE3CD" />
+          <Circle cx={width} cy={40} r={40} fill="#BFE3CD" />
 
           {/* Layer 2 (Middle) */}
-          <Path d={`M 0,60 Q ${width/2},160 ${width},60 L ${width},200 L 0,200 Z`} fill="#F0FAF4" />
-          <Circle cx={0} cy={60} r={35} fill="#F0FAF4" />
-          <Circle cx={width*0.25} cy={110} r={50} fill="#F0FAF4" />
-          <Circle cx={width*0.5} cy={160} r={60} fill="#F0FAF4" />
-          <Circle cx={width*0.75} cy={110} r={50} fill="#F0FAF4" />
-          <Circle cx={width} cy={60} r={35} fill="#F0FAF4" />
+          <Path d={`M 0,60 Q ${width/2},160 ${width},60 L ${width},200 L 0,200 Z`} fill="#D6EFE0" />
+          <Circle cx={0} cy={60} r={35} fill="#D6EFE0" />
+          <Circle cx={width*0.25} cy={110} r={50} fill="#D6EFE0" />
+          <Circle cx={width*0.5} cy={160} r={60} fill="#D6EFE0" />
+          <Circle cx={width*0.75} cy={110} r={50} fill="#D6EFE0" />
+          <Circle cx={width} cy={60} r={35} fill="#D6EFE0" />
 
           {/* Layer 3 (Front, matching cream background) */}
           <Path d={`M 0,80 Q ${width/2},180 ${width},80 L ${width},200 L 0,200 Z`} fill="#FBF8F1" />
@@ -100,17 +100,22 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
 
 const styles = StyleSheet.create({
   headerContainer: {
-    height: 320, // Reduced height since text is moved to ScrollView
+    height: 380, // Reduced height since text is moved to ScrollView
     width: '100%',
     position: 'relative',
     backgroundColor: '#DFF3E6', 
   },
   mascotContainer: {
     position: 'absolute',
-    bottom: 80, // Peeking from the bottom center valley
+    bottom: 90, // Peeking from the bottom center valley
     width: '100%',
     alignItems: 'center',
     zIndex: 1,
+    shadowColor: "#1B4332", 
+    shadowOffset: { width: 0, height: 12 }, 
+    shadowOpacity: 0.2, 
+    shadowRadius: 16, 
+    elevation: 10,
   },
   cloudWrapper: {
     position: 'absolute',

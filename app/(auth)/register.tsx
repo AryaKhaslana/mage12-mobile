@@ -135,6 +135,20 @@ export default function RegisterScreen() {
                 />
               </View>
 
+              {/* Username */}
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, activeInput === 'username' && styles.inputFocused]}
+                  placeholder="Username (tanpa spasi)"
+                  placeholderTextColor="#8F9B94"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  onFocus={() => setActiveInput('username')}
+                  onBlur={() => setActiveInput(null)}
+                />
+              </View>
+
               <View style={styles.inputContainer}>
                 <TextInput
                   style={[styles.input, activeInput === 'password' && styles.inputFocused]}

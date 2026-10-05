@@ -46,6 +46,23 @@ export default function FarmerScene({
 
   const firstName = userName ? userName.split(' ')[0] : 'Sobat';
 
+  const isNight = hour >= 18 || hour < 6;
+  const isRaining = weatherCondition?.toLowerCase().includes('hujan');
+  
+  let skyColor1 = '#DFF3E6';
+  let skyColor2 = '#FBF8F1';
+  
+  if (isRaining) {
+    skyColor1 = '#78909C';
+    skyColor2 = '#CFD8DC';
+  } else if (isNight) {
+    skyColor1 = '#1A237E';
+    skyColor2 = '#3949AB';
+  } else if (hour >= 15 && hour < 18) {
+    skyColor1 = '#FFB74D';
+    skyColor2 = '#FFE082';
+  }
+
   const renderWeather = () => {
     if (weatherCondition?.toLowerCase().includes('hujan')) {
       return (
@@ -76,18 +93,27 @@ export default function FarmerScene({
         <Svg width={width} height={SCENE_HEIGHT}>
           <Defs>
             <LinearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#DFF3E6" stopOpacity="1" />
-              <Stop offset="1" stopColor="#FBF8F1" stopOpacity="1" />
+              <Stop offset="0" stopColor={skyColor1} stopOpacity="1" />
+              <Stop offset="1" stopColor={skyColor2} stopOpacity="1" />
             </LinearGradient>
           </Defs>
           {/* Sky background */}
           <Rect x="0" y="0" width={width} height={SCENE_HEIGHT} fill="url(#skyGrad)" />
           
-          {/* Sun */}
-          {!weatherCondition?.toLowerCase().includes('hujan') && (
+          {/* Sun / Moon */}
+          {!isRaining && (
             <G x={width * 0.7} y={40}>
-              <Circle cx="40" cy="40" r="48" fill="#FFEB3B" opacity={0.2} />
-              <Circle cx="40" cy="40" r="32" fill="#FFC107" opacity={0.8} />
+              {isNight ? (
+                <>
+                  <Circle cx="40" cy="40" r="48" fill="#FFFFFF" opacity={0.1} />
+                  <Circle cx="40" cy="40" r="32" fill="#F4F6F0" opacity={0.9} />
+                </>
+              ) : (
+                <>
+                  <Circle cx="40" cy="40" r="48" fill="#FFEB3B" opacity={0.2} />
+                  <Circle cx="40" cy="40" r="32" fill="#FFC107" opacity={0.8} />
+                </>
+              )}
             </G>
           )}
 
@@ -163,7 +189,12 @@ export default function FarmerScene({
           </G>
 
           {/* Front Foreground (Cream color matching background to blend perfectly) */}
-          <Path d={`M -20,245 Q ${width/2},220 ${width+20},255 L ${width+20},${SCENE_HEIGHT} L -20,${SCENE_HEIGHT} Z`} fill="#FBF8F1" />
+          <Path d={`M -20,245 Q ${width/2},220 ${width+20},255 L ${width+20},${SCENE_HEIGHT} L -20,${SCENE_HEIGHT} Z`} fill={skyColor2} />
+
+          {/* Night/Rain Overlay for scene elements */}
+          {(isNight || isRaining) && (
+            <Rect x="0" y="0" width={width} height={SCENE_HEIGHT} fill="#091530" opacity={isNight ? 0.3 : 0.1} />
+          )}
         </Svg>
       </View>
 
@@ -177,7 +208,7 @@ export default function FarmerScene({
               <Feather name="user" size={20} color="#3FA96B" />
             )}
           </View>
-          <Text style={styles.greetingText} numberOfLines={1}>
+          <Text style={[styles.greetingText, isNight && { color: '#FFFFFF' }]} numberOfLines={1}>
             {greeting}, {firstName}!
           </Text>
         </View>
@@ -187,8 +218,8 @@ export default function FarmerScene({
       {/* Drifting Clouds */}
       <Animated.View style={[styles.cloudLayer, cloudAnimatedStyle]}>
         <Svg width={width + 100} height={100}>
-          <Path d="M 40,60 Q 60,40 80,60 Q 100,50 120,70 L 40,70 Z" fill="#FFFFFF" opacity={0.7} />
-          <Path d="M 240,40 Q 260,20 280,40 Q 300,30 320,50 L 240,50 Z" fill="#FFFFFF" opacity={0.5} />
+          <Path d="M 40,60 Q 60,40 80,60 Q 100,50 120,70 L 40,70 Z" fill="#FFFFFF" opacity={isNight ? 0.2 : 0.7} />
+          <Path d="M 240,40 Q 260,20 280,40 Q 300,30 320,50 L 240,50 Z" fill="#FFFFFF" opacity={isNight ? 0.1 : 0.5} />
         </Svg>
       </Animated.View>
 

@@ -309,13 +309,7 @@ export default function ProfilPenggunaScreen() {
           <Text style={styles.appBarOverline}>PROFIL PETANI</Text>
           <Text style={styles.appBarTitle} numberOfLines={1}>{handle}</Text>
         </View>
-        <Pressable
-          accessibilityLabel="Opsi Lainnya"
-          onPress={handleMore}
-          style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-        >
-          <MaterialIcons name="more-vert" size={20} color={C.ink} />
-        </Pressable>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function StatCard({ userData, tanamanCount, onBadgePress }: { userData: any, tanamanCount: number, onBadgePress: () => void }) {
   return (
@@ -45,15 +46,15 @@ export default function StatCard({ userData, tanamanCount, onBadgePress }: { use
       
       <View style={styles.divider} />
       
-      <View style={styles.item}>
-        <View style={[styles.iconBox, { backgroundColor: '#FFF9E6' }]}>
-          <MaterialIcons name="star" size={24} color="#FFB627" />
+      <Pressable style={styles.item} onPress={() => router.push('/notifikasi')}>
+        <View style={[styles.iconBox, { backgroundColor: '#E8F5E9' }]}>
+          <MaterialIcons name="notifications" size={24} color="#3FA86B" />
         </View>
         <View>
-          <Text style={styles.value}>{userData?.level || 1}</Text>
-          <Text style={styles.label}>Level</Text>
+          <Text style={[styles.value, { fontSize: 16 }]}>Inbox</Text>
+          <Text style={styles.label}>2 Baru</Text>
         </View>
-      </View>
+      </Pressable>
     </View>
   );
 }

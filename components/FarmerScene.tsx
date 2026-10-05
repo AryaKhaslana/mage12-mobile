@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import Svg, { Path, Defs, LinearGradient, Stop, Rect, Circle, G, Polygon } from 'react-native-svg';
+import { useEffect } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 const SCENE_HEIGHT = 280;
@@ -16,11 +16,11 @@ interface FarmerSceneProps {
   farmerState: 'needsWatering' | 'allClear' | 'raining';
 }
 
-export default function FarmerScene({ 
-  userName, 
+export default function FarmerScene({
+  userName,
   avatarUrl,
-  weatherCondition, 
-  temperature, 
+  weatherCondition,
+  temperature,
 }: FarmerSceneProps) {
   const cloudOffset = useSharedValue(0);
 
@@ -48,10 +48,10 @@ export default function FarmerScene({
 
   const isNight = hour >= 18 || hour < 6;
   const isRaining = weatherCondition?.toLowerCase().includes('hujan');
-  
+
   let skyColor1 = '#DFF3E6';
   let skyColor2 = '#FBF8F1';
-  
+
   if (isRaining) {
     skyColor1 = '#78909C';
     skyColor2 = '#CFD8DC';
@@ -81,7 +81,7 @@ export default function FarmerScene({
     }
     return (
       <View style={styles.weatherBox}>
-        <Feather name="sun" size={16} color="#FFB627" />
+        <Feather name={isNight ? "moon" : "sun"} size={16} color={isNight ? "#90A4AE" : "#FFB627"} />
         <Text style={styles.tempText}>{temperature}°C</Text>
       </View>
     );
@@ -99,14 +99,14 @@ export default function FarmerScene({
           </Defs>
           {/* Sky background */}
           <Rect x="0" y="0" width={width} height={SCENE_HEIGHT} fill="url(#skyGrad)" />
-          
+
           {/* Sun / Moon */}
           {!isRaining && (
             <G x={width * 0.7} y={40}>
               {isNight ? (
                 <>
-                  <Circle cx="40" cy="40" r="48" fill="#FFFFFF" opacity={0.1} />
-                  <Circle cx="40" cy="40" r="32" fill="#F4F6F0" opacity={0.9} />
+                  <Circle cx="40" cy="40" r="36" fill="#FFFFFF" opacity={0.1} />
+                  <Circle cx="40" cy="40" r="24" fill="#F4F6F0" opacity={0.9} />
                 </>
               ) : (
                 <>
@@ -118,38 +118,38 @@ export default function FarmerScene({
           )}
 
           {/* Distant Rolling Hills (Smooth curves instead of sharp lines) */}
-          <Path d={`M -50,160 Q ${width*0.2},100 ${width*0.5},140 T ${width+50},120 L ${width+50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#B2D8C6" opacity={0.6} />
-          
-          <Path d={`M -50,180 Q ${width*0.3},120 ${width*0.8},180 T ${width+50},160 L ${width+50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#C8EAD4" opacity={0.8} />
+          <Path d={`M -50,160 Q ${width * 0.2},100 ${width * 0.5},140 T ${width + 50},120 L ${width + 50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#B2D8C6" opacity={0.6} />
+
+          <Path d={`M -50,180 Q ${width * 0.3},120 ${width * 0.8},180 T ${width + 50},160 L ${width + 50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#C8EAD4" opacity={0.8} />
 
           {/* Barn and Silo (Using G tag to position correctly inside SVG) */}
           <G x={width * 0.55} y={105}>
             {/* Silo */}
-            <Rect x="60" y="10" width="16" height="40" fill="#E0E0E0" />
-            <Path d="M 60,10 Q 68,-5 76,10 Z" fill="#9E9E9E" />
+            <Rect x="60" y="35" width="16" height="40" fill="#E0E0E0" />
+            <Path d="M 60,35 Q 68,10 76,35 Z" fill="#9E9E9E" />
             {/* Barn Body */}
-            <Rect x="10" y="20" width="55" height="35" fill="#E53935" />
+            <Rect x="10" y="40" width="55" height="35" fill="#E53935" />
             {/* Barn Roof */}
-            <Path d="M 5,20 L 37,-5 L 70,20 Z" fill="#B71C1C" />
+            <Path d="M 5,45 L 37,10 L 70,45 Z" fill="#B71C1C" />
             {/* Barn Door */}
-            <Rect x="30" y="35" width="15" height="20" fill="#FFFFFF" />
+            <Rect x="30" y="55" width="15" height="20" fill="#FFFFFF" />
             {/* Barn Window */}
-            <Circle cx="37" cy="12" r="4" fill="#FFFFFF" />
+            <Circle cx="37" cy="30" r="4" fill="#FFFFFF" />
           </G>
 
           {/* Trees on the right */}
-          <G x={width * 0.8} y={120}>
+          <G x={width * 0.8} y={150}>
             <Rect x="12" y="20" width="5" height="15" fill="#795548" />
             <Path d="M 14,0 Q -2,0 -2,15 Q -2,30 14,30 Q 30,30 30,15 Q 30,0 14,0 Z" fill="#4CAF50" />
           </G>
-          <G x={width * 0.88} y={135}>
+          <G x={width * 0.88} y={160}>
             <Rect x="10" y="15" width="4" height="12" fill="#795548" />
             <Path d="M 12,2 Q 0,2 0,14 Q 0,25 12,25 Q 24,25 24,14 Q 24,2 12,2 Z" fill="#388E3C" />
           </G>
 
           {/* Mid Hill */}
-          <Path d={`M -50,210 Q ${width*0.4},150 ${width+50},200 L ${width+50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#DDF1E3" />
-          
+          <Path d={`M -50,210 Q ${width * 0.4},150 ${width + 50},200 L ${width + 50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#DDF1E3" />
+
           {/* Raised Beds (Kotak Perkebunan / Pot Panjang) */}
           <G x={(width - 250) / 2} y={170}>
             {/* Box 1 (Kiri) */}
@@ -188,13 +188,13 @@ export default function FarmerScene({
             </G>
           </G>
 
-          {/* Front Foreground (Cream color matching background to blend perfectly) */}
-          <Path d={`M -20,245 Q ${width/2},220 ${width+20},255 L ${width+20},${SCENE_HEIGHT} L -20,${SCENE_HEIGHT} Z`} fill={skyColor2} />
-
           {/* Night/Rain Overlay for scene elements */}
           {(isNight || isRaining) && (
             <Rect x="0" y="0" width={width} height={SCENE_HEIGHT} fill="#091530" opacity={isNight ? 0.3 : 0.1} />
           )}
+
+          {/* Front Foreground (Cream color matching background to blend perfectly) */}
+          <Path d={`M -20,245 Q ${width / 2},220 ${width + 20},255 L ${width + 20},${SCENE_HEIGHT} L -20,${SCENE_HEIGHT} Z`} fill="#FBF8F1" />
         </Svg>
       </View>
 

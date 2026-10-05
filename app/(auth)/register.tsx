@@ -4,10 +4,8 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
-    Dimensions,
     KeyboardAvoidingView,
     Platform,
-    Alert,
     ScrollView,
     Modal,
     StyleSheet,
@@ -15,19 +13,17 @@ import {
     TextInput,
     TouchableOpacity,
     Pressable,
-    View } from "react-native";
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming } from "react-native-reanimated";
-import Svg, { Path } from "react-native-svg";
+    View 
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api from "../../services/api";
+import api, { googleSignIn } from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
 import { Image } from 'expo-image';
+import AuthHeader from "../../components/AuthHeader";
+import * as SecureStore from "expo-secure-store";
+
 export default function RegisterScreen() {
+  const { showNotification } = useNotification();
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,155 +33,116 @@ export default function RegisterScreen() {
   const [agreeTnc, setAgreeTnc] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const { showNotification } = useNotification();
-  // Animasi Mascot
-  const scale = useSharedValue(1);
-  React.useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 1500 }),
-        withTiming(1, { duration: 1500 }),
-      ),
-      -1,
-      true,
-    );
-  }, []);
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }] };
-  });
+
+  // Interaction states for mascot
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [activeInput, setActiveInput] = useState<string | null>(null);
+
   const handleRegister = async () => {
-    // Validasi
     if (!nama || !email || !password || !confirmPassword) {
-      return showNotification("Oops", "Semua data wajib diisi.", "error");
-    }
-    if (password.length < 8) {
-      return showNotification("Oops", "Kata sandi minimal 8 karakter.", "error");
+      showNotification("Waduh!", "Isi semua datanya dulu broskie biar bisa lanjut.", "info");
+      return;
     }
     if (password !== confirmPassword) {
-      return showNotification("Oops", "Konfirmasi kata sandi tidak sama.", "error");
+      showNotification("Waduh!", "Kata sandi sama konfirmasinya beda nih, coba cek lagi.", "info");
+      return;
     }
     if (!agreeTnc) {
-      return Alert.alert(
-        "Oops",
-        "Centang persetujuan Syarat & Ketentuan dulu ya.",
-      );
+      showNotification("Waduh!", "Centang dulu syarat & ketentuannya ya broskie.", "info");
+      return;
     }
-    setIsLoading(true);
+
     try {
-      // Dapatkan lokasi user
+      setIsLoading(true);
+      
+      let lat = null;
+      let lng = null;
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setIsLoading(false);
-        return Alert.alert(
-          "Izin Lokasi Diperlukan",
-          "TaniSync butuh lokasimu untuk menghubungkanmu dengan petani di sekitar. Aktifkan izin lokasi lalu coba lagi.",
-        );
+      if (status === "granted") {
+        let location = await Location.getCurrentPositionAsync({});
+        lat = location.coords.latitude;
+        lng = location.coords.longitude;
       }
-      let location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-      // Panggil API register
-      await api.post("/auth/register", {
+
+      const payload = {
         nama,
         email,
         password,
-        latitude,
-        longitude });
-      // Kembali ke login jika sukses
-      showNotification("Berhasil!", "Akun kamu sudah dibuat. Silakan masuk.", "success");
-      setTimeout(() => router.replace("/(auth)/login"), 1500);
-      setTimeout(() => router.replace({ pathname: "/(auth)/login", params: { isNewUser: "true" } }), 1500);
+        latitude: lat,
+        longitude: lng,
+      };
+
+      const res = await api.post("/auth/register", payload);
+      if (res.data.status === "success") {
+        router.replace("/(auth)/login");
+        showNotification("Mantap!", "Akun lu udah jadi broskie, tinggal login aja sekarang.", "success");
+      }
     } catch (error: any) {
-      const msg =
-        error.response?.data?.message ||
-        "Tidak bisa terhubung ke server. Cek koneksi internetmu.";
-      showNotification("Register Gagal", msg, "error");
+      console.error(error.response?.data || error.message);
+      showNotification("Gagal Daftar", error.response?.data?.message || "Ada yang salah pas daftar nih.", "error");
     } finally {
       setIsLoading(false);
     }
   };
-  const { width } = Dimensions.get('window');
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FBF8F0" }}>
-      {/* BACKGROUND: Giant Green Inverted Trapezoid filling the top half */}
-      <View style={{ position: 'absolute', top: 0, width: '100%', height: 300, zIndex: 0 }}>
-        <Svg height="100%" width="100%">
-          <Path 
-            d={`M 0,0 L ${width},0 L ${width - 33},250 Q ${width - 40},300 ${width - 90},300 L 90,300 Q 40,300 33,250 Z`} 
-            fill="#e9f3ee" 
-            stroke="#123924" 
-            strokeWidth="4" 
-          />
-        </Svg>
-      </View>
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+      <AuthHeader 
+        isPasswordFocused={isPasswordFocused && !showPassword}
+        title="Daftar TaniSync"
+        subtitle="Ayo mulai perjalanan bertanimu!"
+      />
 
-      {/* Floating Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.replace("/(auth)/login")}
-      >
-        <MaterialIcons name="arrow-back" size={24} color="#123924" />
-      </TouchableOpacity>
-
-      {/* MASCOT: In the middle of the green trapezoid */}
-      <View style={{ position: 'absolute', top: 90, width: '100%', alignItems: 'center', zIndex: 1 }}>
-        <Image
-          source={require("../../assets/images/icontampilanawal/seedling-ngintip.svg")}
-          style={{ width: 400, height: 400 }}
-          contentFit="contain"
-        />
-      </View>
-
-      <SafeAreaView style={{ flex: 1, zIndex: 2 }}>
-
-        {/* Fixed Header Title */}
-        <View style={styles.fixedHeader} pointerEvents="none">
-          <Text style={styles.title}>Bikin akun baru</Text>
-          <Text style={styles.subtitle}>Mulai perjalanan berkebunmu </Text>
-        </View>
+      <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false} bounces={false}>
-            
-            {/* Spacer so card starts below the absolute header */}
-            <View style={{ height: 280 }} />
-
+          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
             {/* Main Form Card */}
             <View style={styles.wallCard}>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, activeInput === 'nama' && styles.inputFocused]}
                   placeholder="Nama Lengkap"
-                  placeholderTextColor="#5C5A4F"
+                  placeholderTextColor="#8F9B94"
                   value={nama}
                   onChangeText={setNama}
-                />
-              </View>
-              
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email"
-                  placeholderTextColor="#5C5A4F"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
+                  onFocus={() => setActiveInput('nama')}
+                  onBlur={() => setActiveInput(null)}
                 />
               </View>
 
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, activeInput === 'email' && styles.inputFocused]}
+                  placeholder="Email"
+                  placeholderTextColor="#8F9B94"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onFocus={() => setActiveInput('email')}
+                  onBlur={() => setActiveInput(null)}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, activeInput === 'password' && styles.inputFocused]}
                   placeholder="Kata Sandi"
-                  placeholderTextColor="#5C5A4F"
+                  placeholderTextColor="#8F9B94"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  onFocus={() => {
+                    setActiveInput('password');
+                    setIsPasswordFocused(true);
+                  }}
+                  onBlur={() => {
+                    setActiveInput(null);
+                    setIsPasswordFocused(false);
+                  }}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
@@ -194,19 +151,27 @@ export default function RegisterScreen() {
                   <MaterialIcons
                     name={showPassword ? "visibility" : "visibility-off"}
                     size={24}
-                    color="#123924"
+                    color="#5C5A4F"
                   />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, activeInput === 'confirmPassword' && styles.inputFocused]}
                   placeholder="Konfirmasi Kata Sandi"
-                  placeholderTextColor="#5C5A4F"
+                  placeholderTextColor="#8F9B94"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
+                  onFocus={() => {
+                    setActiveInput('confirmPassword');
+                    setIsPasswordFocused(true);
+                  }}
+                  onBlur={() => {
+                    setActiveInput(null);
+                    setIsPasswordFocused(false);
+                  }}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
@@ -215,7 +180,7 @@ export default function RegisterScreen() {
                   <MaterialIcons
                     name={showConfirmPassword ? "visibility" : "visibility-off"}
                     size={24}
-                    color="#123924"
+                    color="#5C5A4F"
                   />
                 </TouchableOpacity>
               </View>
@@ -227,20 +192,23 @@ export default function RegisterScreen() {
                   onPress={() => setAgreeTnc(!agreeTnc)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.checkbox, { marginRight: 0 }, agreeTnc && styles.checkboxChecked]}>
+                  <View style={[styles.checkbox, agreeTnc && styles.checkboxChecked]}>
                     {agreeTnc && (
                       <MaterialIcons name="check" size={16} color="#FFFFFF" />
                     )}
                   </View>
                 </TouchableOpacity>
-                <Text style={[styles.checkboxText, { flex: 1, lineHeight: 18 }]}>
+                <Text style={styles.checkboxText}>
                   <Text onPress={() => setAgreeTnc(!agreeTnc)}>Saya setuju dengan </Text>
                   <Text style={styles.privacyLinkText} onPress={() => setModalVisible(true)}>Syarat & Ketentuan serta Kebijakan Privasi</Text>
                 </Text>
               </View>
 
-              <TouchableOpacity
-                style={styles.primaryButton}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && { transform: [{ scale: 0.97 }], shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 }
+                ]}
                 onPress={handleRegister}
                 disabled={isLoading}
               >
@@ -249,8 +217,45 @@ export default function RegisterScreen() {
                 ) : (
                   <Text style={styles.primaryButtonText}>Daftar</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
               
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>ATAU</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.googleButton,
+                  pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }
+                ]}
+                onPress={async () => {
+                  try {
+                    setIsLoading(true);
+                    await googleSignIn();
+                  } catch (error) {
+                    showNotification("Gagal", "Google Sign In bermasalah.", "error");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#123924" />
+                ) : (
+                  <>
+                    <Image 
+                      source={require("../../assets/images/google-logo.png")} 
+                      style={styles.googleLogo} 
+                      contentFit="contain" 
+                    />
+                    <Text style={styles.googleButtonText}>Daftar dengan Google</Text>
+                  </>
+                )}
+              </Pressable>
+
               <TouchableOpacity
                 style={styles.footerLink}
                 onPress={() => router.replace("/(auth)/login")}
@@ -263,178 +268,187 @@ export default function RegisterScreen() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-        <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      </SafeAreaView>
+
+      {/* S&K Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Kebijakan Privasi 🛡️</Text>
-            <ScrollView style={styles.modalScroll}>
-              <Text style={styles.modalText}>
-                Data pribadi dan lokasi lahan kamu dijamin <Text style={{ fontFamily: 'Nunito_800ExtraBold' }}>100% AMAN</Text> bersama TaniSync!{"\n\n"}
-                • Kami tidak menjual datamu ke pihak ketiga.{"\n"}
-                • Izin lokasi murni dipakai buat fitur Peta Wabah Hama & Cuaca Lokal.{"\n"}
-                • Password dilindungi enkripsi kelas militer.{"\n\n"}
-                Lanjutin daftar tanpa khawatir, lahanmu jadi subur, privasimu nggak hancur!
+            <Text style={styles.modalTitle}>Syarat & Ketentuan</Text>
+            <ScrollView style={{ marginVertical: 16 }}>
+              <Text style={{ fontFamily: "Nunito_500Medium", color: "#5C5A4F", lineHeight: 22 }}>
+                1. Data lokasi lu cuma disimpen buat keperluan cuaca dan komunitas, santai ga kita sebar broskie.{"\n\n"}
+                2. Jaga etika pas posting di komunitas ya.{"\n\n"}
+                3. Jangan spam panen kalo emang kaga ada tanaman.{"\n\n"}
+                4. Data login diproses pake enkripsi standar, jadi aman.
               </Text>
             </ScrollView>
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={() => setModalVisible(false)}
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && { transform: [{ scale: 0.97 }] }
+              ]}
+              onPress={() => {
+                setAgreeTnc(true);
+                setModalVisible(false);
+              }}
             >
-              <Text style={styles.primaryButtonText}>Sip, Paham!</Text>
-            </TouchableOpacity>
+              <Text style={styles.primaryButtonText}>Saya Mengerti & Setuju</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
-
-    </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#FBF8F0" },
   scrollContainer: { 
     flexGrow: 1, 
-    justifyContent: "flex-end", 
+    justifyContent: "flex-start", 
     paddingHorizontal: 24,
-    paddingBottom: 24
+    paddingBottom: 24,
+    paddingTop: 12,
+    backgroundColor: '#FBF8F1', // Smooth transition from cloud
   },
-  
-  fixedHeader: {
-    position: 'absolute',
-    top: 330, // Enough clearance from the mascot
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  headerContainer: {
-    marginTop: 220,
-    marginBottom: 32,
-    alignItems: 'center' },
-  title: {
-    fontSize: 32,
-    fontFamily: "Nunito_800ExtraBold",
-    color: "#123924",
-    marginBottom: 8,
-    textAlign: 'center' },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: "Nunito_700Bold",
-    color: "#5C5A4F",
-    textAlign: 'center' },
   wallCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    shadowColor: "#1B4332", 
+    shadowOffset: { width: 0, height: 6 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 14, 
+    elevation: 4,
     padding: 24,
     paddingTop: 32,
-    position: "relative",
-    zIndex: 2 },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
-    zIndex: 10,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 0,
-    
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FBF8F0",
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+  },
   inputContainer: { marginBottom: 16, position: "relative" },
   input: {
     height: 56,
-    borderWidth: 0,
-    
+    borderWidth: 1.5,
+    borderColor: "#CFE8D8",
     borderRadius: 30,
     paddingHorizontal: 20,
-    backgroundColor: "#FBF8F0",
+    backgroundColor: "#FFFFFF",
     fontSize: 16,
     fontFamily: "Nunito_500Medium",
-    color: "#123924" },
+    color: "#1B4332",
+  },
+  inputFocused: {
+    borderColor: "#3FA96B",
+    backgroundColor: "#FBF8F1",
+  },
   eyeIcon: { position: "absolute", right: 16, top: 16 },
   checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 24,
-    marginTop: 8 },
+  },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 8,
-    borderWidth: 0,
-    
-    backgroundColor: "#FBF8F0",
-    marginRight: 12,
-    alignItems: "center",
-    justifyContent: "center" },
-  checkboxChecked: { backgroundColor: "#3FA86B" },
-  checkboxText: {
-    fontSize: 12,
-    color: "#5C5A4F",
-    fontFamily: "Nunito_700Bold" },
-  privacyLinkText: {
-    fontSize: 12,
-    color: "#3FA86B",
-    fontFamily: "Nunito_800ExtraBold",
-    textDecorationLine: "underline" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(18, 57, 36, 0.5)',
-    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: "#CFE8D8",
+    backgroundColor: "#FFFFFF",
     alignItems: 'center',
-    padding: 24 },
-  modalContent: {
-    backgroundColor: "#FBF8F0",
-    borderRadius: 24,
-    borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
-    padding: 24,
-    width: '100%',
-    maxHeight: '70%' },
-  modalTitle: {
-    fontSize: 24,
-    fontFamily: "Nunito_800ExtraBold",
-    color: "#123924",
-    marginBottom: 16,
-    textAlign: "center" },
-  modalScroll: {
-    marginBottom: 24 },
-  modalText: {
-    fontSize: 14,
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: "#3FA96B",
+    borderColor: "#3FA96B",
+  },
+  checkboxText: {
+    flex: 1,
     fontFamily: "Nunito_500Medium",
-    color: "#123924",
-    lineHeight: 22 },
+    fontSize: 14,
+    color: "#5C5A4F",
+    lineHeight: 20,
+  },
+  privacyLinkText: {
+    color: "#3FA96B",
+    fontFamily: "Nunito_800ExtraBold",
+  },
   primaryButton: {
-    backgroundColor: "#3FA86B",
+    backgroundColor: "#3FA96B",
     height: 56,
     borderRadius: 30,
-    borderWidth: 0,
-    
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
-    marginTop: 8,
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    marginBottom: 20,
+    shadowColor: "#3FA96B", 
+    shadowOffset: { width: 0, height: 6 }, 
+    shadowOpacity: 0.2, 
+    shadowRadius: 14, 
+    elevation: 4 
+  },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Nunito_800ExtraBold" },
+    fontFamily: "Nunito_800ExtraBold" 
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 16 
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#CFE8D8' 
+  },
+  dividerText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 12,
+    color: '#8F9B94',
+    marginHorizontal: 12 
+  },
+  googleButton: {
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    height: 56,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: "#CFE8D8",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  googleLogo: {
+    width: 24,
+    height: 24,
+    marginRight: 12 
+  },
+  googleButtonText: {
+    color: "#1B4332",
+    fontSize: 16,
+    fontFamily: "Nunito_800ExtraBold" 
+  },
   footerLink: { alignItems: "center" },
   footerText: {
     color: "#5C5A4F",
-    fontSize: 14,
-    fontFamily: "Nunito_500Medium" },
-  footerTextBold: { color: "#123924", fontFamily: "Nunito_800ExtraBold" } });
+    fontSize: 15,
+    fontFamily: "Nunito_500Medium" 
+  },
+  footerTextBold: { color: "#3FA96B", fontFamily: "Nunito_800ExtraBold" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    maxHeight: '80%',
+    shadowColor: "#1B4332", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4,
+  },
+  modalTitle: {
+    fontFamily: "Nunito_800ExtraBold",
+    fontSize: 20,
+    color: "#1B4332",
+    textAlign: "center",
+  }
+});

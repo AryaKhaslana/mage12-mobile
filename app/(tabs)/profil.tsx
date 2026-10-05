@@ -14,10 +14,9 @@ export default function ProfilScreen() {
   const getRankTitle = (level: number) => {
     if (level >= 10) return "Dewa Tani ";
     if (level >= 8) return "Sultan Hidroponik ";
-    if (level >= 6) return "Master Kompos ";
     if (level >= 4) return "Juragan Panen ";
-    if (level >= 2) return "Petani Magang ";
-    return "Petani Pemula ";
+    if (level >= 2) return "Tangan Dingin ";
+    return "Petani Balkon ";
   };
   const [showAbout, setShowAbout] = React.useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);

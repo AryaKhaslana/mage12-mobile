@@ -66,7 +66,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <View style={{ flex: 1, backgroundColor: "#DFF3E6" }}>
       <AuthHeader 
         isPasswordFocused={isPasswordFocused && !showPassword}
         title="Selamat datang balik!"
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF8F1', // Smooth transition from cloud
   },
   wallCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#DFF3E6",
     borderRadius: 24,
     shadowColor: "#1B4332", 
     shadowOffset: { width: 0, height: 6 }, 
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     borderColor: "#CFE8D8",
     borderRadius: 30,
     paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#DFF3E6",
     fontSize: 16,
     fontFamily: "Nunito_500Medium",
     color: "#1B4332",
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12 
   },
   googleButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#DFF3E6",
     flexDirection: "row",
     height: 56,
     borderRadius: 30,

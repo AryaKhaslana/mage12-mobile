@@ -5,6 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Alert,
   Animated,
   Pressable,
@@ -187,6 +188,7 @@ export default function ProfilPenggunaScreen() {
 
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
   const [saved, setSaved] = useState<Record<number, boolean>>({});
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!targetUsername) return;
@@ -274,11 +276,7 @@ export default function ProfilPenggunaScreen() {
   };
 
   const handleMore = () => {
-    Alert.alert(nama, undefined, [
-      { text: "Bagikan Profil", onPress: handleShare },
-      { text: "Laporkan Pengguna", style: "destructive", onPress: () => showNotification("Terima kasih", "Laporanmu sudah kami terima", "success") },
-      { text: "Batal", style: "cancel" },
-    ]);
+    setShowMoreMenu(true);
   };
 
   const handleLike = async (postId: number) => {
@@ -536,6 +534,42 @@ export default function ProfilPenggunaScreen() {
 
         {isLoading && !profile ? <ActivityIndicator color={C.primary} style={{ marginTop: 12 }} /> : null}
       </ScrollView>
+      {/* Bottom Sheet Modal */}
+      <Modal visible={showMoreMenu} transparent animationType="fade" onRequestClose={() => setShowMoreMenu(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowMoreMenu(false)}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>{nama}</Text>
+            
+            <Pressable 
+              style={styles.sheetOption} 
+              onPress={() => {
+                setShowMoreMenu(false);
+                setTimeout(handleShare, 300);
+              }}
+            >
+              <View style={[styles.sheetIconCircle, { backgroundColor: '#E8F7EE' }]}>
+                <MaterialIcons name="share" size={24} color="#3FA86B" />
+              </View>
+              <Text style={styles.sheetOptionText}>Bagikan Profil</Text>
+            </Pressable>
+
+            <Pressable 
+              style={styles.sheetOption} 
+              onPress={() => {
+                setShowMoreMenu(false);
+                setTimeout(() => showNotification("Terima kasih", "Laporanmu sudah kami terima", "success"), 300);
+              }}
+            >
+              <View style={[styles.sheetIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                <MaterialIcons name="report-problem" size={24} color="#EF4444" />
+              </View>
+              <Text style={[styles.sheetOptionText, { color: '#EF4444' }]}>Laporkan Pengguna</Text>
+            </Pressable>
+
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -804,4 +838,56 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 60, height: 60, borderRadius: 18, backgroundColor: C.primaryLight, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   emptyTitle: { fontSize: 16, fontFamily: F.extra, color: C.ink },
   emptySub: { fontSize: 13, fontFamily: F.medium, color: C.muted, textAlign: "center", marginTop: 4 },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  sheetHandle: {
+    width: 48,
+    height: 6,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A202C',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  sheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  sheetIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  sheetOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2D3748',
+  },
 });

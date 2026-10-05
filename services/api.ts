@@ -55,7 +55,18 @@ api.interceptors.response.use(
       await SecureStore.deleteItemAsync("userToken");
       router.replace("/");
     }
-    console.error("AXIOS ERROR URL:", error.config?.url); return Promise.reject(error);
+    
+    // Improved logging to see exactly why it failed
+    console.error(
+      "AXIOS ERROR URL:", 
+      error.config?.url, 
+      "| STATUS:", 
+      error.response?.status, 
+      "| MESSAGE:", 
+      error.response?.data?.message || error.message
+    );
+    
+    return Promise.reject(error);
   },
 );
 

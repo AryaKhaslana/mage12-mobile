@@ -9,13 +9,19 @@ export default function NotifikasiScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={{ width: 40 }} />
+        <View style={{ flex: 1, alignItems: 'flex-start' }}>
+          <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+            <MaterialIcons name="arrow-back" size={20} color="#123924" />
+          </Pressable>
+        </View>
         
         <Text style={styles.headerTitle}>Notifikasi</Text>
         
-        <Pressable style={({ pressed }) => [pressed && styles.pressed]}>
-          <Text style={styles.headerAction}>Tandai Semua Dibaca</Text>
-        </Pressable>
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <Pressable style={({ pressed }) => [pressed && styles.pressed]}>
+            <Text style={styles.headerAction}>Tandai Dibaca</Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

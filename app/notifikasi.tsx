@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMyNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../services/api';
 import { getRelativeTime } from '../utils/format';
@@ -63,23 +63,27 @@ export default function NotifikasiScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={{ flex: 1, alignItems: 'flex-start' }}>
-          <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-            <MaterialIcons name="arrow-back" size={20} color="#123924" />
-          </Pressable>
-        </View>
-        
-        <Text style={styles.headerTitle}>Notifikasi</Text>
-        
-        <View style={{ flex: 1, alignItems: 'flex-end' }}>
-          <Pressable onPress={handleMarkAllRead} style={({ pressed }) => [pressed && styles.pressed]}>
-            <Text style={styles.headerAction}>Tandai Dibaca</Text>
-          </Pressable>
-        </View>
-      </View>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      
+      <Stack.Screen 
+        options={{ 
+          headerShown: true,
+          title: 'Notifikasi',
+          headerTitleStyle: { fontFamily: 'Nunito_700Bold', fontSize: 17, color: '#123924' },
+          headerStyle: { backgroundColor: '#FBF8F0' },
+          headerShadowVisible: false,
+          headerLeft: () => (
+            <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backButton, pressed && styles.pressed, { marginLeft: 16 }]}>
+              <MaterialIcons name="arrow-back" size={20} color="#123924" />
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable onPress={handleMarkAllRead} style={({ pressed }) => [pressed && styles.pressed, { marginRight: 16 }]}>
+              <Text style={styles.headerAction}>Tandai Dibaca</Text>
+            </Pressable>
+          )
+        }} 
+      />
 
       <ScrollView 
         contentContainerStyle={[styles.scrollContent, isLoading && { flex: 1, justifyContent: 'center' }]} 

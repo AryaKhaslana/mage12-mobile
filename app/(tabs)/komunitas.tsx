@@ -514,7 +514,7 @@ export default function KomunitasScreen() {
           <View style={{ flexDirection: "row", marginTop: 16, marginBottom: 20, gap: 12 }}>
             <View style={{ flex: 1, height: 52, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 16, borderRadius: 20, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4 }}>
               <MaterialIcons name="search" size={24} color="#5C5A4F" />
-              <TextInput style={{ flex: 1, marginLeft: 8, height: '100%', fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924' }} placeholder="Cari username, lokasi..." placeholderTextColor="#5C5A4F" value={searchQuery} onChangeText={setSearchQuery} />
+              <TextInput style={{ flex: 1, marginLeft: 8, height: '100%', fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924', paddingVertical: 0 }} placeholder="Cari username, lokasi..." placeholderTextColor="#5C5A4F" value={searchQuery} onChangeText={setSearchQuery} />
             </View>
             <Pressable onPress={() => setIsFilterModalVisible(true)} style={({ pressed }) => [{ backgroundColor: '#FFFFFF', width: 52, height: 52, borderRadius: 20, alignItems: 'center', justifyContent: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4 }, pressed && { opacity: 0.7 }]}>
               <MaterialIcons name="tune" size={24} color="#123924" />

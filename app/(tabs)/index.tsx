@@ -493,7 +493,7 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleLogAktivitas = async (tanamanId: number) => {
+  const handleLogAktivitas = async (tanamanId: number, plantName?: string) => {
     try {
       const response = await api.post("/logs", {
         tanamanId,
@@ -518,11 +518,7 @@ export default function DashboardScreen() {
             "success",
           );
         } else {
-          showNotification(
-            "Mantap!",
-            `+${d.expDidapat} EXP! Streak: ${d.streak} hari`,
-            "success",
-          );
+          showNotification("Mantap!", `Berhasil menyiram ${plantName || 'tanaman'}! +${d.expDidapat} EXP! Streak: ${d.streak} hari`, "success");
         }
         fetchDashboardData();
       }
@@ -632,7 +628,7 @@ export default function DashboardScreen() {
                       isWateredToday={sudahValidasiHariIni}
                       onTaskPress={() => {
                         if (isWateringTask && !sudahValidasiHariIni) {
-                          handleLogAktivitas(tanaman.id);
+                          handleLogAktivitas(tanaman.id, tanaman.nickname || tanaman.jenisTanaman);
                         } else {
                           router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } });
                         }

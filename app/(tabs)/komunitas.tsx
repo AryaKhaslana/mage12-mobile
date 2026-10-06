@@ -18,6 +18,7 @@ import {
   Text,
   TextInput,
   View,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,7 +28,7 @@ import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import {
   createCommunityPost,
-  getCommunityPosts, getMyCommunityPosts
+  getCommunityPosts, getMyCommunityPosts, toggleCommunityLike
 } from "../../services/api";
 
 const EmptyHint = ({
@@ -325,6 +326,7 @@ export default function KomunitasScreen() {
   }, [searchQuery]);
 
   const [posts, setPosts] = useState<any[]>([]);
+  const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -412,10 +414,23 @@ export default function KomunitasScreen() {
         response = await getCommunityPosts(lat, lng, pageNum, 10, debouncedSearch);
       }
 
+      const newPosts = response.data;
       if (shouldRefresh || pageNum === 1) {
-        setPosts(response.data);
+        setPosts(newPosts);
+        const newLikes: Record<number, { liked: boolean; count: number }> = {};
+        newPosts.forEach((p: any) => {
+          newLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
+        });
+        setLikes(newLikes);
       } else {
-        setPosts((prev) => [...prev, ...response.data]);
+        setPosts((prev) => [...prev, ...newPosts]);
+        setLikes((prev) => {
+          const next = { ...prev };
+          newPosts.forEach((p: any) => {
+            next[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
+          });
+          return next;
+        });
       }
 
       setHasMore(response.meta.halamanSekarang < response.meta.totalHalaman);
@@ -436,6 +451,28 @@ export default function KomunitasScreen() {
       fetchPosts(1, false);
     }, [activeTab, debouncedSearch, userFilter]),
   );
+
+  const handleLike = async (postId: number) => {
+    try {
+      setLikes((prev) => {
+        const curr = prev[postId] || { liked: false, count: 0 };
+        return {
+          ...prev,
+          [postId]: {
+            liked: !curr.liked,
+            count: curr.liked ? Math.max(0, curr.count - 1) : curr.count + 1,
+          },
+        };
+      });
+      const result = await toggleCommunityLike(postId);
+      setLikes((prev) => ({
+        ...prev,
+        [postId]: { liked: result.liked, count: result.jumlahLike },
+      }));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handlePickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -744,6 +781,7 @@ export default function KomunitasScreen() {
                   }}
                 >
                   <Pressable
+                    onPress={() => handleLike(item.id)}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
@@ -751,17 +789,18 @@ export default function KomunitasScreen() {
                     }}
                   >
                     <MaterialIcons
-                      name="favorite-border"
+                      name={likes[item.id]?.liked ? "favorite" : "favorite-border"}
                       size={24}
-                      color="#123924"
+                      color={likes[item.id]?.liked ? "#FF6B5C" : "#123924"}
                     />
                     <Text
-                      style={{ fontFamily: "Nunito_700Bold", color: "#123924" }}
+                      style={{ fontFamily: "Nunito_700Bold", color: likes[item.id]?.liked ? "#FF6B5C" : "#123924" }}
                     >
-                      0
+                      {likes[item.id]?.count ?? 0}
                     </Text>
                   </Pressable>
                   <Pressable
+                    onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: item.id } } as any)}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
@@ -776,10 +815,19 @@ export default function KomunitasScreen() {
                     <Text
                       style={{ fontFamily: "Nunito_700Bold", color: "#123924" }}
                     >
-                      0
+                      {item.jumlahKomentar ?? 0}
                     </Text>
                   </Pressable>
                   <Pressable
+                    onPress={async () => {
+                      try {
+                        await Share.share({
+                          message: `Lihat postingan ini dari ${item.author?.nama || item.user_nama || "Petani"}: ${item.judul}`,
+                        });
+                      } catch (error) {
+                        console.error(error);
+                      }
+                    }}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",

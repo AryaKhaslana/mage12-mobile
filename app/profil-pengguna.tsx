@@ -174,7 +174,7 @@ const SkeletonBlock = ({ style }: { style: any }) => {
 // ===== Screen =====
 export default function ProfilPenggunaScreen() {
   const { showNotification } = useNotification();
-  const params = useLocalSearchParams<{ userId: string; nama?: string; avatarUrl?: string; username?: string }>();
+  const params = useLocalSearchParams<{ userId: string; nama?: string; avatarUrl?: string; bannerUrl?: string; username?: string }>();
   const targetUsername = params.username;
 
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
@@ -325,7 +325,13 @@ export default function ProfilPenggunaScreen() {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[C.primary]} tintColor={C.primary} />}
       >
         {/* BANNER */}
-        <BotanicBanner />
+        {profile?.bannerUrl ? (
+          <Image source={{ uri: profile.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
+        ) : params.bannerUrl ? (
+          <Image source={{ uri: params.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
+        ) : (
+          <BotanicBanner />
+        )}
 
         {/* AVATAR + RANK BADGE */}
         <View style={styles.avatarRow}>

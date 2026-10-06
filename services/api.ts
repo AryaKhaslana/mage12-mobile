@@ -370,6 +370,7 @@ export interface PublicUserProfile {
   nama: string;
   username?: string | null;
   avatarUrl?: string | null;
+  bannerUrl?: string | null;
   bio?: string | null;
   level?: number;
   streak?: number;

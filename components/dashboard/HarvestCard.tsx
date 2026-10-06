@@ -11,7 +11,7 @@ export default function HarvestCard({ task }: { task: any }) {
         <View style={styles.iconBox}>
           <MaterialIcons name="grass" size={24} color="#3FA96B" />
         </View>
-        <Text style={styles.title}>{task.nama_tanaman}</Text>
+        <Text style={styles.title}>{task.nickname || task.jenisTanaman}</Text>
       </View>
       
       <View style={styles.daysRow}>

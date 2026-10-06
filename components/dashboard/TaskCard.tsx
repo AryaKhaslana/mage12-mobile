@@ -43,7 +43,7 @@ export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredT
         </View>
         
         <View style={styles.info}>
-          <Text style={styles.title}>{task.nama_tanaman}</Text>
+          <Text style={styles.title}>{task.nickname || task.jenisTanaman}</Text>
           <Text style={[styles.status, { color: isWateringTask && !isWateredToday ? "#FF8A65" : "#3FA96B" }]}>
             {isWateringTask ? (isWateredToday ? "Sudah disiram!" : "Perlu disiram sekarang") : "Pertumbuhan baik"}
           </Text>

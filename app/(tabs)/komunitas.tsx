@@ -341,6 +341,7 @@ export default function KomunitasScreen() {
 
 
   // Form State
+  const [tipePost, setTipePost] = useState("PROGRESS");
   const [judul, setJudul] = useState("");
   const [lokasiNama, setLokasiNama] = useState("");
   const [lokasiLat, setLokasiLat] = useState<number | null>(null);
@@ -495,7 +496,7 @@ export default function KomunitasScreen() {
       const formData = new FormData();
 
       formData.append("deskripsi", deskripsi);
-      formData.append("tipe", "PROGRESS");
+      formData.append("tipe", tipePost);
       if (judul) formData.append("judul", judul);
       if (lokasiNama) formData.append("lokasiNama", lokasiNama);
       if (lokasiLat !== null) formData.append("latitude", lokasiLat.toString());
@@ -909,7 +910,31 @@ export default function KomunitasScreen() {
               </View>
             )}
 
-            {/* 3. JUDUL POSTINGAN */}
+            {/* 3. TIPE POSTINGAN */}
+            <Text style={styles.clayLabel}>Tipe Postingan *</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+              {["PROGRESS", "TANYA", "PANEN"].map(type => (
+                <Pressable
+                  key={type}
+                  onPress={() => setTipePost(type)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: tipePost === type ? "#3FA86B" : "#E8E5DA",
+                    backgroundColor: tipePost === type ? "#E8F5E9" : "#FFFFFF",
+                    alignItems: "center"
+                  }}
+                >
+                  <Text style={{ fontFamily: "Nunito_700Bold", color: tipePost === type ? "#123924" : "#5C5A4F", fontSize: 14 }}>
+                    {type === "PROGRESS" ? "Update" : type === "TANYA" ? "Tanya" : "Panen"}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* 4. JUDUL POSTINGAN */}
             <Text style={styles.clayLabel}>Judul Postingan *</Text>
             <View style={{ marginBottom: 20 }}>
               <TextInput

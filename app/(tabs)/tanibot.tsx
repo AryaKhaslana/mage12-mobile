@@ -3,6 +3,7 @@ import { router, Stack } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as SecureStore from 'expo-secure-store';
 import { ChatMessage, getTanibotHistory, sendTanibotMessage } from '../../services/api';
 
 const getRelativeTime = (isoString: string) => {
@@ -142,7 +143,16 @@ export default function TanibotScreen() {
     }, 100);
 
     try {
-      const replyText = await sendTanibotMessage(textToSend);
+      let lat = undefined;
+      let lng = undefined;
+      const userDataStr = await SecureStore.getItemAsync("userData");
+      if (userDataStr) {
+        const user = JSON.parse(userDataStr);
+        lat = user.latitude;
+        lng = user.longitude;
+      }
+      
+      const replyText = await sendTanibotMessage(textToSend, lat, lng);
       const botMsg: ChatMessage = {
         id: Date.now() + 1,
         role: "BOT",

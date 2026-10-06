@@ -111,8 +111,15 @@ export default function EditProfilScreen() {
         } as any);
       }
 
-      await updateProfile(formData);
+      const updatedUser = await updateProfile(formData);
       
+      const cachedStr = await SecureStore.getItemAsync("userData");
+      if (cachedStr) {
+        const cached = JSON.parse(cachedStr);
+        const merged = { ...cached, ...updatedUser };
+        await SecureStore.setItemAsync("userData", JSON.stringify(merged));
+      }
+
       showNotification("Sukses", "Profil berhasil diupdate!");
       router.back();
     } catch (error: any) {

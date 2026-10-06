@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from "expo-image";
 import { router, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
-import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike } from '../../services/api';
+import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser } from '../../services/api';
 import { getRelativeTime } from "../../utils/format";
 
 // ===== Design tokens (sesuai design.md + mockup profil) =====
@@ -603,11 +603,7 @@ export default function ProfilScreen() {
               <Pressable 
                 onPress={async () => {
                   setShowLogoutConfirm(false);
-                  await SecureStore.deleteItemAsync("userToken");
-                  await SecureStore.deleteItemAsync("userData");
-                  await AsyncStorage.removeItem("dashboard_weather");
-                  await AsyncStorage.removeItem("dashboard_tanaman");
-                  router.replace("/(auth)/login");
+                  await logoutUser();
                 }}
                 style={({ pressed }) => [{ flex: 1, backgroundColor: C.coral, paddingVertical: 14, borderRadius: 100, alignItems: 'center', ...shadowSubtle }, pressed && { transform: [{ scale: 0.98 }] }]}
               >

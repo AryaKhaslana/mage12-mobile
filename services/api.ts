@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import axios from "axios";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Fix Fail-Safe URL: Jadikan production sebagai default jika env kosong
 const API_URL =
@@ -15,18 +16,18 @@ const api = axios.create({
   // agar otomatis menyesuaikan termasuk untuk FormData (multipart/form-data)
 });
 
-// Request Interceptor untuk mengirim Token
-api.interceptors.response.use(
-  (res) => res,
-  (error) => {
-    if (error.response && error.response.status === 404) {
-      throw new Error("TANI_404_URL: " + error.config.baseURL + error.config.url);
-    }
-    return Promise.reject(error);
+export const logoutUser = async () => {
+  try {
+    await SecureStore.deleteItemAsync("userToken");
+    await SecureStore.deleteItemAsync("userData");
+    await AsyncStorage.removeItem("dashboard_weather");
+    await AsyncStorage.removeItem("dashboard_tanaman");
+    await GoogleSignin.signOut().catch(() => null);
+    router.replace("/");
+  } catch (error) {
+    console.error("Logout error:", error);
   }
-);
-
-// fix token request interceptor...
+};
 
 api.interceptors.request.use(
   async (config) => {
@@ -47,13 +48,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Fix 401 Redirect Logic: Tambahkan pengecualian agar tidak nge-redirect user jika gagal login
     if (
-      error.response?.status === 401 &&
+      (error.response?.status === 401 || error.response?.status === 403) &&
       !error.config?.url?.includes("/auth/login")
     ) {
-      await SecureStore.deleteItemAsync("userToken");
-      router.replace("/");
+      await logoutUser();
     }
     
     // Improved logging to see exactly why it failed
@@ -339,8 +338,8 @@ export const toggleCommunityLike = async (id: number): Promise<{ liked: boolean;
   return response.data.data || response.data;
 };
 
-export const sendTanibotMessage = async (message: string): Promise<string> => {
-  const response = await api.post("/tanibot", { pertanyaan: message });
+export const sendTanibotMessage = async (message: string, latitude?: number, longitude?: number): Promise<string> => {
+  const response = await api.post("/tanibot", { pertanyaan: message, latitude, longitude });
   return response.data.data.jawaban;
 };
 

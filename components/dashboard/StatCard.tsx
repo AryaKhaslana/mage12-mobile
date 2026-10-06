@@ -1,9 +1,32 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { getMyNotifications } from '../../services/api';
 
 export default function StatCard({ userData, tanamanCount, onBadgePress }: { userData: any, tanamanCount: number, onBadgePress: () => void }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const fetchNotif = async () => {
+        try {
+          const res = await getMyNotifications(1, 1);
+          if (isActive) {
+            setUnreadCount(res.meta?.unreadCount || 0);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchNotif();
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
+
   return (
     <View style={styles.card}>
       <View style={styles.item}>
@@ -52,7 +75,11 @@ export default function StatCard({ userData, tanamanCount, onBadgePress }: { use
         </View>
         <View>
           <Text style={[styles.value, { fontSize: 16 }]}>Inbox</Text>
-          <Text style={styles.label}>2 Baru</Text>
+          {unreadCount > 0 ? (
+            <Text style={[styles.label, { color: '#FF6B5C', fontFamily: 'Nunito_700Bold' }]}>{unreadCount} Baru</Text>
+          ) : (
+            <Text style={styles.label}>Kosong</Text>
+          )}
         </View>
       </Pressable>
     </View>

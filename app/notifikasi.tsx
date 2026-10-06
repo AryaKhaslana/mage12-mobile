@@ -69,12 +69,13 @@ export default function NotifikasiScreen() {
         options={{ 
           headerShown: true,
           title: 'Notifikasi',
+          headerTitleAlign: 'center',
           headerTitleStyle: { fontFamily: 'Nunito_700Bold', fontSize: 17, color: '#123924' },
           headerStyle: { backgroundColor: '#FBF8F0' },
           headerShadowVisible: false,
           headerLeft: () => (
             <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backButton, pressed && styles.pressed, { marginLeft: 16 }]}>
-              <MaterialIcons name="arrow-back" size={20} color="#123924" />
+              <MaterialIcons name="arrow-back" size={24} color="#123924" />
             </Pressable>
           ),
           headerRight: () => (
@@ -150,9 +151,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',

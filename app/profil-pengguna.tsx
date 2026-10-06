@@ -484,7 +484,6 @@ export default function ProfilPenggunaScreen() {
                         <MaterialIcons name="chat-bubble-outline" size={18} color={C.muted} />
                         <Text style={styles.postActionText}>{post.jumlahKomentar ?? 0} tanggapan</Text>
                       </Pressable>
-                      </Pressable>
                     </View>
                   </View>
                 );

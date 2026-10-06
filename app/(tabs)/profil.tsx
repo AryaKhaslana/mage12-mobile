@@ -102,9 +102,9 @@ const SkeletonBlock = ({ style }: { style: any }) => {
 };
 
 const POST_BADGE: Record<string, { label: string; bg: string; fg: string; border: string }> = {
-  DISKUSI: { label: "Diskusi", bg: C.primaryLight, fg: C.primaryDark, border: C.primary },
-  TIPS: { label: "Tips & Trik", bg: C.amberLight, fg: C.amberText, border: "rgba(255,182,39,0.5)" },
-  PAMER: { label: "Pamer Kebun", bg: C.tealLight, fg: C.teal, border: "rgba(46,158,140,0.3)" },
+  pertanyaan: { label: "Diskusi", bg: C.primaryLight, fg: C.primaryDark, border: C.primary },
+  progress_update: { label: "Tips & Trik", bg: C.amberLight, fg: C.amberText, border: "rgba(255,182,39,0.5)" },
+  panen_surplus: { label: "Pamer Kebun", bg: C.tealLight, fg: C.teal, border: "rgba(46,158,140,0.3)" },
 };
 
 const EmptyState = ({ icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
@@ -145,9 +145,9 @@ export default function ProfilScreen() {
         }
         try {
           const [userRes, tanamanRes, achRes] = await Promise.all([
-            api.get("/user/me").catch(() => null),
-            api.get("/tanaman").catch(() => null),
-            getAchievements().catch(() => null)
+            api.get("/user/me").catch((err) => { console.error("Error fetch user:", err); return null; }),
+            api.get("/tanaman").catch((err) => { console.error("Error fetch tanaman:", err); return null; }),
+            getAchievements().catch((err) => { console.error("Error fetch achievements:", err); return null; })
           ]);
 
           if (isActive) {
@@ -165,12 +165,15 @@ export default function ProfilScreen() {
                   setLikes(initialLikes);
                 }
               }
+            } else {
+              Alert.alert("Gagal Memuat Profil", "Gagal memuat data profil kamu.");
             }
             if (tanamanRes?.data?.data) setTanamanList(tanamanRes.data.data);
             if (achRes) setAchievementsData(achRes);
           }
         } catch (error) {
           console.error("Gagal mengambil data profil:", error);
+          if (isActive) Alert.alert("Error", "Terjadi kesalahan saat memuat profil.");
         } finally {
           if (isActive) setIsLoading(false);
         }
@@ -411,9 +414,6 @@ export default function ProfilScreen() {
                         <MaterialIcons name="chat-bubble-outline" size={18} color={C.muted} />
                         <Text style={styles.postActionText}>{post.jumlahKomentar ?? 0} tanggapan</Text>
                       </Pressable>
-                      <Pressable onPress={() => setSaved((s) => ({ ...s, [post.id]: !s[post.id] }))} style={styles.postAction} hitSlop={8}>
-                        <MaterialIcons name={isSaved ? "bookmark" : "bookmark-border"} size={18} color={isSaved ? C.amber : C.muted} />
-                        <Text style={[styles.postActionText, isSaved && { color: C.amber }]}>Simpan</Text>
                       </Pressable>
                     </View>
                   </View>

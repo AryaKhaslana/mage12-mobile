@@ -192,6 +192,8 @@ export default function ProfilPenggunaScreen() {
       setProfile(profRes);
       setIsFollowing(!!profRes.isFollowing);
       setFollowerCount(profRes.jumlahPengikut ?? 0);
+    } else {
+      Alert.alert("Error", "Gagal memuat profil pengguna ini.");
     }
     const postList = postRes?.data ?? [];
     setPosts(postList);
@@ -378,14 +380,6 @@ export default function ProfilPenggunaScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => showNotification("Segera hadir", "Fitur pesan lagi disiapkan broskie 💬", "success")}
-            style={({ pressed }) => [styles.secondaryBtn, shadowSubtle, pressed && styles.pressed]}
-          >
-            <MaterialIcons name="chat-bubble-outline" size={18} color={C.muted} />
-            <Text style={styles.secondaryText}>Pesan</Text>
-          </Pressable>
-
-          <Pressable
             accessibilityLabel="Bagikan Profil"
             onPress={handleShare}
             style={({ pressed }) => [styles.shareBtn, shadowSubtle, pressed && styles.pressed]}
@@ -490,9 +484,6 @@ export default function ProfilPenggunaScreen() {
                         <MaterialIcons name="chat-bubble-outline" size={18} color={C.muted} />
                         <Text style={styles.postActionText}>{post.jumlahKomentar ?? 0} tanggapan</Text>
                       </Pressable>
-                      <Pressable onPress={() => setSaved((s) => ({ ...s, [post.id]: !s[post.id] }))} style={styles.postAction} hitSlop={8}>
-                        <MaterialIcons name={isSaved ? "bookmark" : "bookmark-border"} size={18} color={isSaved ? C.amber : C.muted} />
-                        <Text style={[styles.postActionText, isSaved && { color: C.amber }]}>Simpan</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -546,19 +537,6 @@ export default function ProfilPenggunaScreen() {
                 <MaterialIcons name="share" size={24} color="#3FA86B" />
               </View>
               <Text style={styles.sheetOptionText}>Bagikan Profil</Text>
-            </Pressable>
-
-            <Pressable 
-              style={styles.sheetOption} 
-              onPress={() => {
-                setShowMoreMenu(false);
-                setTimeout(() => showNotification("Terima kasih", "Laporanmu sudah kami terima", "success"), 300);
-              }}
-            >
-              <View style={[styles.sheetIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                <MaterialIcons name="report-problem" size={24} color="#EF4444" />
-              </View>
-              <Text style={[styles.sheetOptionText, { color: '#EF4444' }]}>Laporkan Pengguna</Text>
             </Pressable>
 
           </View>

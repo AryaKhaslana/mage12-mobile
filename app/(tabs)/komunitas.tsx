@@ -446,12 +446,10 @@ export default function KomunitasScreen() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      setIsLoading(true);
-      fetchPosts(1, false);
-    }, [activeTab, debouncedSearch, userFilter]),
-  );
+  useEffect(() => {
+    setIsLoading(true);
+    fetchPosts(1, false);
+  }, [activeTab, debouncedSearch, userFilter]);
 
   const handleLike = async (postId: number) => {
     try {

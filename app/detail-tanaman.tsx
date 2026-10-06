@@ -106,7 +106,7 @@ export default function DetailTanamanModal() {
       setIsEditModalVisible(false);
       fetchData(); // refetch to update UI
     } catch (e: any) {
-      Alert.alert("Gagal", e.response?.data?.message || "Gagal mengupdate tanaman.");
+      showNotification("Gagal", e.response?.data?.message || "Gagal mengupdate tanaman.", "error");
     } finally {
       setIsSavingEdit(false);
     }
@@ -124,7 +124,7 @@ export default function DetailTanamanModal() {
       setTanaman(tanamanData);
       setLogs(logsData);
     } catch (e: any) {
-      Alert.alert("Gagal", e.response?.data?.message || "Gagal memuat data tanaman");
+      showNotification("Gagal", e.response?.data?.message || "Gagal memuat data tanaman", "error");
       router.back();
     } finally {
       setIsLoading(false);
@@ -198,7 +198,7 @@ export default function DetailTanamanModal() {
       setIsHarvesting(false);
     } catch (e: any) {
       setIsHarvesting(false);
-      Alert.alert("Gagal", e.response?.data?.message || "Gagal memanen.");
+      showNotification("Gagal", e.response?.data?.message || "Gagal memanen.", "error");
     }
   };
 
@@ -208,15 +208,15 @@ export default function DetailTanamanModal() {
     try {
       const localHariKe = tanaman ? Math.floor((Date.now() - new Date(tanaman.tanggalTanam || Date.now()).getTime()) / 86400000) + 1 : 0;
       const formData = new FormData();
-      formData.append("tipePost", "panen_surplus");
+      formData.append("tipe", "PANEN");
       formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya nih bosku! `);
       
       await createCommunityPost(formData);
-      Alert.alert("Mantap!", "Raport panen lu udah mejeng di Komunitas radius 2km! ");
+      showNotification("Mantap!", "Raport panen lu udah mejeng di Komunitas radius 2km! ", "success");
       setShowCertificate(false);
       router.back();
     } catch (e: any) {
-      Alert.alert("Gagal Pamer", e.response?.data?.message || "Koneksi lagi ngambek.");
+      showNotification("Gagal Pamer", e.response?.data?.message || "Koneksi lagi ngambek.", "error");
     } finally {
       setIsPosting(false);
     }
@@ -261,7 +261,7 @@ export default function DetailTanamanModal() {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (e: any) {
-      Alert.alert("Gagal", e.response?.data?.message || "Gagal validasi");
+      showNotification("Gagal", e.response?.data?.message || "Gagal validasi", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -273,7 +273,7 @@ export default function DetailTanamanModal() {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert("Izin Kamera Ditolak", "TaniSync butuh izin kamera untuk memvalidasi tanamanmu broskie!");
+        showNotification("Izin Ditolak", "TaniSync butuh izin kamera untuk memvalidasi tanamanmu broskie!", "error");
         return;
       }
 
@@ -306,7 +306,7 @@ export default function DetailTanamanModal() {
                 setTimeout(() => setToastMessage(null), 4000);
                 fetchData();
               } catch (e: any) {
-                Alert.alert("Gagal", e.response?.data?.message || "Gagal upload foto");
+                showNotification("Gagal", e.response?.data?.message || "Gagal upload foto", "error");
               } finally {
                 setIsSubmitting(false);
               }
@@ -315,7 +315,7 @@ export default function DetailTanamanModal() {
       }
     } catch (e: any) {
       setIsSubmitting(false);
-      Alert.alert("Gagal", e?.message || "Gagal membuka kamera");
+      showNotification("Gagal", e?.message || "Gagal membuka kamera", "error");
     }
   };
 

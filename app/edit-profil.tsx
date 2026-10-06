@@ -14,8 +14,10 @@ export default function EditProfilScreen() {
   const [noHp, setNoHp] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   
   const [fotoBaru, setFotoBaru] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [bannerBaru, setBannerBaru] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -32,6 +34,7 @@ export default function EditProfilScreen() {
         setNoHp(user.noHp || '');
         setBio(user.bio || '');
         setAvatarUrl(user.avatarUrl || null);
+        setBannerUrl(user.bannerUrl || null);
       } catch (error) {
         console.error("Failed to fetch user data", error);
         Alert.alert("Error", "Gagal memuat data profil.");
@@ -48,8 +51,7 @@ export default function EditProfilScreen() {
       Alert.alert('Izin Ditolak', 'TaniSync butuh izin akses galeri buat ganti avatar broskie.');
       return;
     }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
@@ -57,6 +59,23 @@ export default function EditProfilScreen() {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setFotoBaru(result.assets[0]);
+    }
+  };
+
+  const pickBanner = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Ditolak', 'TaniSync butuh izin akses galeri buat ganti banner broskie.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7 });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setBannerBaru(result.assets[0]);
     }
   };
 
@@ -83,6 +102,14 @@ export default function EditProfilScreen() {
           type: "image/jpeg"
         } as any);
       }
+      
+      if (bannerBaru) {
+        formData.append("banner", {
+          uri: bannerBaru.uri,
+          name: "banner.jpg",
+          type: "image/jpeg"
+        } as any);
+      }
 
       await updateProfile(formData);
       
@@ -106,6 +133,7 @@ export default function EditProfilScreen() {
   }
 
   const displayAvatarUri = fotoBaru ? fotoBaru.uri : avatarUrl;
+  const displayBannerUri = bannerBaru ? bannerBaru.uri : bannerUrl;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -122,6 +150,23 @@ export default function EditProfilScreen() {
 
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
+            {/* BANNER SECTION */}
+            <View style={styles.bannerSection}>
+              <Pressable onPress={pickBanner} style={({ pressed }) => [styles.bannerContainer, pressed && { opacity: 0.8 }]}>
+                {displayBannerUri ? (
+                  <Image source={{ uri: displayBannerUri }} style={styles.bannerImage} />
+                ) : (
+                  <View style={styles.bannerPlaceholder}>
+                    <MaterialIcons name="image" size={32} color="#a09d91" />
+                  </View>
+                )}
+                <View style={styles.bannerEditBadge}>
+                  <MaterialIcons name="camera-alt" size={14} color="#FFFFFF" />
+                </View>
+              </Pressable>
+              <Text style={styles.avatarHint}>Tap untuk ganti banner</Text>
+            </View>
+
             {/* AVATAR */}
             <View style={styles.avatarSection}>
               <Pressable onPress={pickImage} style={({ pressed }) => [styles.avatarContainer, pressed && { opacity: 0.8 }]}>
@@ -239,6 +284,44 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 20,
     shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+  bannerSection: {
+    alignItems: 'center',
+    marginBottom: 24
+  },
+  bannerContainer: {
+    width: '100%',
+    height: 120,
+    borderRadius: 16,
+    backgroundColor: '#E8E5DA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden'
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
+  },
+  bannerPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#E8E5DA',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  bannerEditBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: '#123924',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF'
+  },
   avatarSection: {
     alignItems: 'center',
     marginBottom: 24 },

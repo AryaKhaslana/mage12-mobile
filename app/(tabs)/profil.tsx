@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, FlatList, StyleSheet, Text, View, Animated } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, RefreshControl, FlatList, StyleSheet, Text, View, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -123,6 +123,7 @@ export default function ProfilScreen() {
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [achievementsData, setAchievementsData] = useState<AchievementResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [showRiwayatPanen, setShowRiwayatPanen] = useState(false);
   const [isLoadingRiwayat, setIsLoadingRiwayat] = useState(false);
@@ -136,53 +137,57 @@ export default function ProfilScreen() {
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
   const [saved, setSaved] = useState<Record<number, boolean>>({});
 
+  const fetchAllData = async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else if (!userData) {
+      setIsLoading(true);
+    }
+    try {
+      const [userRes, tanamanRes, achRes] = await Promise.all([
+        api.get("/user/me").catch((err) => { console.error("Error fetch user:", err); return null; }),
+        api.get("/tanaman").catch((err) => { console.error("Error fetch tanaman:", err); return null; }),
+        getAchievements().catch((err) => { console.error("Error fetch achievements:", err); return null; })
+      ]);
+
+      if (userRes?.data?.data) {
+        setUserData(userRes.data.data);
+        const username = userRes.data.data.username;
+        if (username) {
+          const postsRes = await getUserCommunityPosts(username, 1, 20).catch(() => null);
+          if (postsRes?.data) {
+            setPosts(postsRes.data);
+            const initialLikes: Record<number, { liked: boolean; count: number }> = {};
+            postsRes.data.forEach((p: CommunityPost) => {
+              initialLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
+            });
+            setLikes(initialLikes);
+          }
+        }
+      } else {
+        if (!isRefresh) Alert.alert("Gagal Memuat Profil", "Gagal memuat data profil kamu.");
+      }
+      if (tanamanRes?.data?.data) setTanamanList(tanamanRes.data.data);
+      if (achRes) setAchievementsData(achRes);
+    } catch (error) {
+      console.error("Gagal mengambil data profil:", error);
+      Alert.alert("Error", "Terjadi kesalahan saat memuat profil.");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
-      let isActive = true;
-      const fetchData = async () => {
-        if (!userData) {
-          setIsLoading(true);
-        }
-        try {
-          const [userRes, tanamanRes, achRes] = await Promise.all([
-            api.get("/user/me").catch((err) => { console.error("Error fetch user:", err); return null; }),
-            api.get("/tanaman").catch((err) => { console.error("Error fetch tanaman:", err); return null; }),
-            getAchievements().catch((err) => { console.error("Error fetch achievements:", err); return null; })
-          ]);
-
-          if (isActive) {
-            if (userRes?.data?.data) {
-              setUserData(userRes.data.data);
-              const username = userRes.data.data.username;
-              if (username) {
-                const postsRes = await getUserCommunityPosts(username, 1, 20).catch(() => null);
-                if (isActive && postsRes?.data) {
-                  setPosts(postsRes.data);
-                  const initialLikes: Record<number, { liked: boolean; count: number }> = {};
-                  postsRes.data.forEach((p: CommunityPost) => {
-                    initialLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
-                  });
-                  setLikes(initialLikes);
-                }
-              }
-            } else {
-              Alert.alert("Gagal Memuat Profil", "Gagal memuat data profil kamu.");
-            }
-            if (tanamanRes?.data?.data) setTanamanList(tanamanRes.data.data);
-            if (achRes) setAchievementsData(achRes);
-          }
-        } catch (error) {
-          console.error("Gagal mengambil data profil:", error);
-          if (isActive) Alert.alert("Error", "Terjadi kesalahan saat memuat profil.");
-        } finally {
-          if (isActive) setIsLoading(false);
-        }
-      };
-
-      fetchData();
-      return () => { isActive = false; };
+      fetchAllData();
+      return () => {};
     }, [])
   );
+
+  const onRefresh = () => {
+    fetchAllData(true);
+  };
 
   const handleLike = async (postId: number) => {
     try {
@@ -257,7 +262,11 @@ export default function ProfilScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[C.primary]} tintColor={C.primary} />}
+      >
         {/* BANNER */}
         {userData?.bannerUrl ? (
           <Image source={{ uri: userData.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />

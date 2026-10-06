@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
-import { ChatMessage, getTanibotHistory, sendTanibotMessage } from '../../services/api';
+import { ChatMessage, getTanibotHistory, clearTanibotHistory, sendTanibotMessage } from '../../services/api';
 
 const getRelativeTime = (isoString: string) => {
   const date = new Date(isoString);
@@ -120,6 +120,29 @@ export default function TanibotScreen() {
     };
     fetchHistory();
   }, []);
+  const handleClearHistory = () => {
+    if (messages.length === 0) return;
+    Alert.alert(
+      "Bersihkan Obrolan",
+      "Yakin mau hapus semua riwayat chat dengan TaniBot?",
+      [
+        { text: "Batal", style: "cancel" },
+        { 
+          text: "Hapus", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearTanibotHistory();
+              setMessages([]);
+            } catch (e) {
+              console.error(e);
+              Alert.alert("Gagal", "Gagal menghapus riwayat chat.");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleSend = async () => {
     if (!inputText.trim() || isSending) return;
@@ -204,6 +227,13 @@ export default function TanibotScreen() {
             <Text style={styles.headerTitle}>TaniBot </Text>
             <Text style={styles.headerSubtitle}>Asisten tanamanmu</Text>
           </View>
+
+          <Pressable 
+            onPress={handleClearHistory}
+            style={({ pressed }) => [{ padding: 8 }, pressed && { opacity: 0.7 }]}
+          >
+            <MaterialIcons name="delete-sweep" size={24} color="#FF6B5C" />
+          </Pressable>
         </View>
 
         {/* CHAT AREA */}
@@ -293,6 +323,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
     

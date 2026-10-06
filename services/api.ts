@@ -421,3 +421,8 @@ export const markAllNotificationsAsRead = async () => {
   const response = await api.put('/notifications/read-all');
   return response.data;
 };
+
+export const clearTanibotHistory = async (): Promise<any> => {
+  const res = await api.delete("/tanibot/history");
+  return res.data;
+};

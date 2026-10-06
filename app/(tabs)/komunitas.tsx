@@ -382,12 +382,16 @@ export default function KomunitasScreen() {
 
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const fetchPosts = async (pageNum = 1, shouldRefresh = false) => {
     try {
       setIsError(false);
       if (shouldRefresh) setIsRefreshing(true);
       const userDataStr = await SecureStore.getItemAsync("userData");
+      if (userDataStr) {
+        setCurrentUser(JSON.parse(userDataStr));
+      }
       let lat = undefined;
       let lng = undefined;
 
@@ -450,6 +454,29 @@ export default function KomunitasScreen() {
     setIsLoading(true);
     fetchPosts(1, false);
   }, [activeTab, debouncedSearch, userFilter]);
+
+  const handleDeletePost = (postId: number) => {
+    Alert.alert(
+      "Hapus Postingan",
+      "Yakin mau hapus postingan ini? Nggak bisa dikembalikan lho.",
+      [
+        { text: "Batal", style: "cancel" },
+        { 
+          text: "Hapus", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteCommunityPost(postId);
+              showNotification("Berhasil", "Postingan dihapus.", "success");
+              fetchPosts(1, true);
+            } catch (e: any) {
+              showNotification("Gagal", "Gagal hapus postingan", "error");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleLike = async (postId: number) => {
     try {
@@ -690,29 +717,39 @@ export default function KomunitasScreen() {
                   </View>
                   </Pressable>
 
-                  <View
-                    style={{
-                      backgroundColor: badgeBg,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: badgeColor,
-                      shadowColor: badgeColor,
-                      shadowOffset: { width: 2, height: 2 },
-                      shadowOpacity: 1,
-                      shadowRadius: 0,
-                    }}
-                  >
-                    <Text
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    {(item.author?.id === currentUser?.id || item.user_id === currentUser?.id || item.userId === currentUser?.id) && (
+                      <Pressable
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        onPress={() => handleDeletePost(item.id)}
+                      >
+                        <MaterialIcons name="delete-outline" size={20} color="#FF6B5C" />
+                      </Pressable>
+                    )}
+                    <View
                       style={{
-                        fontFamily: "Nunito_800ExtraBold",
-                        fontSize: 10,
-                        color: badgeColor,
+                        backgroundColor: badgeBg,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: badgeColor,
+                        shadowColor: badgeColor,
+                        shadowOffset: { width: 2, height: 2 },
+                        shadowOpacity: 1,
+                        shadowRadius: 0,
                       }}
                     >
-                      {labelTipe}
-                    </Text>
+                      <Text
+                        style={{
+                          fontFamily: "Nunito_800ExtraBold",
+                          fontSize: 10,
+                          color: badgeColor,
+                        }}
+                      >
+                        {labelTipe}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 

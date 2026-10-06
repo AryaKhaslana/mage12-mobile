@@ -267,9 +267,7 @@ export default function ProfilPenggunaScreen() {
     } catch {}
   };
 
-  const handleMore = () => {
-    setShowMoreMenu(true);
-  };
+
 
   const handleLike = async (postId: number) => {
     const prev = likes[postId] ?? { liked: false, count: 0 };
@@ -300,13 +298,7 @@ export default function ProfilPenggunaScreen() {
           <Text style={styles.appBarOverline}>PROFIL PETANI</Text>
           <Text style={styles.appBarTitle} numberOfLines={1}>{handle}</Text>
         </View>
-        <Pressable
-          accessibilityLabel="Opsi Lainnya"
-          onPress={handleMore}
-          style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-        >
-          <MaterialIcons name="more-vert" size={20} color={C.ink} />
-        </Pressable>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
@@ -518,29 +510,7 @@ export default function ProfilPenggunaScreen() {
 
         {isLoading && !profile ? <ActivityIndicator color={C.primary} style={{ marginTop: 12 }} /> : null}
       </ScrollView>
-      {/* Bottom Sheet Modal */}
-      <Modal visible={showMoreMenu} transparent animationType="fade" onRequestClose={() => setShowMoreMenu(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setShowMoreMenu(false)}>
-          <View style={styles.bottomSheet}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>{nama}</Text>
-            
-            <Pressable 
-              style={styles.sheetOption} 
-              onPress={() => {
-                setShowMoreMenu(false);
-                setTimeout(handleShare, 300);
-              }}
-            >
-              <View style={[styles.sheetIconCircle, { backgroundColor: '#E8F7EE' }]}>
-                <MaterialIcons name="share" size={24} color="#3FA86B" />
-              </View>
-              <Text style={styles.sheetOptionText}>Bagikan Profil</Text>
-            </Pressable>
 
-          </View>
-        </Pressable>
-      </Modal>
     </SafeAreaView>
   );
 }

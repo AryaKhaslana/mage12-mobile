@@ -376,9 +376,9 @@ const styles = StyleSheet.create({
     color: '#123924',
     marginBottom: 8 },
   inputField: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0,
-    
+    backgroundColor: '#FBF8F0',
+    borderWidth: 1,
+    borderColor: '#E8E5DA',
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,

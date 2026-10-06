@@ -11,7 +11,7 @@ import {
   Animated,
   FlatList,
   Image,
-  Modal,
+  Alert, Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -28,7 +28,7 @@ import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import {
   createCommunityPost,
-  getCommunityPosts, getMyCommunityPosts, toggleCommunityLike
+  getCommunityPosts, getMyCommunityPosts, toggleCommunityLike, deleteCommunityPost
 } from "../../services/api";
 
 const EmptyHint = ({
@@ -490,7 +490,7 @@ export default function KomunitasScreen() {
           },
         };
       });
-      const result = await toggleCommunityLike(postId);
+      const result = await toggleCommunityLike, deleteCommunityPost(postId);
       setLikes((prev) => ({
         ...prev,
         [postId]: { liked: result.liked, count: result.jumlahLike },

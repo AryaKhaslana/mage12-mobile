@@ -604,7 +604,12 @@ export default function DashboardScreen() {
               onPress={() => setShowGamification(true)} 
             />
 
-            {/* 3. Tugas Hari Ini */}
+            
+            {/* 5. Info Peta Wabah (Dipindah ke atas) */}
+            <View style={{ paddingHorizontal: 24, marginTop: 8 }}>
+              <InfoCard onPress={() => router.push("/peta-hama" as any)} />
+            </View>
+{/* 3. Tugas Hari Ini */}
             <View style={{ paddingHorizontal: 24, marginTop: 32 }} ref={step2Ref}>
               <Text style={{ fontSize: 18, fontFamily: 'Nunito_800ExtraBold', color: '#1B4332', marginBottom: 16 }}>Hari ini</Text>
               
@@ -652,11 +657,6 @@ export default function DashboardScreen() {
                 </ScrollView>
               </View>
             )}
-
-            {/* 5. Info Peta Wabah */}
-            <View style={{ paddingHorizontal: 24, marginTop: 8 }}>
-              <InfoCard onPress={() => router.push("/peta-hama" as any)} />
-            </View>
           </>
         )}
       </ScrollView>

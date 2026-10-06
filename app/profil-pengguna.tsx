@@ -96,19 +96,6 @@ const formatCount = (n: number) => {
   return String(n);
 };
 
-const getRelativeTime = (iso: string) => {
-  const date = new Date(iso);
-  const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
-  if (diffMins < 60) return `${Math.max(1, diffMins)} menit yang lalu`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} jam yang lalu`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1)
-    return `Kemarin • ${date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`;
-  if (diffDays < 7) return `${diffDays} hari yang lalu`;
-  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-};
-
 const POST_BADGE: Record<string, { label: string; bg: string; fg: string; border: string }> = {
   progress_update: { label: "Update Kebun", bg: C.tealLight, fg: C.teal, border: "rgba(46,158,140,0.3)" },
   panen_surplus: { label: "Galeri Panen", bg: C.amberLight, fg: C.amberText, border: "rgba(255,182,39,0.6)" },

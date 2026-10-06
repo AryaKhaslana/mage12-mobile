@@ -161,11 +161,15 @@ export default function TanibotScreen() {
       };
       setMessages(prev => [...prev, botMsg]);
     } catch (e: any) {
-      if (e.response?.status === 429) {
-        Alert.alert("Santai Dulu Broskie", "TaniBot butuh istirahat sebentar  Coba lagi dalam beberapa menit.");
-      } else {
-        Alert.alert("Gagal", e.response?.data?.message || "Gagal mengirim pesan.");
-      }
+      const errorMsg: ChatMessage = {
+        id: Date.now() + 1,
+        role: "BOT",
+        message: e.response?.status === 429 
+          ? "Waduh, aku lagi ngos-ngosan nih (terlalu banyak pesan). Kasih aku nafas sekitar 15 menit ya broskie! 😴" 
+          : (e.response?.data?.message || "Duh, koneksiku ke server lagi gangguan nih. Coba lagi nanti ya! 🔌"),
+        createdAt: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsSending(false);
       setTimeout(() => {

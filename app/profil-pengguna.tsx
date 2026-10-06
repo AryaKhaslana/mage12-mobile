@@ -1,3 +1,4 @@
+import { getRelativeTime } from "../utils/format";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";

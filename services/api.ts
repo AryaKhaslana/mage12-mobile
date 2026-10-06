@@ -404,3 +404,21 @@ export const toggleFollowUser = async (userId: number): Promise<{ following: boo
   const response = await api.post(`/user/${userId}/follow`);
   return response.data.data ?? response.data;
 };
+
+/** GET /notifications -> ambil daftar notifikasi user */
+export const getMyNotifications = async (page: number = 1, limit: number = 20) => {
+  const response = await api.get('/notifications', { params: { page, limit } });
+  return response.data as { meta?: any; data: any[] };
+};
+
+/** PUT /notifications/:id/read -> tandai notifikasi dibaca */
+export const markNotificationAsRead = async (id: number) => {
+  const response = await api.put(`/notifications/${id}/read`);
+  return response.data;
+};
+
+/** PUT /notifications/read-all -> tandai semua dibaca */
+export const markAllNotificationsAsRead = async () => {
+  const response = await api.put('/notifications/read-all');
+  return response.data;
+};

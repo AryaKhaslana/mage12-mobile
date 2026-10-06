@@ -330,6 +330,7 @@ export default function KomunitasScreen() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [activeTab, setActiveTab] = useState<"terbaru" | "terdekat">("terbaru");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -381,6 +382,7 @@ export default function KomunitasScreen() {
 
   const fetchPosts = async (pageNum = 1, shouldRefresh = false) => {
     try {
+      setIsError(false);
       if (shouldRefresh) setIsRefreshing(true);
       const userDataStr = await SecureStore.getItemAsync("userData");
       let lat = undefined;
@@ -420,6 +422,7 @@ export default function KomunitasScreen() {
       setPage(pageNum);
     } catch (error) {
       console.error(error);
+      setIsError(true);
       showNotification("Error", "Gagal memuat feed", "error");
     } finally {
       setIsLoading(false);
@@ -524,7 +527,7 @@ export default function KomunitasScreen() {
 
         <FlatList
           data={posts}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
           contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
@@ -536,11 +539,26 @@ export default function KomunitasScreen() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
-            <EmptyHint
-              icon="groups"
-              title="Postingan tidak ditemukan"
-              subtitle="Coba cari dengan kata kunci lain."
-            />
+            isLoading ? (
+              <View style={{ paddingVertical: 40, alignItems: "center" }}>
+                <ActivityIndicator size="large" color="#3FA86B" />
+                <Text style={{ marginTop: 12, fontFamily: "Nunito_500Medium", color: "#5C5A4F" }}>Memuat postingan...</Text>
+              </View>
+            ) : isError ? (
+              <EmptyHint
+                icon="wifi-off"
+                title="Tidak ada koneksi internet"
+                subtitle="Periksa koneksi internetmu lalu coba lagi."
+                ctaText="Coba Lagi"
+                onCtaPress={handleRefresh}
+              />
+            ) : (
+              <EmptyHint
+                icon="groups"
+                title="Postingan tidak ditemukan"
+                subtitle="Coba cari dengan kata kunci lain."
+              />
+            )
           }
           renderItem={({ item }: { item: any }) => {
             let badgeBg = "#E8E5DA";

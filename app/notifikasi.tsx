@@ -68,7 +68,7 @@ export default function NotifikasiScreen() {
       <Stack.Screen 
         options={{ 
           headerShown: true,
-          title: 'Notifikasi',
+          title: 'Inbox',
           headerTitleAlign: 'center',
           headerTitleStyle: { fontFamily: 'Nunito_700Bold', fontSize: 17, color: '#123924' },
           headerStyle: { backgroundColor: '#FBF8F0' },

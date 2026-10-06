@@ -200,7 +200,7 @@ export default function EditProfilScreen() {
                 value={nama}
                 onChangeText={setNama}
                 placeholder="Masukkan nama"
-                placeholderTextColor="#5C5A4F"
+                placeholderTextColor="#9CA3AF"
               />
             </View>
 
@@ -211,7 +211,7 @@ export default function EditProfilScreen() {
                 value={username}
                 onChangeText={setUsername}
                 placeholder="Masukkan username"
-                placeholderTextColor="#5C5A4F"
+                placeholderTextColor="#9CA3AF"
                 autoCapitalize="none"
               />
             </View>
@@ -223,7 +223,7 @@ export default function EditProfilScreen() {
                 value={noHp}
                 onChangeText={setNoHp}
                 placeholder="08xxxxxxxxxx"
-                placeholderTextColor="#5C5A4F"
+                placeholderTextColor="#9CA3AF"
                 keyboardType="phone-pad"
               />
             </View>
@@ -235,7 +235,7 @@ export default function EditProfilScreen() {
                 value={bio}
                 onChangeText={setBio}
                 placeholder="Ceritakan sedikit tentang dirimu..."
-                placeholderTextColor="#5C5A4F"
+                placeholderTextColor="#9CA3AF"
                 multiline
                 textAlignVertical="top"
               />

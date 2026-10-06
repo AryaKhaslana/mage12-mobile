@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
 
-export default function TaskCard({ task, onTaskPress, isWateringTask }: { task: any, onTaskPress: () => void, isWateringTask: boolean }) {
+export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredToday }: { task: any, onTaskPress: () => void, isWateringTask: boolean, isWateredToday?: boolean }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
@@ -38,20 +38,24 @@ export default function TaskCard({ task, onTaskPress, isWateringTask }: { task: 
         ]} 
         onPress={handlePress}
       >
-        <View style={[styles.iconBox, { backgroundColor: isWateringTask ? '#FFECE8' : '#E5F5EB' }]}>
-          <MaterialIcons name={isWateringTask ? "water-drop" : "eco"} size={28} color={isWateringTask ? "#FF8A65" : "#3FA96B"} />
+        <View style={[styles.iconBox, { backgroundColor: isWateringTask && !isWateredToday ? '#FFECE8' : '#E5F5EB' }]}>
+          <MaterialIcons name={isWateringTask ? "water-drop" : "eco"} size={28} color={isWateringTask && !isWateredToday ? "#FF8A65" : "#3FA96B"} />
         </View>
         
         <View style={styles.info}>
           <Text style={styles.title}>{task.nama_tanaman}</Text>
-          <Text style={[styles.status, { color: isWateringTask ? "#FF8A65" : "#3FA96B" }]}>
-            {isWateringTask ? "Perlu disiram sekarang" : "Pertumbuhan baik"}
+          <Text style={[styles.status, { color: isWateringTask && !isWateredToday ? "#FF8A65" : "#3FA96B" }]}>
+            {isWateringTask ? (isWateredToday ? "Sudah disiram!" : "Perlu disiram sekarang") : "Pertumbuhan baik"}
           </Text>
         </View>
 
         {isWateringTask && (
-          <View style={styles.checkbox}>
-            <View style={styles.checkboxInner} />
+          <View style={[styles.checkbox, isWateredToday && { borderColor: '#3FA96B', backgroundColor: '#3FA96B' }]}>
+            {isWateredToday ? (
+              <MaterialIcons name="check" size={24} color="#FFFFFF" />
+            ) : (
+              <View style={styles.checkboxInner} />
+            )}
           </View>
         )}
       </Pressable>

@@ -540,11 +540,8 @@ export default function DashboardScreen() {
 
   const reminders = [...tanamanList]
     .filter((t) => {
-      const sudahValidasiHariIni =
-        t.logTerakhir &&
-        new Date(t.logTerakhir.createdAt).toDateString() ===
-          new Date().toDateString();
-      if (t.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni)
+      // Keep watering task in the list even if validated today
+      if (t.statusPenyiraman === "PERLU_SIRAM")
         return true;
       if ((t.sisaHariPanen ?? 999) <= 7) return true;
       return false;
@@ -625,15 +622,16 @@ export default function DashboardScreen() {
               ) : (
                 reminders.map((tanaman) => {
                   const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-                  const isWateringTask = tanaman.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
+                  const isWateringTask = tanaman.statusPenyiraman === "PERLU_SIRAM";
 
                   return (
                     <TaskCard 
                       key={tanaman.id}
                       task={tanaman}
                       isWateringTask={isWateringTask}
+                      isWateredToday={sudahValidasiHariIni}
                       onTaskPress={() => {
-                        if (isWateringTask) {
+                        if (isWateringTask && !sudahValidasiHariIni) {
                           handleLogAktivitas(tanaman.id);
                         } else {
                           router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } });

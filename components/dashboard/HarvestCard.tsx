@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function HarvestCard({ task }: { task: any }) {
-  const progress = task.sisaHariPanen ? Math.max(0, 1 - (task.sisaHariPanen / 30)) : 0; // Assuming 30 days total for visual
+  const progress = task.sisaHariPanen ? Math.max(0, 1 - (task.sisaHariPanen / (task.daysToHarvest || 30))) : 0;
   
   return (
     <View style={styles.card}>

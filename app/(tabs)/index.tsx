@@ -261,45 +261,51 @@ export default function DashboardScreen() {
         ];
 
         Promise.all(measurePromises).then((results) => {
-          if (results.every(r => r !== null)) {
-            clearInterval(interval);
-            const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
-            const tabBarHeight = 64 + insets.bottom;
+          clearInterval(interval);
+          const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
+          const tabBarHeight = 64 + insets.bottom;
 
-            const steps: CoachMarkStep[] = [
-              {
-                rect: { x: results[0].x, y: results[0].y, width: results[0].w, height: results[0].h },
-                title: "Streak Belajar",
-                description: "Lihat seberapa konsisten kamu merawat tanaman tiap harinya. Pertahankan streak-mu!",
-                borderRadius: 24 },
-              {
-                rect: { x: results[1].x, y: results[1].y, width: results[1].w, height: results[1].h },
-                title: "Tugas Hari Ini",
-                description: "Semua tanaman yang butuh perhatianmu hari ini akan muncul di sini.",
-                borderRadius: 24 },
-              {
-                rect: { x: results[2].x, y: results[2].y, width: results[2].w, height: results[2].h },
-                title: "Tandai Selesai",
-                description: "Tekan tombol ini setelah menyiram tanaman untuk mencatat log dan dapatkan EXP!",
-                borderRadius: 16, // Or whatever the checkbox radius is
+          const allSteps = [
+            {
+              rect: results[0] ? { x: results[0].x, y: results[0].y, width: results[0].w, height: results[0].h } : null,
+              title: "Streak Belajar",
+              description: "Lihat seberapa konsisten kamu merawat tanaman tiap harinya. Pertahankan streak-mu!",
+              borderRadius: 24 
+            },
+            {
+              rect: results[1] ? { x: results[1].x, y: results[1].y, width: results[1].w, height: results[1].h } : null,
+              title: "Tugas Hari Ini",
+              description: "Semua tanaman yang butuh perhatianmu hari ini akan muncul di sini.",
+              borderRadius: 24 
+            },
+            {
+              rect: results[2] ? { x: results[2].x, y: results[2].y, width: results[2].w, height: results[2].h } : null,
+              title: tanamanList.length === 0 ? "Mulai Bertani" : "Tandai Selesai",
+              description: tanamanList.length === 0 ? "Tambahkan tanaman pertamamu lewat menu di bawah nanti ya!" : "Tekan tombol ini setelah menyiram tanaman untuk mencatat log dan dapatkan EXP!",
+              borderRadius: 24,
+            },
+            {
+              rect: results[3] ? { x: results[3].x, y: results[3].y, width: results[3].w, height: results[3].h } : null,
+              title: "Panen Terdekat",
+              description: "Pantau tanaman mana yang udah mau panen biar nggak kelewat.",
+              borderRadius: 24 
+            },
+            {
+              rect: { 
+                x: 0, 
+                y: windowHeight - tabBarHeight, 
+                width: windowWidth, 
+                height: tabBarHeight 
               },
-              {
-                rect: { x: results[3].x, y: results[3].y, width: results[3].w, height: results[3].h },
-                title: "Kebunku",
-                description: "Lihat koleksi semua tanamanmu dan pantau statusnya di sini.",
-                borderRadius: 24 },
-              {
-                rect: { 
-                  x: 0, 
-                  y: windowHeight - tabBarHeight, 
-                  width: windowWidth, 
-                  height: tabBarHeight 
-                },
-                title: "Navigasi Utama",
-                description: "Pindah ke halaman lain seperti Tanaman, ChatBot, atau Komunitas lewat menu ini.",
-                borderRadius: 0 },
-            ];
-            setTutorialSteps(steps);
+              title: "Navigasi Utama",
+              description: "Pindah ke halaman lain seperti Tambah Tanaman, ChatBot, atau Komunitas lewat menu ini.",
+              borderRadius: 0 
+            },
+          ];
+
+          const validSteps = allSteps.filter(s => s.rect !== null);
+          if (validSteps.length > 0) {
+            setTutorialSteps(validSteps as CoachMarkStep[]);
             setShowTutorial(true);
             setNeedsTutorial(false); // Stop trying
           }
@@ -449,6 +455,10 @@ export default function DashboardScreen() {
           SecureStore.setItemAsync("userData", JSON.stringify(merged)).catch(console.error);
           return merged;
         });
+
+        if (!meRes.data.data.username) {
+          setShowProfilePopup(true);
+        }
       }
       if (tanamanRes?.data?.data) {
         setTanamanList(tanamanRes.data.data);
@@ -599,10 +609,12 @@ export default function DashboardScreen() {
             </View>
 
             {/* Streak Hero Card (Restored) */}
-            <HeroCard 
-              streak={userData?.streak || 0} 
-              onPress={() => setShowGamification(true)} 
-            />
+            <View ref={step1Ref}>
+              <HeroCard 
+                streak={userData?.streak || 0} 
+                onPress={() => setShowGamification(true)} 
+              />
+            </View>
 
             
             {/* 5. Info Peta Wabah (Dipindah ke atas) */}
@@ -646,7 +658,7 @@ export default function DashboardScreen() {
 
             {/* 4. Panen Terdekat */}
             {upcomingHarvests.length > 0 && (
-              <View style={{ marginTop: 24, paddingLeft: 24 }}>
+              <View style={{ marginTop: 24, paddingLeft: 24 }} ref={step4Ref}>
                 <Text style={{ fontSize: 18, fontFamily: 'Nunito_800ExtraBold', color: '#1B4332', marginBottom: 16 }}>Panen Terdekat</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 24, paddingBottom: 16 }}>
                   {upcomingHarvests.map(tanaman => (

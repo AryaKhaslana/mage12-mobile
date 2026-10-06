@@ -490,7 +490,7 @@ export default function KomunitasScreen() {
           },
         };
       });
-      const result = await toggleCommunityLike, deleteCommunityPost(postId);
+      const result = await toggleCommunityLike(postId);
       setLikes((prev) => ({
         ...prev,
         [postId]: { liked: result.liked, count: result.jumlahLike },

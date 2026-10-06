@@ -693,7 +693,7 @@ export default function ProfilScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: C.bg },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 64 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 120 },
   pressed: { backgroundColor: C.container, transform: [{ scale: 0.95 }] },
 
   // App bar

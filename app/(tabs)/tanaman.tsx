@@ -115,7 +115,7 @@ const BouncingFAB = ({ onPress, style, children }: any) => {
 export default function TanamanScreen() {
   const { showNotification } = useNotification();
   const [activeFilter, setActiveFilter] = useState("Semua");
-  const filters = ["Semua", "Perlu Disiram"];
+  const filters = ["Semua", "Perlu Disiram", "Sudah Disiram"];
   const [tanamanList, setTanamanList] = useState<TanamanDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -194,8 +194,13 @@ export default function TanamanScreen() {
 
 
   const filteredList = tanamanList.filter((tanaman) => {
+    const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+    
     if (activeFilter === "Perlu Disiram")
-      return tanaman.statusPenyiraman === "PERLU_SIRAM";
+      return tanaman.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
+    if (activeFilter === "Sudah Disiram")
+      return tanaman.statusPenyiraman === "SUDAH_DISIRAM" || sudahValidasiHariIni;
+    
     return true;
   });
 
@@ -204,36 +209,34 @@ export default function TanamanScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Tanaman Kamu</Text>
       </View>
-      <FadeInSlideUp delay={0}>
-        <View style={styles.filterSection}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterScroll}
-            contentContainerStyle={styles.filterScrollContent}
-          >
-            {filters.map((filter) => (
-              <Pressable
-                key={filter}
-                style={({ pressed }) => [
-                  styles.filterChip,
-                  activeFilter === filter ? styles.filterChipActive : styles.filterChipInactive,
-                  pressed && { opacity: 0.8 },
+      <View style={styles.filterSection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
+          contentContainerStyle={styles.filterScrollContent}
+        >
+          {filters.map((filter) => (
+            <Pressable
+              key={filter}
+              style={({ pressed }) => [
+                styles.filterChip,
+                activeFilter === filter ? styles.filterChipActive : styles.filterChipInactive,
+                pressed && { opacity: 0.8 },
+              ]}
+              onPress={() => setActiveFilter(filter)}
+            >
+              <Text style={[
+                  styles.filterChipText,
+                  activeFilter === filter ? styles.filterChipTextActive : styles.filterChipTextInactive,
                 ]}
-                onPress={() => setActiveFilter(filter)}
               >
-                <Text style={[
-                    styles.filterChipText,
-                    activeFilter === filter ? styles.filterChipTextActive : styles.filterChipTextInactive,
-                  ]}
-                >
-                  {filter}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      </FadeInSlideUp>
+                {filter}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
     </>
   );
 

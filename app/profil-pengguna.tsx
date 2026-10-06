@@ -313,13 +313,22 @@ export default function ProfilPenggunaScreen() {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[C.primary]} tintColor={C.primary} />}
       >
         {/* BANNER */}
-        {profile?.bannerUrl ? (
-          <Image source={{ uri: profile.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
-        ) : params.bannerUrl ? (
-          <Image source={{ uri: params.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
-        ) : (
-          <BotanicBanner />
-        )}
+        <View style={{ position: "relative" }}>
+          {profile?.bannerUrl ? (
+            <Image source={{ uri: profile.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
+          ) : params.bannerUrl ? (
+            <Image source={{ uri: params.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
+          ) : (
+            <BotanicBanner />
+          )}
+          
+          {streak > 0 && (
+            <View style={[styles.smallStreakBadge, shadowSubtle]}>
+              <MaterialIcons name="local-fire-department" size={12} color={C.ink} />
+              <Text style={styles.smallStreakText}>{streak} streak</Text>
+            </View>
+          )}
+        </View>
 
         {/* AVATAR + RANK BADGE */}
         <View style={styles.avatarRow}>
@@ -403,24 +412,7 @@ export default function ProfilPenggunaScreen() {
           </View>
         </View>
 
-        {/* STREAK CARD (hero clay) */}
-        <View style={[styles.streakCard, shadowCard]}>
-          <View style={styles.streakBlob} />
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14, flex: 1 }}>
-            <View style={styles.streakIcon}>
-              <MaterialIcons name="local-fire-department" size={24} color={C.amber} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.streakOverline}>RAWAT KONSISTEN</Text>
-              <Text style={styles.streakTitle} numberOfLines={1}>
-                {streak > 0 ? `Streak ${streak} Hari Tanpa Henti 🔥` : "Belum ada streak aktif"}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.streakPill}>
-            <Text style={styles.streakPillText}>{streak > 0 ? "Aktif" : "Istirahat"}</Text>
-          </View>
-        </View>
+
 
         {/* SEGMENTED TABS */}
         <View style={styles.tabs}>
@@ -619,6 +611,8 @@ const styles = StyleSheet.create({
 
   // Banner + avatar
   banner: { width: "100%", height: 128, borderRadius: 20, overflow: "hidden", backgroundColor: C.primaryDark },
+  smallStreakBadge: { position: "absolute", bottom: 12, right: 12, flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 4 },
+  smallStreakText: { fontSize: 12, fontFamily: F.bold, color: C.ink },
   avatarRow: { marginTop: -48, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", paddingHorizontal: 8 },
   avatarFrame: {
     width: 96,
@@ -744,7 +738,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  streakOverline: { fontSize: 11, fontFamily: F.extra, color: C.amber, letterSpacing: 1 },
+  streakOverline: { fontSize: 11, fontFamily: F.extra, color: "#FFFFFF", letterSpacing: 1, opacity: 0.9 },
   streakTitle: { fontSize: 14, fontFamily: F.bold, color: "#FFFFFF", marginTop: 1 },
   streakPill: {
     paddingHorizontal: 12,

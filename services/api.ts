@@ -426,3 +426,25 @@ export const clearTanibotHistory = async (): Promise<any> => {
   const res = await api.delete("/tanibot/history");
   return res.data;
 };
+
+/** GET /user/:id/followers -> daftar pengikut */
+export const getUserFollowers = async (userId: number): Promise<PublicUserProfile[]> => {
+  try {
+    const response = await api.get(`/user/${userId}/followers`);
+    return response.data.data ?? response.data ?? [];
+  } catch (error) {
+    console.log("Error get followers:", error);
+    return [];
+  }
+};
+
+/** GET /user/:id/following -> daftar diikuti */
+export const getUserFollowing = async (userId: number): Promise<PublicUserProfile[]> => {
+  try {
+    const response = await api.get(`/user/${userId}/following`);
+    return response.data.data ?? response.data ?? [];
+  } catch (error) {
+    console.log("Error get following:", error);
+    return [];
+  }
+};

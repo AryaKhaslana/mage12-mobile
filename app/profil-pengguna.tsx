@@ -387,15 +387,21 @@ export default function ProfilPenggunaScreen() {
             <Text style={styles.statLabel}>Tanaman</Text>
           </View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <Pressable 
+            style={styles.statItem}
+            onPress={() => profile?.id && router.push({ pathname: "/koneksi", params: { userId: profile.id, username: handle, initialTab: "followers" } } as any)}
+          >
             <Text style={[styles.statValue, { color: C.primary }]}>{formatCount(followerCount)}</Text>
             <Text style={styles.statLabel}>Pengikut</Text>
-          </View>
+          </Pressable>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <Pressable 
+            style={styles.statItem}
+            onPress={() => profile?.id && router.push({ pathname: "/koneksi", params: { userId: profile.id, username: handle, initialTab: "following" } } as any)}
+          >
             <Text style={styles.statValue}>{formatCount(mengikutiCount)}</Text>
             <Text style={styles.statLabel}>Mengikuti</Text>
-          </View>
+          </Pressable>
         </View>
 
 

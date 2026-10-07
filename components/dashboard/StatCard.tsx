@@ -4,7 +4,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { getMyNotifications } from '../../services/api';
 
-export default function StatCard({ userData, tanamanCount, onBadgePress }: { userData: any, tanamanCount: number, onBadgePress: () => void }) {
+export default function StatCard({ userData, tanamanCount, onBadgePress, onTanamanPress, onStreakPress }: { userData: any, tanamanCount: number, onBadgePress: () => void, onTanamanPress?: () => void, onStreakPress?: () => void }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useFocusEffect(
@@ -29,7 +29,7 @@ export default function StatCard({ userData, tanamanCount, onBadgePress }: { use
 
   return (
     <View style={styles.card}>
-      <View style={styles.item}>
+      <Pressable style={styles.item} onPress={onTanamanPress}>
         <View style={[styles.iconBox, { backgroundColor: '#E5F5EB' }]}>
           <MaterialIcons name="eco" size={24} color="#3FA86B" />
         </View>
@@ -37,19 +37,19 @@ export default function StatCard({ userData, tanamanCount, onBadgePress }: { use
           <Text style={styles.value}>{tanamanCount}</Text>
           <Text style={styles.label}>Tanaman</Text>
         </View>
-      </View>
+      </Pressable>
       
       <View style={styles.divider} />
       
       <View style={styles.item}>
-        <View style={[styles.iconBox, { backgroundColor: '#FFF0ED' }]}>
+        <Pressable style={[styles.iconBox, { backgroundColor: '#FFF0ED' }]} onPress={onStreakPress}>
           <MaterialIcons name="local-fire-department" size={24} color="#FF6B5C" />
-        </View>
+        </Pressable>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View>
+          <Pressable onPress={onStreakPress}>
             <Text style={styles.value}>{userData?.streak || 0}</Text>
             <Text style={styles.label}>Streak</Text>
-          </View>
+          </Pressable>
           
           {/* Badge Streak Freeze */}
           {(userData?.pelindung_streak !== undefined && userData.pelindung_streak > 0) && (

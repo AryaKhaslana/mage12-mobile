@@ -1,9 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useEffect } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View, Pressable } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const SCENE_HEIGHT = 280;
@@ -14,6 +15,7 @@ interface FarmerSceneProps {
   weatherCondition: string;
   temperature: number;
   farmerState: 'needsWatering' | 'allClear' | 'raining';
+  onProfilePress?: () => void;
 }
 
 export default function FarmerScene({
@@ -21,6 +23,7 @@ export default function FarmerScene({
   avatarUrl,
   weatherCondition,
   temperature,
+  onProfilePress,
 }: FarmerSceneProps) {
   const cloudOffset = useSharedValue(0);
 
@@ -66,24 +69,24 @@ export default function FarmerScene({
   const renderWeather = () => {
     if (weatherCondition?.toLowerCase().includes('hujan')) {
       return (
-        <View style={styles.weatherBox}>
+        <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
           <Feather name="cloud-rain" size={16} color="#4A90E2" />
           <Text style={styles.tempText}>{temperature}°C</Text>
-        </View>
+        </Pressable>
       );
     } else if (weatherCondition?.toLowerCase().includes('berawan')) {
       return (
-        <View style={styles.weatherBox}>
+        <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
           <Feather name="cloud" size={16} color="#8F9B94" />
           <Text style={styles.tempText}>{temperature}°C</Text>
-        </View>
+        </Pressable>
       );
     }
     return (
-      <View style={styles.weatherBox}>
+      <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
         <Feather name={isNight ? "moon" : "sun"} size={16} color={isNight ? "#90A4AE" : "#FFB627"} />
         <Text style={styles.tempText}>{temperature}°C</Text>
-      </View>
+      </Pressable>
     );
   };
 
@@ -200,7 +203,7 @@ export default function FarmerScene({
 
       {/* Top Bar (Greeting & Weather) */}
       <View style={styles.topBar}>
-        <View style={styles.greetingWrapper}>
+        <Pressable onPress={onProfilePress} style={styles.greetingWrapper}>
           <View style={styles.avatar}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%', borderRadius: 20 }} contentFit="cover" />
@@ -211,7 +214,7 @@ export default function FarmerScene({
           <Text style={[styles.greetingText, isNight && { color: '#FFFFFF' }]} numberOfLines={1}>
             {greeting}, {firstName}!
           </Text>
-        </View>
+        </Pressable>
         {renderWeather()}
       </View>
 

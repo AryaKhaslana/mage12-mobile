@@ -320,15 +320,21 @@ export default function ProfilScreen() {
             <Text style={styles.statLabel}>Tanaman</Text>
           </View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <Pressable 
+            style={styles.statItem} 
+            onPress={() => router.push({ pathname: "/koneksi", params: { userId: userData?.id, username: username || nameFallback, initialTab: "followers" } } as any)}
+          >
             <Text style={[styles.statValue, { color: C.primary }]}>{followerCount}</Text>
             <Text style={styles.statLabel}>Pengikut</Text>
-          </View>
+          </Pressable>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <Pressable 
+            style={styles.statItem}
+            onPress={() => router.push({ pathname: "/koneksi", params: { userId: userData?.id, username: username || nameFallback, initialTab: "following" } } as any)}
+          >
             <Text style={styles.statValue}>{mengikutiCount}</Text>
             <Text style={styles.statLabel}>Mengikuti</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* STREAK CARD */}

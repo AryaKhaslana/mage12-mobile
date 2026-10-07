@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -10,23 +10,7 @@ import Animated, {
   withTiming,
   Easing
 } from 'react-native-reanimated';
-
-// 1. STRUKTUR DATA DUMMY
-const WEATHER_DATA = {
-  city: "Sidoarjo",
-  temp: 32,
-  condition: "Cerah Berawan",
-  pop: 60, // Probability of Precipitation
-  humidity: 75,
-  windSpeed: 5.2,
-  uvi: 6
-};
-
-const FORECAST_DATA = [
-  { id: '1', day: 'Kamis', temp: 30, pop: 70, icon: 'rainy-outline' },
-  { id: '2', day: 'Jumat', temp: 32, pop: 20, icon: 'partly-sunny-outline' },
-  { id: '3', day: 'Sabtu', temp: 33, pop: 10, icon: 'sunny-outline' },
-];
+import api from '../services/api';
 
 // Colors dari design.md
 const COLORS = {
@@ -44,10 +28,27 @@ const COLORS = {
 };
 
 export default function CuacaScreen() {
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Animasi Mascot (Floating)
   const translateY = useSharedValue(0);
 
   useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const response = await api.get('/weather/today');
+        if (response.data?.status === 'success') {
+          setWeatherData(response.data.data);
+        }
+      } catch (error) {
+        console.error("Gagal load cuaca:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchWeather();
+
     translateY.value = withRepeat(
       withSequence(
         withTiming(-10, { duration: 750, easing: Easing.inOut(Easing.ease) }),
@@ -64,6 +65,14 @@ export default function CuacaScreen() {
       transform: [{ translateY: translateY.value }]
     };
   });
+
+  if (isLoading || !weatherData) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.neutral }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -88,12 +97,12 @@ export default function CuacaScreen() {
         <View style={styles.headerContainer}>
           <View style={styles.locationRow}>
             <Ionicons name="location" size={24} color={COLORS.coral} />
-            <Text style={styles.cityName}>{WEATHER_DATA.city}</Text>
+            <Text style={styles.cityName}>{weatherData.city}</Text>
           </View>
           <View style={styles.tempContainer}>
-            <Text style={styles.temperature}>{WEATHER_DATA.temp}°</Text>
+            <Text style={styles.temperature}>{weatherData.suhu}°</Text>
             <View style={styles.conditionBadge}>
-              <Text style={styles.conditionText}>{WEATHER_DATA.condition}</Text>
+              <Text style={styles.conditionText}>{weatherData.kondisi}</Text>
             </View>
           </View>
         </View>
@@ -109,16 +118,16 @@ export default function CuacaScreen() {
         {/* 3. KARTU KEPUTUSAN SIRAM (Action Card) */}
         <View style={[
           styles.actionCard, 
-          { backgroundColor: WEATHER_DATA.pop >= 40 ? COLORS.coral : COLORS.primary }
+          { backgroundColor: weatherData.pop >= 40 ? COLORS.coral : COLORS.primary }
         ]}>
           <View style={styles.actionIconContainer}>
-            <Text style={styles.actionIcon}>{WEATHER_DATA.pop >= 40 ? '🚫💧' : '💧'}</Text>
+            <Text style={styles.actionIcon}>{weatherData.pop >= 40 ? '🚫💧' : '💧'}</Text>
           </View>
           <View style={styles.actionTextContainer}>
-            <Text style={[styles.actionTitle, { color: WEATHER_DATA.pop >= 40 ? COLORS.surface : COLORS.onPrimary }]}>
-              {WEATHER_DATA.pop >= 40 ? "Tunda Siram Hari Ini!" : "Waktunya Menyiram!"}
+            <Text style={[styles.actionTitle, { color: weatherData.pop >= 40 ? COLORS.surface : COLORS.onPrimary }]}>
+              {weatherData.pop >= 40 ? "Tunda Siram Hari Ini!" : "Waktunya Menyiram!"}
             </Text>
-            {WEATHER_DATA.pop >= 40 && (
+            {weatherData.pop >= 40 && (
               <Text style={styles.actionSubtext}>
                 Cuaca diprediksi hujan, cegah akar busuk!
               </Text>
@@ -134,7 +143,7 @@ export default function CuacaScreen() {
             <View style={[styles.metricIconBox, { backgroundColor: '#E3F2FD' }]}>
               <Ionicons name="rainy" size={24} color="#1E88E5" />
             </View>
-            <Text style={styles.metricValue}>{WEATHER_DATA.pop}%</Text>
+            <Text style={styles.metricValue}>{weatherData.pop}%</Text>
             <Text style={styles.metricLabel}>Peluang Hujan</Text>
           </View>
 
@@ -143,7 +152,7 @@ export default function CuacaScreen() {
             <View style={[styles.metricIconBox, { backgroundColor: '#E0F7FA' }]}>
               <Ionicons name="water" size={24} color="#00ACC1" />
             </View>
-            <Text style={styles.metricValue}>{WEATHER_DATA.humidity}%</Text>
+            <Text style={styles.metricValue}>{weatherData.humidity}%</Text>
             <Text style={styles.metricLabel}>Kelembaban</Text>
           </View>
 
@@ -152,7 +161,7 @@ export default function CuacaScreen() {
             <View style={[styles.metricIconBox, { backgroundColor: '#F3E5F5' }]}>
               <Ionicons name="leaf" size={24} color="#8E24AA" />
             </View>
-            <Text style={styles.metricValue}>{WEATHER_DATA.windSpeed} m/s</Text>
+            <Text style={styles.metricValue}>{weatherData.windSpeed} m/s</Text>
             <Text style={styles.metricLabel}>Kecepatan Angin</Text>
           </View>
 
@@ -161,7 +170,7 @@ export default function CuacaScreen() {
             <View style={[styles.metricIconBox, { backgroundColor: '#FFF3E0' }]}>
               <Ionicons name="sunny" size={24} color="#F4511E" />
             </View>
-            <Text style={styles.metricValue}>{WEATHER_DATA.uvi}</Text>
+            <Text style={styles.metricValue}>{weatherData.uvi}</Text>
             <Text style={styles.metricLabel}>Indeks UV</Text>
           </View>
         </View>
@@ -169,7 +178,7 @@ export default function CuacaScreen() {
         {/* 5. PRAKIRAAN 3 HARI KE DEPAN */}
         <Text style={styles.sectionTitle}>Prakiraan 3 Hari</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.forecastScroll}>
-          {FORECAST_DATA.map((item) => (
+          {(weatherData.forecast3Days || []).map((item) => (
             <View key={item.id} style={styles.forecastCard}>
               <Text style={styles.forecastDay}>{item.day}</Text>
               <Ionicons name={item.icon as any} size={32} color={COLORS.ink} style={styles.forecastIcon} />

@@ -597,14 +597,16 @@ export default function DashboardScreen() {
               weatherCondition={weather?.kondisi || 'CERAH'}
               temperature={weather?.suhu ? Math.round(weather.suhu) : 28}
               farmerState={farmerState}
+              onProfilePress={() => router.push('/(tabs)/profil')}
             />
 
-            {/* 2. Stat Card (Overlaps Scene) */}
             <View style={{ zIndex: 10 }}>
               <StatCard 
                 userData={userData} 
                 tanamanCount={tanamanList.length} 
                 onBadgePress={() => setShowBadgeInfo(true)} 
+                onTanamanPress={() => router.push('/(tabs)/tanaman')}
+                onStreakPress={() => setShowGamification(true)}
               />
             </View>
 

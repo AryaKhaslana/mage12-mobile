@@ -718,14 +718,6 @@ export default function KomunitasScreen() {
                   </Pressable>
 
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    {(item.author?.id === currentUser?.id || item.user_id === currentUser?.id || item.userId === currentUser?.id) && (
-                      <Pressable
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        onPress={() => handleDeletePost(item.id)}
-                      >
-                        <MaterialIcons name="delete-outline" size={20} color="#FF6B5C" />
-                      </Pressable>
-                    )}
                     <View
                       style={{
                         backgroundColor: badgeBg,
@@ -812,10 +804,11 @@ export default function KomunitasScreen() {
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 16,
+                    justifyContent: "space-between",
                     marginTop: 4,
                   }}
                 >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
                   <Pressable
                     onPress={() => handleLike(item.id)}
                     style={{
@@ -872,6 +865,16 @@ export default function KomunitasScreen() {
                   >
                     <MaterialIcons name="share" size={24} color="#123924" />
                   </Pressable>
+                  </View>
+
+                  {(item.author?.id === currentUser?.id || item.user_id === currentUser?.id || item.userId === currentUser?.id) && (
+                    <Pressable
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      onPress={() => handleDeletePost(item.id)}
+                    >
+                      <MaterialIcons name="delete-outline" size={24} color="#FF6B5C" />
+                    </Pressable>
+                  )}
                 </View>
               </View>
             );

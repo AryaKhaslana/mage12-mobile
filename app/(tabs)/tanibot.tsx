@@ -106,7 +106,7 @@ export default function TanibotScreen() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await getTanibotHistory(1, 100);
+        const res = await getTanibotHistory(1, 30);
         // The endpoint returns messages sorted newest to oldest? Usually history is newest first, or oldest first.
         // Wait, "urut terlama→terbaru" was specified in the prompt:
         // "GET /api/tanibot/history?page=1&limit=20 -> ... urut terlama->terbaru"
@@ -247,8 +247,8 @@ export default function TanibotScreen() {
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={{ padding: 20 }}
               keyboardShouldPersistTaps="handled"
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-              onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+              onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
               ListEmptyComponent={
                 <View>
                   <View style={styles.welcomeContainer}>

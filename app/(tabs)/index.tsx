@@ -504,6 +504,18 @@ export default function DashboardScreen() {
   };
 
   const handleLogAktivitas = async (tanamanId: number, plantName?: string) => {
+    // Optimistic UI Update: Langsung centang hijau di frontend biar kerasa instan!
+    setTanamanList(prev => prev.map(t => {
+      if (t.id === tanamanId) {
+        return {
+          ...t,
+          statusPenyiraman: 'SUDAH_DISIRAM',
+          logTerakhir: { createdAt: new Date().toISOString() }
+        };
+      }
+      return t;
+    }));
+
     try {
       const response = await api.post("/logs", {
         tanamanId,
@@ -530,6 +542,7 @@ export default function DashboardScreen() {
         } else {
           showNotification("Mantap!", `Berhasil menyiram ${plantName || 'tanaman'}! +${d.expDidapat} EXP! Streak: ${d.streak} hari`, "success");
         }
+        // fetchDashboardData berjalan di background tanpa blocking UI
         fetchDashboardData();
       }
     } catch (error: any) {
@@ -539,6 +552,8 @@ export default function DashboardScreen() {
         error.response?.data?.message || "Terjadi kesalahan.",
         "error",
       );
+      // Revert state if failed (trigger refresh)
+      fetchDashboardData();
     }
   };
 
@@ -546,23 +561,24 @@ export default function DashboardScreen() {
 
   const reminders = [...tanamanList]
     .filter((t) => {
-      // Keep watering task in the list even if validated today
-      if (t.statusPenyiraman === "PERLU_SIRAM")
+      // Keep watering task in the list if it needs watering or was watered today
+      const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+      if (t.statusPenyiraman === "PERLU_SIRAM" || sudahValidasiHariIni)
         return true;
       if ((t.sisaHariPanen ?? 999) <= 7) return true;
       return false;
     })
     .sort((a, b) => {
-      if (
-        a.statusPenyiraman === "PERLU_SIRAM" &&
-        b.statusPenyiraman !== "PERLU_SIRAM"
-      )
-        return -1;
-      if (
-        a.statusPenyiraman !== "PERLU_SIRAM" &&
-        b.statusPenyiraman === "PERLU_SIRAM"
-      )
-        return 1;
+      const aSudahValidasi = a.logTerakhir && new Date(a.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+      const bSudahValidasi = b.logTerakhir && new Date(b.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+      
+      // Order: needs watering -> watered today -> harvest soon
+      if (a.statusPenyiraman === "PERLU_SIRAM" && b.statusPenyiraman !== "PERLU_SIRAM") return -1;
+      if (a.statusPenyiraman !== "PERLU_SIRAM" && b.statusPenyiraman === "PERLU_SIRAM") return 1;
+      
+      if (aSudahValidasi && !bSudahValidasi) return -1;
+      if (!aSudahValidasi && bSudahValidasi) return 1;
+
       return (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999);
     });
 
@@ -637,7 +653,7 @@ export default function DashboardScreen() {
               ) : (
                 reminders.map((tanaman) => {
                   const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-                  const isWateringTask = tanaman.statusPenyiraman === "PERLU_SIRAM";
+                  const isWateringTask = tanaman.statusPenyiraman === "PERLU_SIRAM" || sudahValidasiHariIni;
 
                   return (
                     <TaskCard 

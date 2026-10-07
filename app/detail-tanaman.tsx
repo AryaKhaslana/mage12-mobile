@@ -242,6 +242,14 @@ export default function DetailTanamanModal() {
 
   const handleValidasiButton = async () => {
     if (isSubmitting) return;
+    
+    // Optimistic UI Update: Langsung ubah state lokal biar tombolnya instan berubah
+    setTanaman((prev: any) => prev ? {
+      ...prev,
+      statusPenyiraman: 'SUDAH_DISIRAM',
+      logTerakhir: { createdAt: new Date().toISOString() }
+    } : prev);
+
     setIsSubmitting(true);
     try {
       const res = await createLog({ tanamanId, tipeValidasi: "button_only" });
@@ -259,9 +267,13 @@ export default function DetailTanamanModal() {
         await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
       }
       setTimeout(() => setToastMessage(null), 4000);
+      
+      // Update background data
       fetchData();
     } catch (e: any) {
       showNotification("Gagal", e.response?.data?.message || "Gagal validasi", "error");
+      // Revert state if failed
+      fetchData();
     } finally {
       setIsSubmitting(false);
     }

@@ -42,6 +42,7 @@ export default function RootLayout() {
         <Stack.Screen name="pusat-bantuan" options={{ headerShown: false }} />
         <Stack.Screen name="profil-pengguna" options={{ headerShown: false }} />
         <Stack.Screen name="notifikasi" options={{ headerShown: false }} />
+        <Stack.Screen name="cuaca" options={{ headerShown: false, presentation: 'modal' }} />
       </Stack>
 
       {/* Kunci status bar HP ke mode gelap karena background aplikasi kita terang */}

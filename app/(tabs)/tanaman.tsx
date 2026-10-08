@@ -197,9 +197,9 @@ export default function TanamanScreen() {
     const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
     
     if (activeFilter === "Perlu Disiram")
-      return tanaman.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
+      return tanaman.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
     if (activeFilter === "Sudah Disiram")
-      return tanaman.statusPenyiraman === "SUDAH_DISIRAM" || sudahValidasiHariIni;
+      return sudahValidasiHariIni;
     
     return true;
   });

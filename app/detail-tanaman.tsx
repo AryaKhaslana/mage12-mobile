@@ -501,7 +501,7 @@ export default function DetailTanamanModal() {
               Penyiraman ditunda karena sistem mendeteksi hujan lebat hari ini! 🌧️ Streak kamu aman!
             </Text>
           ) : (
-            tanaman.statusPenyiraman !== "SUDAH_DISIRAM" && (
+            true && (
               <View style={styles.actionRow}>
                 <TouchableOpacity style={[styles.actionBtn, styles.btnWhite]} onPress={handleValidasiButton} disabled={isSubmitting}>
                   {isSubmitting ? <ActivityIndicator color="#123924" /> : <Text style={styles.btnWhiteText}>Konfirmasi{`\n`}Disiram</Text>}

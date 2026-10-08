@@ -46,6 +46,7 @@ export default function CuacaScreen() {
   if (isLoading || !weatherData) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.neutral }}>
+        <Stack.Screen options={{ headerShown: false }} />
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );

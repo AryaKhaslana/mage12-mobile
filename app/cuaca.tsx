@@ -53,18 +53,12 @@ export default function CuacaScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          headerShown: true,
-          headerTransparent: true,
-          headerTitle: "",
-          headerLeft: () => (
-            <Pressable onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color={COLORS.ink} />
-            </Pressable>
-          )
-        }} 
-      />
+      <Stack.Screen options={{ headerShown: false }} />
+      
+      {/* CUSTOM BACK BUTTON */}
+      <Pressable onPress={() => router.back()} style={styles.absoluteBackButton}>
+        <Ionicons name="arrow-back" size={24} color={COLORS.ink} />
+      </Pressable>
       
       {/* 1. WEATHER SCENE BACKGROUND */}
       <WeatherScene weatherCondition={weatherData.kondisi} isNight={new Date().getHours() > 18 || new Date().getHours() < 6} />
@@ -162,18 +156,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.neutral,
   },
-  backButton: {
-    marginLeft: 16,
+  absoluteBackButton: {
+    position: 'absolute',
+    top: 48,
+    left: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.8)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 99,
   },
+
   headerContainer: {
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: 80,
     zIndex: 10,
   },
   cityName: {
@@ -213,7 +211,7 @@ const styles = StyleSheet.create({
   bottomSheet: {
     flex: 1,
     backgroundColor: '#FBF8F1',
-    marginTop: 60,
+    marginTop: 80,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     shadowColor: '#000',

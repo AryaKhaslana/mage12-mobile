@@ -71,21 +71,21 @@ export default function FarmerScene({
       return (
         <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
           <Feather name="cloud-rain" size={16} color="#4A90E2" />
-          <Text style={styles.tempText}>{temperature}°C</Text>
+          <Text style={styles.tempText}>Cuaca: {temperature}°C</Text>
         </Pressable>
       );
     } else if (weatherCondition?.toLowerCase().includes('berawan')) {
       return (
         <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
           <Feather name="cloud" size={16} color="#8F9B94" />
-          <Text style={styles.tempText}>{temperature}°C</Text>
+          <Text style={styles.tempText}>Cuaca: {temperature}°C</Text>
         </Pressable>
       );
     }
     return (
       <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
         <Feather name={isNight ? "moon" : "sun"} size={16} color={isNight ? "#90A4AE" : "#FFB627"} />
-        <Text style={styles.tempText}>{temperature}°C</Text>
+        <Text style={styles.tempText}>Cuaca: {temperature}°C</Text>
       </Pressable>
     );
   };
@@ -289,11 +289,18 @@ const styles = StyleSheet.create({
   weatherBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+    shadowColor: '#1B4332',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F3E5F5'
   },
   tempText: {
     fontFamily: 'Nunito_700Bold',

@@ -563,8 +563,9 @@ export default function DashboardScreen() {
     .filter((t) => {
       // Keep watering task in the list if it needs watering or was watered today
       const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-      if (t.statusPenyiraman === "PERLU_SIRAM" || sudahValidasiHariIni)
-        return true;
+      // Selalu tampilkan plant sebagai task nyiram tiap hari KECUALI kalau statusnya DITUNDA_HUJAN (dan belum disiram hari ini)
+      if (t.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni) return true;
+      
       if ((t.sisaHariPanen ?? 999) <= 7) return true;
       return false;
     })
@@ -588,7 +589,7 @@ export default function DashboardScreen() {
   
   const hasWateringTask = reminders.some(t => {
       const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-      return t.statusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
+      return t.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
   });
   const farmerState = weather?.kondisi === "HUJAN" || weather?.prediksiHujanHariIni ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
 
@@ -653,7 +654,8 @@ export default function DashboardScreen() {
               ) : (
                 reminders.map((tanaman) => {
                   const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-                  const isWateringTask = tanaman.statusPenyiraman === "PERLU_SIRAM" || sudahValidasiHariIni;
+                  // Task penyiraman aktif tiap hari, kecuali kalau ditunda hujan
+                  const isWateringTask = tanaman.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni;
 
                   return (
                     <TaskCard 

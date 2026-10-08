@@ -133,7 +133,7 @@ export default function CuacaScreen() {
           {/* 3 Day Forecast */}
           <Text style={styles.sectionTitle}>Prakiraan 5 Hari</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.forecastScroll}>
-            {(weatherData.forecast5Days || []).map((item: any) => (
+            {(weatherData.forecast5Days || weatherData.forecast3Days || []).map((item: any) => (
               <View key={item.id} style={styles.forecastCard}>
                 <Text style={styles.forecastDay}>{item.day}</Text>
                 <Ionicons name={item.icon as any} size={32} color={COLORS.ink} style={styles.forecastIcon} />

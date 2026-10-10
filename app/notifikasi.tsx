@@ -15,43 +15,7 @@ export default function NotifikasiScreen() {
   const fetchNotifs = async () => {
     try {
       const res = await getMyNotifications(1, 50);
-      let data = res.data || [];
-      if (data.length === 0) {
-        data = [
-          {
-            id: 9901,
-            type: 'WATERING',
-            title: 'Pengingat Penyiraman',
-            message: 'Waktunya menyiram tanaman Tomat-mu! Jangan biarkan dia kehausan.',
-            createdAt: new Date().toISOString(),
-            isRead: false
-          },
-          {
-            id: 9902,
-            type: 'SOCIAL',
-            title: 'Pengikut Baru',
-            message: '@budi mulai mengikuti kamu. Cek kebunnya sekarang!',
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            isRead: false
-          },
-          {
-            id: 9903,
-            type: 'SOCIAL',
-            title: 'Komentar Baru',
-            message: '@joko mengomentari postinganmu: "Wah subur banget tanamannya!"',
-            createdAt: new Date(Date.now() - 7200000).toISOString(),
-            isRead: false
-          },
-          {
-            id: 9904,
-            type: 'SOCIAL',
-            title: 'Suka Postingan',
-            message: '@siti menyukai update kebun kamu.',
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            isRead: true
-          }
-        ];
-      }
+      const data = res.data || [];
       setNotifications(data);
       setUnreadCount(data.filter((n: any) => !n.isRead).length);
     } catch (error) {

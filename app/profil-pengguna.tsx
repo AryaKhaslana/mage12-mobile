@@ -162,8 +162,8 @@ const SkeletonBlock = ({ style }: { style: any }) => {
 // ===== Screen =====
 export default function ProfilPenggunaScreen() {
   const { showNotification } = useNotification();
-  const params = useLocalSearchParams<{ userId: string; nama?: string; avatarUrl?: string; bannerUrl?: string; username?: string }>();
-  const targetUsername = params.username;
+  const params = useLocalSearchParams<{ userId?: string; nama?: string; avatarUrl?: string; bannerUrl?: string; username?: string }>();
+  const targetIdentifier = params.username || params.userId;
 
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -181,44 +181,61 @@ export default function ProfilPenggunaScreen() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const fetchAll = useCallback(async () => {
-    if (!targetUsername) return;
-    const [profRes, postRes, plantRes] = await Promise.all([
-      getPublicUserProfile(targetUsername).catch(() => null),
-      getUserCommunityPosts(targetUsername, 1, 20).catch(() => null),
-      getUserPublicTanaman(targetUsername).catch(() => null),
-    ]);
-
-    if (profRes) {
-      setProfile(profRes);
-      setIsFollowing(!!profRes.isFollowing);
-      setFollowerCount(profRes.jumlahPengikut ?? 0);
-    } else {
-      Alert.alert("Error", "Gagal memuat profil pengguna ini.");
+    if (!targetIdentifier) {
+      setIsLoading(false);
+      return;
     }
-    const postList = postRes?.data ?? [];
-    setPosts(postList);
-    setLikes(
-      Object.fromEntries(postList.map((p) => [p.id, { liked: !!p.isLiked, count: p.jumlahLike ?? 0 }])),
-    );
-    if (plantRes) setPlants(plantRes);
-  }, [targetUsername]);
+    try {
+      const [profRes, postRes, plantRes] = await Promise.all([
+        getPublicUserProfile(targetIdentifier).catch(() => null),
+        getUserCommunityPosts(targetIdentifier, 1, 20).catch(() => null),
+        getUserPublicTanaman(targetIdentifier).catch(() => null),
+      ]);
+
+      if (profRes) {
+        setProfile(profRes);
+        setIsFollowing(!!profRes.isFollowing);
+        setFollowerCount(profRes.jumlahPengikut ?? 0);
+      }
+      const postList = postRes?.data ?? [];
+      setPosts(postList);
+      setLikes(
+        Object.fromEntries(postList.map((p) => [p.id, { liked: !!p.isLiked, count: p.jumlahLike ?? 0 }])),
+      );
+      if (plantRes) setPlants(plantRes);
+    } catch (e) {
+      console.error("Error fetching user profile:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [targetIdentifier]);
 
   useEffect(() => {
-    // Kalau yang dibuka ternyata profil sendiri, arahkan ke tab Profil
+    let isMounted = true;
     (async () => {
       try {
         const stored = await SecureStore.getItemAsync("userData");
         const me = stored ? JSON.parse(stored) : null;
-        if (me?.username && me.username === targetUsername) {
+        if (
+          (me?.username && targetIdentifier && me.username === targetIdentifier) ||
+          (me?.id && targetIdentifier && String(me.id) === targetIdentifier)
+        ) {
           router.replace("/(tabs)/profil");
           return;
         }
       } catch {}
-      setIsLoading(true);
+      if (!targetIdentifier) {
+        if (isMounted) setIsLoading(false);
+        return;
+      }
+      if (isMounted) setIsLoading(true);
       await fetchAll();
-      setIsLoading(false);
+      if (isMounted) setIsLoading(false);
     })();
-  }, [targetUsername, fetchAll]);
+    return () => {
+      isMounted = false;
+    };
+  }, [targetIdentifier, fetchAll]);
 
   const onRefresh = async () => {
     setIsRefreshing(true);
@@ -379,6 +396,16 @@ export default function ProfilPenggunaScreen() {
             <MaterialIcons name="share" size={18} color={C.muted} />
           </Pressable>
         </View>
+
+        {!isLoading && !profile && !params.nama && (
+          <View style={{ marginVertical: 24, padding: 24, alignItems: "center", backgroundColor: C.surface, borderRadius: 20 }}>
+            <MaterialIcons name="person-off" size={48} color={C.muted} />
+            <Text style={{ fontFamily: "Nunito_700Bold", fontSize: 16, color: C.ink, marginTop: 12 }}>Profil Tidak Ditemukan</Text>
+            <Text style={{ fontFamily: "Nunito_500Medium", fontSize: 13, color: C.muted, textAlign: "center", marginTop: 4 }}>
+              Profil ini belum tersedia atau pengguna belum mengatur profil publiknya.
+            </Text>
+          </View>
+        )}
 
         {/* STATS */}
         <View style={[styles.statsCard, shadowSubtle]}>

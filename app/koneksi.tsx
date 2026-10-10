@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, useFocusEffect, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -73,7 +73,22 @@ export default function KoneksiScreen() {
     return (
       <Pressable 
         style={({ pressed }) => [styles.userCard, pressed && { opacity: 0.8 }]}
-        onPress={() => router.push({ pathname: "/profil-pengguna", params: { username: item.username } } as any)}
+        onPress={() => {
+          const targetParam = item.username || (item.id ? String(item.id) : "");
+          if (!targetParam) {
+            Alert.alert("Profil Belum Siap", "Pengguna ini belum dapat diakses.");
+            return;
+          }
+          router.push({
+            pathname: "/profil-pengguna",
+            params: {
+              username: targetParam,
+              userId: item.id ? String(item.id) : undefined,
+              nama: item.nama || "",
+              avatarUrl: item.avatarUrl || ""
+            }
+          } as any);
+        }}
       >
         {item.avatarUrl ? (
           <Image source={{ uri: item.avatarUrl }} style={styles.avatar} contentFit="cover" />

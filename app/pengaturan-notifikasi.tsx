@@ -27,23 +27,40 @@ export default function PengaturanNotifikasiScreen() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        let jamNotifBackend: string | null = null;
+        const storedUserData = await SecureStore.getItemAsync('userData');
+        if (storedUserData) {
+          try {
+            const parsedUser = JSON.parse(storedUserData);
+            jamNotifBackend = parsedUser.jamNotif || null;
+          } catch {}
+        }
+
         const savedEnabled = await SecureStore.getItemAsync('notifEnabled');
         const savedTimeStr = await SecureStore.getItemAsync('notifTime');
         
-        if (savedTimeStr) {
+        let matchedTime = null;
+        if (jamNotifBackend) {
+          matchedTime = TIME_OPTIONS.find(t => t.label === jamNotifBackend);
+        } else if (savedTimeStr) {
           const parsedTime = JSON.parse(savedTimeStr);
-          const foundTime = TIME_OPTIONS.find(t => t.hour === parsedTime.hour && t.minute === parsedTime.minute);
-          if (foundTime) {
-            setSelectedTime(foundTime);
-          }
+          matchedTime = TIME_OPTIONS.find(t => t.hour === parsedTime.hour && t.minute === parsedTime.minute);
         }
 
-        if (savedEnabled === 'true') {
+        if (matchedTime) {
+          setSelectedTime(matchedTime);
+        }
+
+        const shouldEnable = jamNotifBackend !== null || savedEnabled === 'true';
+
+        if (shouldEnable) {
           const granted = await registerForPushNotificationsAsync();
-          if (granted && savedTimeStr) {
-            const t = JSON.parse(savedTimeStr);
+          const targetTime = matchedTime || selectedTime;
+          if (granted) {
             setIsEnabled(true);
-            await scheduleDailyPlantReminder(t.hour, t.minute);
+            await scheduleDailyPlantReminder(targetTime.hour, targetTime.minute);
+            await SecureStore.setItemAsync('notifEnabled', 'true');
+            await SecureStore.setItemAsync('notifTime', JSON.stringify({ hour: targetTime.hour, minute: targetTime.minute }));
           } else {
             setIsEnabled(false);
             await SecureStore.setItemAsync('notifEnabled', 'false');
@@ -72,6 +89,15 @@ export default function PengaturanNotifikasiScreen() {
         const granted = await registerForPushNotificationsAsync();
         if (granted) {
           await scheduleDailyPlantReminder(selectedTime.hour, selectedTime.minute);
+          await api.put('/user/setting-notif', { jamNotif: selectedTime.label });
+          const storedUser = await SecureStore.getItemAsync('userData');
+          if (storedUser) {
+            try {
+              const u = JSON.parse(storedUser);
+              u.jamNotif = selectedTime.label;
+              await SecureStore.setItemAsync('userData', JSON.stringify(u));
+            } catch {}
+          }
           showNotification("Sukses", "Reminder aktif! ");
         } else {
           Alert.alert("Izin Ditolak", "Izin notifikasi ditolak — aktifkan dari pengaturan HP");
@@ -79,8 +105,15 @@ export default function PengaturanNotifikasiScreen() {
           await SecureStore.setItemAsync('notifEnabled', 'false');
         }
       } else {
-        // 🔥 Kirim null ke backend agar Cron berhenti ngecek
         await api.put('/user/setting-notif', { jamNotif: null });
+        const storedUser = await SecureStore.getItemAsync('userData');
+        if (storedUser) {
+          try {
+            const u = JSON.parse(storedUser);
+            u.jamNotif = null;
+            await SecureStore.setItemAsync('userData', JSON.stringify(u));
+          } catch {}
+        }
         await cancelAllPlantReminders();
         showNotification("Dimatikan", "Reminder dimatikan");
       }
@@ -97,8 +130,15 @@ export default function PengaturanNotifikasiScreen() {
       setSelectedTime(timeOption);
       await SecureStore.setItemAsync('notifTime', JSON.stringify({ hour: timeOption.hour, minute: timeOption.minute }));
       
-      // 🔥 Kirim jam pilihan ke backend agar Cron Vercel tahu
       await api.put('/user/setting-notif', { jamNotif: timeOption.label });
+      const storedUser = await SecureStore.getItemAsync('userData');
+      if (storedUser) {
+        try {
+          const u = JSON.parse(storedUser);
+          u.jamNotif = timeOption.label;
+          await SecureStore.setItemAsync('userData', JSON.stringify(u));
+        } catch {}
+      }
       
       if (isEnabled) {
         await scheduleDailyPlantReminder(timeOption.hour, timeOption.minute);

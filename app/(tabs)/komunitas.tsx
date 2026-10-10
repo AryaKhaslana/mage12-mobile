@@ -649,16 +649,21 @@ export default function KomunitasScreen() {
               <View style={styles.postCard}>
                 <View style={styles.postHeader}>
                   <Pressable
-                    onPress={() =>
+                    onPress={() => {
+                      const uname = item.username || item.author?.username || item.user_username;
+                      const uid = item.author?.id || item.userId;
+                      const targetParam = uname || (uid ? String(uid) : "");
+                      if (!targetParam) return;
                       router.push({
                         pathname: "/profil-pengguna",
                         params: {
-                          username: item.username || item.author?.username || item.user_username || item.user_nama || "",
+                          username: targetParam,
+                          userId: uid ? String(uid) : undefined,
                           nama: item.author?.nama || item.user_nama || "",
                           avatarUrl: item.author?.avatarUrl || item.userAvatar || "",
                         },
-                      } as any)
-                    }
+                      } as any);
+                    }}
                     style={({ pressed }) => [
                       { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
                       pressed && { opacity: 0.7 },

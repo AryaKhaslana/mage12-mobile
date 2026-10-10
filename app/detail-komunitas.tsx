@@ -268,14 +268,25 @@ export default function DetailKomunitasScreen() {
         <View style={styles.postCard}>
           <View style={styles.postHeader}>
             <Pressable
-              onPress={() =>
-                post.isOwner
-                  ? router.push("/(tabs)/profil")
-                  : router.push({
-                      pathname: "/profil-pengguna",
-                      params: { username: post.username || post.author?.username || post.user_username || post.user_nama || "", nama: post.user_nama || post.author?.nama || "" },
-                    } as any)
-              }
+              onPress={() => {
+                if (post.isOwner) {
+                  router.push("/(tabs)/profil");
+                  return;
+                }
+                const uname = post.username || post.author?.username || post.user_username;
+                const uid = post.author?.id || post.userId;
+                const targetParam = uname || (uid ? String(uid) : "");
+                if (!targetParam) return;
+                router.push({
+                  pathname: "/profil-pengguna",
+                  params: {
+                    username: targetParam,
+                    userId: uid ? String(uid) : undefined,
+                    nama: post.user_nama || post.author?.nama || "",
+                    avatarUrl: post.userAvatar || post.author?.avatarUrl || "",
+                  },
+                } as any);
+              }}
               style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center' }, pressed && { opacity: 0.7 }]}
             >
             <View style={styles.avatarContainer}>

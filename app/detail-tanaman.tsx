@@ -210,6 +210,27 @@ export default function DetailTanamanModal() {
       const formData = new FormData();
       formData.append("tipe", "PANEN");
       formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya nih bosku! `);
+
+      const cached = await SecureStore.getItemAsync("userData");
+      if (cached) {
+        try {
+          const u = JSON.parse(cached);
+          if (u.latitude != null && u.longitude != null) {
+            formData.append("latitude", String(u.latitude));
+            formData.append("longitude", String(u.longitude));
+          }
+          if (u.kota || u.kabupaten) {
+            formData.append("lokasiNama", u.kota || u.kabupaten);
+          }
+        } catch {}
+      }
+
+      if (photoLogsAsc && photoLogsAsc.length > 0) {
+        const lastPhoto = photoLogsAsc[photoLogsAsc.length - 1];
+        if (lastPhoto) {
+          formData.append("fotoUrl", lastPhoto);
+        }
+      }
       
       await createCommunityPost(formData);
       showNotification("Mantap!", "Raport panen lu udah mejeng di Komunitas radius 2km! ", "success");

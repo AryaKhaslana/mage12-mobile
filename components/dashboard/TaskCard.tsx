@@ -8,20 +8,18 @@ export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredT
   const opacity = useSharedValue(1);
 
   const handlePress = () => {
-    // If it's a watering task, do a little check animation before firing the prop
-    if (isWateringTask) {
+    // If it's a watering task and not watered today, do a little check animation before firing the prop
+    if (isWateringTask && !isWateredToday) {
       scale.value = withSequence(
         withTiming(0.9, { duration: 150 }),
         withTiming(1, { duration: 150 })
       );
-      // Optional: hide it
-      // opacity.value = withTiming(0, { duration: 300 });
     }
     
     // Slight delay to let animation play
     setTimeout(() => {
       onTaskPress();
-    }, 200);
+    }, (isWateringTask && !isWateredToday) ? 200 : 0);
   };
 
   const animatedStyle = useAnimatedStyle(() => ({

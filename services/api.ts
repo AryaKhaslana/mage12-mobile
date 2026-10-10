@@ -49,8 +49,8 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (
-      (error.response?.status === 401 || error.response?.status === 403) &&
-      !error.config?.url?.includes("/auth/login")
+      error.response?.status === 401 &&
+      !error.config?.url?.includes("/auth/")
     ) {
       await logoutUser();
     }
@@ -382,19 +382,19 @@ export interface PublicUserProfile {
 
 /** GET /user/:id -> profil publik user lain */
 export const getPublicUserProfile = async (username: string): Promise<PublicUserProfile> => {
-  const response = await api.get(`/user/profile/${username}`);
+  const response = await api.get(`/user/profile/${encodeURIComponent(username)}`);
   return response.data.data ?? response.data;
 };
 
 /** GET /community/user/:id -> postingan milik user tertentu */
 export const getUserCommunityPosts = async (username: string, page: number = 1, limit: number = 10) => {
-  const response = await api.get(`/community/user/${username}`, { params: { page, limit } });
+  const response = await api.get(`/community/user/${encodeURIComponent(username)}`, { params: { page, limit } });
   return response.data as { meta?: any; data: CommunityPost[] };
 };
 
 /** GET /tanaman/user/:id -> tanaman publik milik user tertentu */
 export const getUserPublicTanaman = async (username: string): Promise<TanamanDetail[]> => {
-  const response = await api.get(`/tanaman/user/${username}`);
+  const response = await api.get(`/tanaman/user/${encodeURIComponent(username)}`);
   return response.data.data ?? [];
 };
 

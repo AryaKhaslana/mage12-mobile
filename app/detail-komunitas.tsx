@@ -127,8 +127,9 @@ export default function DetailKomunitasScreen() {
       setPost(data);
       
       const comm = await getCommunityComments(postId, 1, 20);
-      setComments(comm.data);
-      setHasMore(comm.data.length >= 20);
+      const commentList = Array.isArray(comm?.data) ? comm.data : [];
+      setComments(commentList);
+      setHasMore(commentList.length >= 20);
       setPage(1);
     } catch (e) {
       console.error(e);
@@ -150,8 +151,9 @@ export default function DetailKomunitasScreen() {
     try {
       const next = page + 1;
       const comm = await getCommunityComments(postId, next, 20);
-      setComments(prev => [...prev, ...comm.data]);
-      setHasMore(comm.data.length >= 20);
+      const moreComments = Array.isArray(comm?.data) ? comm.data : [];
+      setComments(prev => [...prev, ...moreComments]);
+      setHasMore(moreComments.length >= 20);
       setPage(next);
     } catch (e) {
       console.error(e);

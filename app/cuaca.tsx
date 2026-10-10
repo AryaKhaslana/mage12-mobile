@@ -23,31 +23,60 @@ const COLORS = {
 export default function CuacaScreen() {
   const [weatherData, setWeatherData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
+  const fetchWeather = async () => {
+    setIsLoading(true);
+    setIsError(false);
+    try {
+      const response = await api.get('/weather/today');
+      if (response.data?.status === 'success') {
+        setWeatherData(response.data.data);
+      } else {
+        setIsError(true);
+      }
+    } catch (error) {
+      console.error("Gagal load cuaca:", error);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        const response = await api.get('/weather/today');
-        if (response.data?.status === 'success') {
-          setWeatherData(response.data.data);
-        }
-      } catch (error) {
-        console.error("Gagal load cuaca:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchWeather();
-
   }, []);
 
 
-  if (isLoading || !weatherData) {
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.neutral }}>
         <Stack.Screen options={{ headerShown: false }} />
         <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (isError || !weatherData) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.neutral, padding: 24 }}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <Pressable onPress={() => router.back()} style={styles.absoluteBackButton}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.ink} />
+        </Pressable>
+        <Ionicons name="cloud-offline-outline" size={64} color={COLORS.muted} style={{ marginBottom: 16 }} />
+        <Text style={{ fontSize: 18, fontFamily: 'Nunito_700Bold', color: COLORS.ink, textAlign: 'center', marginBottom: 8 }}>
+          Gagal Memuat Cuaca
+        </Text>
+        <Text style={{ fontSize: 14, fontFamily: 'Nunito_500Medium', color: COLORS.muted, textAlign: 'center', marginBottom: 20 }}>
+          Koneksi bermasalah atau koordinat lokasi belum disetel.
+        </Text>
+        <Pressable 
+          onPress={fetchWeather} 
+          style={{ backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 100 }}
+        >
+          <Text style={{ color: '#FFFFFF', fontFamily: 'Nunito_700Bold', fontSize: 14 }}>Coba Lagi</Text>
+        </Pressable>
       </View>
     );
   }
@@ -133,8 +162,8 @@ export default function CuacaScreen() {
           {/* 3 Day Forecast */}
           <Text style={styles.sectionTitle}>Prakiraan 5 Hari</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.forecastScroll}>
-            {(weatherData.forecast5Days || weatherData.forecast3Days || []).map((item: any) => (
-              <View key={item.id} style={styles.forecastCard}>
+            {(weatherData.forecast5Days || weatherData.forecast3Days || []).map((item: any, index: number) => (
+              <View key={item.id || item.day || index} style={styles.forecastCard}>
                 <Text style={styles.forecastDay}>{item.day}</Text>
                 <Ionicons name={item.icon as any} size={32} color={COLORS.ink} style={styles.forecastIcon} />
                 <Text style={styles.forecastTemp}>{item.temp}°</Text>

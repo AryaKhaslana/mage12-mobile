@@ -194,7 +194,7 @@ export default function TanamanScreen() {
 
 
   const filteredList = tanamanList.filter((tanaman) => {
-    const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+    const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
     
     if (activeFilter === "Perlu Disiram")
       return tanaman.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
@@ -263,10 +263,13 @@ export default function TanamanScreen() {
       textColor = "#FFB627";
       statusText = "Ditunda Hujan";
     } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+      bgColor = "#E8F5E9";
+      borderColor = "#3FA86B";
+      textColor = "#123924";
       statusText = "Sudah Disiram";
     }
     
-    const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+    const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
     if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
       bgColor = "#E8F5E9";
       borderColor = "#3FA86B";

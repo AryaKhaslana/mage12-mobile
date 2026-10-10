@@ -23,10 +23,12 @@ export const useNotification = () => useContext(NotificationContext);
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
   const [notification, setNotification] = useState<NotificationData | null>(null);
   const insets = useSafeAreaInsets();
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showNotification = (title: string, message: string, type: NotificationType = "success") => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     setNotification({ title, message, type });
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setNotification(null);
     }, 4000);
   };

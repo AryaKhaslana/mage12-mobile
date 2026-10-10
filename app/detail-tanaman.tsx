@@ -164,8 +164,8 @@ export default function DetailTanamanModal() {
 
   const sudahValidasiHariIni = useMemo(() => {
     const today = new Date().toDateString();
-    return logs.some(l => new Date(l.createdAt).toDateString() === today);
-  }, [logs]);
+    return logs.some(l => new Date(l.createdAt).toDateString() === today) || tanaman?.statusPenyiraman === 'SUDAH_DISIRAM';
+  }, [logs, tanaman?.statusPenyiraman]);
 
 
   const handleHarvest = () => {
@@ -377,14 +377,17 @@ export default function DetailTanamanModal() {
     badgeTextColor = "#FFB627";
     badgeText = "Ditunda Hujan";
   } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
-    badgeText = "Sudah Disiram";
+    badgeBgColor = "#E8F5E9";
+    badgeBorderColor = "#3FA86B";
+    badgeTextColor = "#123924";
+    badgeText = "Sudah Disiram Hari Ini";
   }
 
   if (sudahValidasiHariIni) {
     badgeBgColor = "#E8F5E9";
     badgeBorderColor = "#3FA86B";
     badgeTextColor = "#123924";
-    badgeText = "Sudah Disiram Hari Ini ";
+    badgeText = "Sudah Disiram Hari Ini";
   }
 
   return (
@@ -430,7 +433,17 @@ export default function DetailTanamanModal() {
             )}
           </View>
           
-          <TouchableOpacity style={styles.floatingCamButton} onPress={handleValidasiPhoto} disabled={isSubmitting}>
+          <TouchableOpacity 
+            style={[styles.floatingCamButton, sudahValidasiHariIni && { opacity: 0.5 }]} 
+            onPress={() => {
+              if (sudahValidasiHariIni) {
+                showNotification("Info", "Tanaman ini sudah disiram hari ini broskie!", "info");
+              } else {
+                handleValidasiPhoto();
+              }
+            }} 
+            disabled={isSubmitting}
+          >
             <MaterialIcons name="photo-camera" size={24} color="#123924" />
           </TouchableOpacity>
           

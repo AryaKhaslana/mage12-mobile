@@ -38,8 +38,9 @@ export default function WeatherScene({ weatherCondition, isNight }: { weatherCon
     transform: [{ translateX: cloudX.value }]
   }));
 
-  const isRain = weatherCondition === 'Rain' || weatherCondition === 'Drizzle' || weatherCondition === 'Thunderstorm';
-  const isCloudy = weatherCondition === 'Clouds';
+  const cond = (weatherCondition || '').toUpperCase();
+  const isRain = cond.includes('HUJAN') || cond === 'RAIN' || cond === 'DRIZZLE' || cond === 'THUNDERSTORM';
+  const isCloudy = cond.includes('AWAN') || cond === 'CLOUDS';
 
   // Dynamic colors
   const skyTop = isNight ? '#091530' : isRain ? '#607D8B' : isCloudy ? '#90A4AE' : '#64B5F6';

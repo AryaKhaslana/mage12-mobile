@@ -1,9 +1,16 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Dimensions, StyleSheet, Text, View, Pressable } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
+import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -23,9 +30,16 @@ export default function FarmerScene({
   avatarUrl,
   weatherCondition,
   temperature,
+  farmerState,
   onProfilePress,
 }: FarmerSceneProps) {
   const cloudOffset = useSharedValue(0);
+
+  // Raindrop animation values (3 layers for depth & parallax)
+  const rainAnim1 = useSharedValue(-SCENE_HEIGHT);
+  const rainAnim2 = useSharedValue(-SCENE_HEIGHT);
+  const rainAnim3 = useSharedValue(-SCENE_HEIGHT);
+  const splashAnim = useSharedValue(0);
 
   useEffect(() => {
     // Slow drifting clouds
@@ -34,6 +48,10 @@ export default function FarmerScene({
       -1,
       true
     );
+
+    return () => {
+      cancelAnimation(cloudOffset);
+    };
   }, []);
 
   const cloudAnimatedStyle = useAnimatedStyle(() => ({
@@ -50,7 +68,122 @@ export default function FarmerScene({
   const firstName = userName ? userName.split(' ')[0] : 'Sobat';
 
   const isNight = hour >= 18 || hour < 6;
-  const isRaining = weatherCondition?.toLowerCase().includes('hujan');
+  const isRaining =
+    weatherCondition?.toLowerCase().includes('hujan') ||
+    weatherCondition?.toLowerCase().includes('rain') ||
+    weatherCondition?.toLowerCase().includes('gerimis') ||
+    weatherCondition?.toLowerCase().includes('drizzle') ||
+    weatherCondition?.toLowerCase().includes('storm') ||
+    farmerState === 'raining';
+
+  useEffect(() => {
+    if (isRaining) {
+      rainAnim1.value = -SCENE_HEIGHT;
+      rainAnim1.value = withRepeat(
+        withTiming(0, { duration: 800, easing: Easing.linear }),
+        -1,
+        false
+      );
+
+      rainAnim2.value = -SCENE_HEIGHT;
+      rainAnim2.value = withRepeat(
+        withTiming(0, { duration: 1100, easing: Easing.linear }),
+        -1,
+        false
+      );
+
+      rainAnim3.value = -SCENE_HEIGHT;
+      rainAnim3.value = withRepeat(
+        withTiming(0, { duration: 1450, easing: Easing.linear }),
+        -1,
+        false
+      );
+
+      splashAnim.value = 0;
+      splashAnim.value = withRepeat(
+        withTiming(1, { duration: 900, easing: Easing.linear }),
+        -1,
+        false
+      );
+    } else {
+      cancelAnimation(rainAnim1);
+      cancelAnimation(rainAnim2);
+      cancelAnimation(rainAnim3);
+      cancelAnimation(splashAnim);
+      rainAnim1.value = -SCENE_HEIGHT;
+      rainAnim2.value = -SCENE_HEIGHT;
+      rainAnim3.value = -SCENE_HEIGHT;
+      splashAnim.value = 0;
+    }
+
+    return () => {
+      cancelAnimation(rainAnim1);
+      cancelAnimation(rainAnim2);
+      cancelAnimation(rainAnim3);
+      cancelAnimation(splashAnim);
+    };
+  }, [isRaining]);
+
+  const rainStyle1 = useAnimatedStyle(() => ({
+    transform: [{ translateY: rainAnim1.value }],
+  }));
+
+  const rainStyle2 = useAnimatedStyle(() => ({
+    transform: [{ translateY: rainAnim2.value }],
+  }));
+
+  const rainStyle3 = useAnimatedStyle(() => ({
+    transform: [{ translateY: rainAnim3.value }],
+  }));
+
+  const splashStyle = useAnimatedStyle(() => ({
+    opacity: 1 - splashAnim.value,
+    transform: [{ scale: 0.5 + splashAnim.value * 0.7 }],
+  }));
+
+  // Memoized deterministic raindrop positions across scene width
+  const layer1Drops = useMemo(() => {
+    const drops = [];
+    const count = 16;
+    for (let i = 0; i < count; i++) {
+      const x = ((i + 0.3) / count) * width;
+      const y = (i * 41) % SCENE_HEIGHT;
+      const len = 16 + (i % 5);
+      drops.push({ x, y, len });
+    }
+    return drops;
+  }, [width]);
+
+  const layer2Drops = useMemo(() => {
+    const drops = [];
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const x = ((i + 0.75) / count) * width;
+      const y = (i * 57 + 35) % SCENE_HEIGHT;
+      const len = 12 + (i % 4);
+      drops.push({ x, y, len });
+    }
+    return drops;
+  }, [width]);
+
+  const layer3Drops = useMemo(() => {
+    const drops = [];
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+      const x = ((i + 0.15) / count) * width;
+      const y = (i * 73 + 70) % SCENE_HEIGHT;
+      const len = 8 + (i % 3);
+      drops.push({ x, y, len });
+    }
+    return drops;
+  }, [width]);
+
+  const splashPoints = useMemo(() => [
+    { x: width * 0.2, y: 225 },
+    { x: width * 0.42, y: 215 },
+    { x: width * 0.65, y: 220 },
+    { x: width * 0.85, y: 230 },
+  ], [width]);
 
   let skyColor1 = '#DFF3E6';
   let skyColor2 = '#FBF8F1';
@@ -67,7 +200,7 @@ export default function FarmerScene({
   }
 
   const renderWeather = () => {
-    if (weatherCondition?.toLowerCase().includes('hujan')) {
+    if (isRaining) {
       return (
         <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
           <Feather name="cloud-rain" size={16} color="#4A90E2" />
@@ -222,7 +355,7 @@ export default function FarmerScene({
       <Animated.View style={[styles.cloudLayer, cloudAnimatedStyle]}>
         <Svg width={width + 200} height={100}>
           {/* Cloud 1 (Bigger, full fluffy) */}
-          <G x="30" y="30" opacity={isNight ? 0.2 : 0.8} fill="#FFFFFF">
+          <G x="30" y="30" opacity={isNight ? 0.2 : (isRaining ? 0.9 : 0.8)} fill={isRaining ? "#B0BEC5" : "#FFFFFF"}>
             <Circle cx="20" cy="20" r="14" />
             <Circle cx="40" cy="12" r="20" />
             <Circle cx="65" cy="22" r="16" />
@@ -230,7 +363,7 @@ export default function FarmerScene({
           </G>
           
           {/* Cloud 2 (Smaller, full fluffy) */}
-          <G x="230" y="10" opacity={isNight ? 0.1 : 0.5} fill="#FFFFFF">
+          <G x="230" y="10" opacity={isNight ? 0.1 : (isRaining ? 0.7 : 0.5)} fill={isRaining ? "#CFD8DC" : "#FFFFFF"}>
             <Circle cx="15" cy="15" r="10" />
             <Circle cx="30" cy="10" r="14" />
             <Circle cx="45" cy="18" r="12" />
@@ -238,6 +371,66 @@ export default function FarmerScene({
           </G>
         </Svg>
       </Animated.View>
+
+      {/* Raindrops Animation Layer */}
+      {isRaining && (
+        <View style={styles.rainContainer} pointerEvents="none">
+          {/* Layer 3: Distant / misty raindrops */}
+          <Animated.View style={[StyleSheet.absoluteFill, rainStyle3]}>
+            <Svg width={width} height={SCENE_HEIGHT * 2}>
+              {layer3Drops.map((d, i) => (
+                <G key={`l3-${i}`}>
+                  <Line x1={d.x} y1={d.y} x2={d.x - 2} y2={d.y + d.len} stroke="#C4E1F8" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
+                  <Line x1={d.x} y1={d.y + SCENE_HEIGHT} x2={d.x - 2} y2={d.y + d.len + SCENE_HEIGHT} stroke="#C4E1F8" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
+                </G>
+              ))}
+            </Svg>
+          </Animated.View>
+
+          {/* Layer 2: Midground raindrops */}
+          <Animated.View style={[StyleSheet.absoluteFill, rainStyle2]}>
+            <Svg width={width} height={SCENE_HEIGHT * 2}>
+              {layer2Drops.map((d, i) => (
+                <G key={`l2-${i}`}>
+                  <Line x1={d.x} y1={d.y} x2={d.x - 3} y2={d.y + d.len} stroke="#A0CBEF" strokeWidth={1.4} strokeLinecap="round" opacity={0.65} />
+                  <Line x1={d.x} y1={d.y + SCENE_HEIGHT} x2={d.x - 3} y2={d.y + d.len + SCENE_HEIGHT} stroke="#A0CBEF" strokeWidth={1.4} strokeLinecap="round" opacity={0.65} />
+                </G>
+              ))}
+            </Svg>
+          </Animated.View>
+
+          {/* Layer 1: Foreground raindrops */}
+          <Animated.View style={[StyleSheet.absoluteFill, rainStyle1]}>
+            <Svg width={width} height={SCENE_HEIGHT * 2}>
+              {layer1Drops.map((d, i) => (
+                <G key={`l1-${i}`}>
+                  <Line x1={d.x} y1={d.y} x2={d.x - 4} y2={d.y + d.len} stroke="#85BEE9" strokeWidth={1.8} strokeLinecap="round" opacity={0.85} />
+                  <Line x1={d.x} y1={d.y + SCENE_HEIGHT} x2={d.x - 4} y2={d.y + d.len + SCENE_HEIGHT} stroke="#85BEE9" strokeWidth={1.8} strokeLinecap="round" opacity={0.85} />
+                </G>
+              ))}
+            </Svg>
+          </Animated.View>
+
+          {/* Splash ripples hitting the ground */}
+          <Animated.View style={[StyleSheet.absoluteFill, splashStyle]}>
+            <Svg width={width} height={SCENE_HEIGHT}>
+              {splashPoints.map((p, i) => (
+                <Ellipse
+                  key={`splash-${i}`}
+                  cx={p.x}
+                  cy={p.y}
+                  rx={6}
+                  ry={2.5}
+                  stroke="#90CAF9"
+                  strokeWidth={1.2}
+                  fill="none"
+                  opacity={0.6}
+                />
+              ))}
+            </Svg>
+          </Animated.View>
+        </View>
+      )}
 
     </View>
   );
@@ -249,6 +442,7 @@ const styles = StyleSheet.create({
     height: SCENE_HEIGHT,
     position: 'relative',
     backgroundColor: '#FBF8F1',
+    overflow: 'hidden',
   },
   topBar: {
     position: 'absolute',
@@ -313,5 +507,14 @@ const styles = StyleSheet.create({
     left: -20,
     width: '100%',
     zIndex: 2,
+  },
+  rainContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+    zIndex: 4,
   },
 });

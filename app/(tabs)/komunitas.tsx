@@ -31,6 +31,8 @@ import {
   getCommunityPosts, getMyCommunityPosts, toggleCommunityLike, deleteCommunityPost
 } from "../../services/api";
 
+import { useNotification } from "../../components/NotificationContext";
+
 const EmptyHint = ({
   icon,
   title,
@@ -106,8 +108,6 @@ const EmptyHint = ({
     )}
   </View>
 );
-
-import { useNotification } from "../../components/NotificationContext";
 
 export interface PostType {
   id: string | number;

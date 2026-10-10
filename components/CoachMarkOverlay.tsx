@@ -62,12 +62,18 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
       const step = steps[currentStepIndex];
       const config = { damping: 15, stiffness: 120 };
       // Tambah padding 8px biar ujungnya (border-radius) nggak motong teks/konten
+      // eslint-disable-next-line react-hooks/immutability
       currentX.value = withSpring(step.rect.x - 8, config);
+      // eslint-disable-next-line react-hooks/immutability
       currentY.value = withSpring(step.rect.y - 8, config);
+      // eslint-disable-next-line react-hooks/immutability
       currentW.value = withSpring(step.rect.width + 16, config);
+      // eslint-disable-next-line react-hooks/immutability
       currentH.value = withSpring(step.rect.height + 16, config);
+      // eslint-disable-next-line react-hooks/immutability
       currentR.value = withSpring(step.borderRadius || 12, config);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStepIndex, visible, steps]);
 
   const B = 2000; // Huge border thickness

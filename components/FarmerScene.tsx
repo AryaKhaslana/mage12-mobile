@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import { Dimensions, StyleSheet, Text, View, Pressable } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -67,14 +68,18 @@ export default function FarmerScene({
 
   const firstName = userName ? userName.split(' ')[0] : 'Sobat';
 
+  const [demoRain, setDemoRain] = useState<boolean | null>(null);
+
   const isNight = hour >= 18 || hour < 6;
   const isRaining =
-    weatherCondition?.toLowerCase().includes('hujan') ||
-    weatherCondition?.toLowerCase().includes('rain') ||
-    weatherCondition?.toLowerCase().includes('gerimis') ||
-    weatherCondition?.toLowerCase().includes('drizzle') ||
-    weatherCondition?.toLowerCase().includes('storm') ||
-    farmerState === 'raining';
+    demoRain !== null
+      ? demoRain
+      : (weatherCondition?.toLowerCase().includes('hujan') ||
+        weatherCondition?.toLowerCase().includes('rain') ||
+        weatherCondition?.toLowerCase().includes('gerimis') ||
+        weatherCondition?.toLowerCase().includes('drizzle') ||
+        weatherCondition?.toLowerCase().includes('storm') ||
+        farmerState === 'raining');
 
   useEffect(() => {
     if (isRaining) {
@@ -199,24 +204,46 @@ export default function FarmerScene({
     skyColor2 = '#FFE082';
   }
 
+  const toggleDemoRain = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    setDemoRain((prev) => (prev === null ? !isRaining : !prev));
+  };
+
   const renderWeather = () => {
     if (isRaining) {
       return (
-        <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
+        <Pressable
+          style={styles.weatherBox}
+          onPress={() => router.push('/cuaca')}
+          onLongPress={toggleDemoRain}
+          delayLongPress={400}
+        >
           <Feather name="cloud-rain" size={16} color="#4A90E2" />
           <Text style={styles.tempText}>Cuaca: {temperature}°C</Text>
         </Pressable>
       );
     } else if (weatherCondition?.toLowerCase().includes('berawan')) {
       return (
-        <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
+        <Pressable
+          style={styles.weatherBox}
+          onPress={() => router.push('/cuaca')}
+          onLongPress={toggleDemoRain}
+          delayLongPress={400}
+        >
           <Feather name="cloud" size={16} color="#8F9B94" />
           <Text style={styles.tempText}>Cuaca: {temperature}°C</Text>
         </Pressable>
       );
     }
     return (
-      <Pressable style={styles.weatherBox} onPress={() => router.push('/cuaca')}>
+      <Pressable
+        style={styles.weatherBox}
+        onPress={() => router.push('/cuaca')}
+        onLongPress={toggleDemoRain}
+        delayLongPress={400}
+      >
         <Feather name={isNight ? "moon" : "sun"} size={16} color={isNight ? "#90A4AE" : "#FFB627"} />
         <Text style={styles.tempText}>Cuaca: {temperature}°C</Text>
       </Pressable>

@@ -39,7 +39,7 @@ export default function KoneksiScreen() {
   const [following, setFollowing] = useState<PublicUserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const id = parseInt(userId as string);
@@ -54,19 +54,19 @@ export default function KoneksiScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   useFocusEffect(
     useCallback(() => {
       if (userId) {
         fetchData();
       }
-    }, [userId])
+    }, [userId, fetchData])
   );
 
   const displayData = activeTab === "followers" ? followers : following;
 
-  const renderItem = ({ item }: { item: PublicUserProfile }) => {
+  const renderItem = useCallback(({ item }: { item: PublicUserProfile }) => {
     const nameFallback = item.nama || "Petani";
     const initial = nameFallback.charAt(0).toUpperCase();
 
@@ -106,7 +106,7 @@ export default function KoneksiScreen() {
         <MaterialIcons name="chevron-right" size={24} color={C.outline} />
       </Pressable>
     );
-  };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>

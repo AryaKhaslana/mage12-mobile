@@ -54,7 +54,7 @@ export default function FarmerScene({
     return () => {
       cancelAnimation(cloudOffset);
     };
-  }, []);
+  }, [cloudOffset]);
 
   const cloudAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: cloudOffset.value }]
@@ -128,7 +128,7 @@ export default function FarmerScene({
       cancelAnimation(rainAnim3);
       cancelAnimation(splashAnim);
     };
-  }, [isRaining]);
+  }, [isRaining, rainAnim1, rainAnim2, rainAnim3, splashAnim]);
 
   const rainStyle1 = useAnimatedStyle(() => ({
     transform: [{ translateY: rainAnim1.value }],
@@ -158,7 +158,7 @@ export default function FarmerScene({
       drops.push({ x, y, len });
     }
     return drops;
-  }, [width]);
+  }, []);
 
   const layer2Drops = useMemo(() => {
     const drops = [];
@@ -170,7 +170,7 @@ export default function FarmerScene({
       drops.push({ x, y, len });
     }
     return drops;
-  }, [width]);
+  }, []);
 
   const layer3Drops = useMemo(() => {
     const drops = [];
@@ -182,14 +182,14 @@ export default function FarmerScene({
       drops.push({ x, y, len });
     }
     return drops;
-  }, [width]);
+  }, []);
 
   const splashPoints = useMemo(() => [
     { x: width * 0.18, y: 190 },
     { x: width * 0.38, y: 180 },
     { x: width * 0.62, y: 185 },
     { x: width * 0.82, y: 195 },
-  ], [width]);
+  ], []);
 
   let skyColor1 = '#DFF3E6';
   let skyColor2 = '#FBF8F1';

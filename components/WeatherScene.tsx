@@ -29,7 +29,7 @@ export default function WeatherScene({ weatherCondition, isNight }: { weatherCon
       -1,
       false
     );
-  }, [width]);
+  }, [width, cloudX, mascotY]);
 
   const mascotStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: mascotY.value }]
@@ -42,7 +42,6 @@ export default function WeatherScene({ weatherCondition, isNight }: { weatherCon
   const cond = (weatherCondition || '').trim().toUpperCase();
   const isRain = cond.includes('HUJAN') || cond.includes('GERIMIS') || cond === 'RAIN' || cond.includes('RAIN') || cond === 'DRIZZLE' || cond.includes('THUNDER');
   const isCloudy = !isRain && (cond.includes('BERAWAN') || cond.includes('AWAN') || cond.includes('MENDUNG') || cond === 'CLOUDS' || cond.includes('CLOUD') || cond === 'OVERCAST');
-  const isClear = !isRain && !isCloudy;
 
   // Dynamic colors
   const skyTop = isNight ? '#091530' : isRain ? '#607D8B' : isCloudy ? '#78909C' : '#64B5F6';

@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const SCENE_HEIGHT = 280;
+const RAIN_BOUNDS_HEIGHT = 210; // Hujan dibatasi sampai y=210 agar tidak tumpah ke card (StatCard mulai di y=248)
 
 interface FarmerSceneProps {
   userName: string;
@@ -83,30 +84,30 @@ export default function FarmerScene({
 
   useEffect(() => {
     if (isRaining) {
-      rainAnim1.value = -SCENE_HEIGHT;
+      rainAnim1.value = -RAIN_BOUNDS_HEIGHT;
       rainAnim1.value = withRepeat(
-        withTiming(0, { duration: 800, easing: Easing.linear }),
+        withTiming(0, { duration: 750, easing: Easing.linear }),
         -1,
         false
       );
 
-      rainAnim2.value = -SCENE_HEIGHT;
+      rainAnim2.value = -RAIN_BOUNDS_HEIGHT;
       rainAnim2.value = withRepeat(
-        withTiming(0, { duration: 1100, easing: Easing.linear }),
+        withTiming(0, { duration: 1050, easing: Easing.linear }),
         -1,
         false
       );
 
-      rainAnim3.value = -SCENE_HEIGHT;
+      rainAnim3.value = -RAIN_BOUNDS_HEIGHT;
       rainAnim3.value = withRepeat(
-        withTiming(0, { duration: 1450, easing: Easing.linear }),
+        withTiming(0, { duration: 1350, easing: Easing.linear }),
         -1,
         false
       );
 
       splashAnim.value = 0;
       splashAnim.value = withRepeat(
-        withTiming(1, { duration: 900, easing: Easing.linear }),
+        withTiming(1, { duration: 850, easing: Easing.linear }),
         -1,
         false
       );
@@ -115,9 +116,9 @@ export default function FarmerScene({
       cancelAnimation(rainAnim2);
       cancelAnimation(rainAnim3);
       cancelAnimation(splashAnim);
-      rainAnim1.value = -SCENE_HEIGHT;
-      rainAnim2.value = -SCENE_HEIGHT;
-      rainAnim3.value = -SCENE_HEIGHT;
+      rainAnim1.value = -RAIN_BOUNDS_HEIGHT;
+      rainAnim2.value = -RAIN_BOUNDS_HEIGHT;
+      rainAnim3.value = -RAIN_BOUNDS_HEIGHT;
       splashAnim.value = 0;
     }
 
@@ -146,14 +147,14 @@ export default function FarmerScene({
     transform: [{ scale: 0.5 + splashAnim.value * 0.7 }],
   }));
 
-  // Memoized deterministic raindrop positions across scene width
+  // Memoized deterministic raindrop positions across scene width (bounded by RAIN_BOUNDS_HEIGHT)
   const layer1Drops = useMemo(() => {
     const drops = [];
     const count = 16;
     for (let i = 0; i < count; i++) {
       const x = ((i + 0.3) / count) * width;
-      const y = (i * 41) % SCENE_HEIGHT;
-      const len = 16 + (i % 5);
+      const y = (i * 37) % RAIN_BOUNDS_HEIGHT;
+      const len = 14 + (i % 4);
       drops.push({ x, y, len });
     }
     return drops;
@@ -164,8 +165,8 @@ export default function FarmerScene({
     const count = 18;
     for (let i = 0; i < count; i++) {
       const x = ((i + 0.75) / count) * width;
-      const y = (i * 57 + 35) % SCENE_HEIGHT;
-      const len = 12 + (i % 4);
+      const y = (i * 47 + 25) % RAIN_BOUNDS_HEIGHT;
+      const len = 11 + (i % 3);
       drops.push({ x, y, len });
     }
     return drops;
@@ -176,7 +177,7 @@ export default function FarmerScene({
     const count = 14;
     for (let i = 0; i < count; i++) {
       const x = ((i + 0.15) / count) * width;
-      const y = (i * 73 + 70) % SCENE_HEIGHT;
+      const y = (i * 59 + 50) % RAIN_BOUNDS_HEIGHT;
       const len = 8 + (i % 3);
       drops.push({ x, y, len });
     }
@@ -184,10 +185,10 @@ export default function FarmerScene({
   }, [width]);
 
   const splashPoints = useMemo(() => [
-    { x: width * 0.2, y: 225 },
-    { x: width * 0.42, y: 215 },
-    { x: width * 0.65, y: 220 },
-    { x: width * 0.85, y: 230 },
+    { x: width * 0.18, y: 190 },
+    { x: width * 0.38, y: 180 },
+    { x: width * 0.62, y: 185 },
+    { x: width * 0.82, y: 195 },
   ], [width]);
 
   let skyColor1 = '#DFF3E6';
@@ -404,11 +405,11 @@ export default function FarmerScene({
         <View style={styles.rainContainer} pointerEvents="none">
           {/* Layer 3: Distant / misty raindrops */}
           <Animated.View style={[StyleSheet.absoluteFill, rainStyle3]}>
-            <Svg width={width} height={SCENE_HEIGHT * 2}>
+            <Svg width={width} height={RAIN_BOUNDS_HEIGHT * 2}>
               {layer3Drops.map((d, i) => (
                 <G key={`l3-${i}`}>
                   <Line x1={d.x} y1={d.y} x2={d.x - 2} y2={d.y + d.len} stroke="#C4E1F8" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
-                  <Line x1={d.x} y1={d.y + SCENE_HEIGHT} x2={d.x - 2} y2={d.y + d.len + SCENE_HEIGHT} stroke="#C4E1F8" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
+                  <Line x1={d.x} y1={d.y + RAIN_BOUNDS_HEIGHT} x2={d.x - 2} y2={d.y + d.len + RAIN_BOUNDS_HEIGHT} stroke="#C4E1F8" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
                 </G>
               ))}
             </Svg>
@@ -416,11 +417,11 @@ export default function FarmerScene({
 
           {/* Layer 2: Midground raindrops */}
           <Animated.View style={[StyleSheet.absoluteFill, rainStyle2]}>
-            <Svg width={width} height={SCENE_HEIGHT * 2}>
+            <Svg width={width} height={RAIN_BOUNDS_HEIGHT * 2}>
               {layer2Drops.map((d, i) => (
                 <G key={`l2-${i}`}>
-                  <Line x1={d.x} y1={d.y} x2={d.x - 3} y2={d.y + d.len} stroke="#A0CBEF" strokeWidth={1.4} strokeLinecap="round" opacity={0.65} />
-                  <Line x1={d.x} y1={d.y + SCENE_HEIGHT} x2={d.x - 3} y2={d.y + d.len + SCENE_HEIGHT} stroke="#A0CBEF" strokeWidth={1.4} strokeLinecap="round" opacity={0.65} />
+                  <Line x1={d.x} y1={d.y} x2={d.x - 3} y2={d.y + d.len} stroke="#A0CBEF" strokeWidth={1.3} strokeLinecap="round" opacity={0.65} />
+                  <Line x1={d.x} y1={d.y + RAIN_BOUNDS_HEIGHT} x2={d.x - 3} y2={d.y + d.len + RAIN_BOUNDS_HEIGHT} stroke="#A0CBEF" strokeWidth={1.3} strokeLinecap="round" opacity={0.65} />
                 </G>
               ))}
             </Svg>
@@ -428,11 +429,11 @@ export default function FarmerScene({
 
           {/* Layer 1: Foreground raindrops */}
           <Animated.View style={[StyleSheet.absoluteFill, rainStyle1]}>
-            <Svg width={width} height={SCENE_HEIGHT * 2}>
+            <Svg width={width} height={RAIN_BOUNDS_HEIGHT * 2}>
               {layer1Drops.map((d, i) => (
                 <G key={`l1-${i}`}>
-                  <Line x1={d.x} y1={d.y} x2={d.x - 4} y2={d.y + d.len} stroke="#85BEE9" strokeWidth={1.8} strokeLinecap="round" opacity={0.85} />
-                  <Line x1={d.x} y1={d.y + SCENE_HEIGHT} x2={d.x - 4} y2={d.y + d.len + SCENE_HEIGHT} stroke="#85BEE9" strokeWidth={1.8} strokeLinecap="round" opacity={0.85} />
+                  <Line x1={d.x} y1={d.y} x2={d.x - 4} y2={d.y + d.len} stroke="#85BEE9" strokeWidth={1.7} strokeLinecap="round" opacity={0.85} />
+                  <Line x1={d.x} y1={d.y + RAIN_BOUNDS_HEIGHT} x2={d.x - 4} y2={d.y + d.len + RAIN_BOUNDS_HEIGHT} stroke="#85BEE9" strokeWidth={1.7} strokeLinecap="round" opacity={0.85} />
                 </G>
               ))}
             </Svg>
@@ -440,7 +441,7 @@ export default function FarmerScene({
 
           {/* Splash ripples hitting the ground */}
           <Animated.View style={[StyleSheet.absoluteFill, splashStyle]}>
-            <Svg width={width} height={SCENE_HEIGHT}>
+            <Svg width={width} height={RAIN_BOUNDS_HEIGHT}>
               {splashPoints.map((p, i) => (
                 <Ellipse
                   key={`splash-${i}`}
@@ -540,8 +541,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: RAIN_BOUNDS_HEIGHT,
     overflow: 'hidden',
-    zIndex: 4,
+    zIndex: 1,
   },
 });

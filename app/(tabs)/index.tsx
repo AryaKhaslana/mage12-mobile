@@ -340,7 +340,8 @@ export default function DashboardScreen() {
     try {
       const response = await api.post("/user/restore-streak");
       if (response.data) {
-        const { pelindung_streak, streak } = response.data;
+        const resultData = response.data.data || response.data;
+        const { pelindung_streak, streak } = resultData;
         setUserData((prev: any) => {
           if (!prev) return prev;
           const updated = { ...prev, pelindung_streak, streak };
@@ -442,7 +443,9 @@ export default function DashboardScreen() {
           AsyncStorage.setItem("dashboard_weather", JSON.stringify({ data: weatherData, savedAt: Date.now() })).catch(() => {});
 
           // Check rain notification
-          if (weatherData.kondisi === "HUJAN" && weatherData.prediksiHujanHariIni) {
+          const weatherCond = (weatherData.kondisi || '').toUpperCase();
+          const isHujan = weatherCond.includes('HUJAN') || weatherCond.includes('RAIN') || weatherCond.includes('GERIMIS') || weatherCond.includes('DRIZZLE') || weatherCond.includes('THUNDER');
+          if (isHujan && weatherData.prediksiHujanHariIni) {
             try {
               const todayStr = new Date().toDateString();
               const lastNotified = await AsyncStorage.getItem("last_rain_notified");
@@ -600,7 +603,9 @@ export default function DashboardScreen() {
       const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
       return t.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
   });
-  const farmerState = weather?.kondisi === "HUJAN" || weather?.prediksiHujanHariIni ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
+  const currentCond = (weather?.kondisi || '').toUpperCase();
+  const isRaining = currentCond.includes('HUJAN') || currentCond.includes('RAIN') || currentCond.includes('GERIMIS') || currentCond.includes('DRIZZLE') || currentCond.includes('THUNDER') || weather?.prediksiHujanHariIni;
+  const farmerState = isRaining ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1' }} edges={["right", "bottom", "left"]}>

@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Alert } from 'react-native';
-// import MapView, { Circle } from 'react-native-maps';
+import React, { useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { router, useFocusEffect, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
+import * as Location from 'expo-location';
 import api from '../services/api';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HeatmapCell {
   lat: number;
@@ -19,24 +20,83 @@ interface HeatmapResponse {
   cells?: HeatmapCell[];
 }
 
+const DEFAULT_COORDS = { lat: -7.4664, lng: 112.7248 };
+
 export default function PetaHamaScreen() {
   const [filter, setFilter] = useState("semua");
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [data, setData] = useState<HeatmapResponse | null>(null);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>(DEFAULT_COORDS);
+  const [mapRevision, setMapRevision] = useState(0);
 
   const insets = useSafeAreaInsets();
+  const filterRef = useRef(filter);
+  filterRef.current = filter;
 
-  const fetchHeatmap = async (selectedFilter: string) => {
+  const resolveUserCoordinates = async (): Promise<{ lat: number; lng: number }> => {
+    let resolvedLat: number | null = null;
+    let resolvedLng: number | null = null;
+
+    // 1. Cek stored coordinates di SecureStore
+    try {
+      const rawUserData = await SecureStore.getItemAsync("userData");
+      if (rawUserData) {
+        const parsed = JSON.parse(rawUserData);
+        if (parsed.latitude != null && parsed.longitude != null) {
+          const lat = parseFloat(parsed.latitude);
+          const lng = parseFloat(parsed.longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            resolvedLat = lat;
+            resolvedLng = lng;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Gagal membaca koordinat tersimpan:", err);
+    }
+
+    // 2. Cek GPS terkini jika izin tersedia (dengan timeout 4 detik agar tidak hang)
+    try {
+      let { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        const permission = await Location.requestForegroundPermissionsAsync();
+        status = permission.status;
+      }
+      if (status === 'granted') {
+        const locPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+        const loc = await Promise.race([locPromise, timeoutPromise]);
+        if (loc?.coords) {
+          resolvedLat = loc.coords.latitude;
+          resolvedLng = loc.coords.longitude;
+        }
+      }
+    } catch (err) {
+      console.warn("Gagal mendapatkan koordinat GPS:", err);
+    }
+
+    return {
+      lat: resolvedLat !== null ? resolvedLat : DEFAULT_COORDS.lat,
+      lng: resolvedLng !== null ? resolvedLng : DEFAULT_COORDS.lng
+    };
+  };
+
+  const fetchHeatmap = async (selectedFilter: string, targetCoords?: { lat: number; lng: number }) => {
     setIsLoading(true);
     setIsError(false);
     try {
-      // Endpoint sesuai kontrak, bbox opsional di sini (kalau required bisa ditambah seperti patch sebelumnya, tapi fallback aman)
-      // Workaround: Kalau filter "semua", kita kirim hama kosong atau tetap "semua" (kita coba hapus hama param kalau dia "semua" buat nge-trigger default backend)
+      const coords = targetCoords || userCoords;
       const hamaParam = selectedFilter === 'semua' ? '' : selectedFilter;
-      const response = await api.get(`/heatmap?hama=${hamaParam}&bbox=-7.45,112.60,-7.20,112.80`);
+      const minLat = (coords.lat - 0.35).toFixed(4);
+      const minLng = (coords.lng - 0.35).toFixed(4);
+      const maxLat = (coords.lat + 0.35).toFixed(4);
+      const maxLng = (coords.lng + 0.35).toFixed(4);
+      const bboxParam = `${minLat},${minLng},${maxLat},${maxLng}`;
+      const response = await api.get(`/heatmap?hama=${hamaParam}&bbox=${bboxParam}`);
       if (response.data && response.data.status === 'success') {
         setData(response.data.data);
+        setMapRevision(prev => prev + 1);
       }
     } catch (error: any) {
       console.error(error);
@@ -48,14 +108,24 @@ export default function PetaHamaScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchHeatmap(filter);
+      let isMounted = true;
+      (async () => {
+        const coords = await resolveUserCoordinates();
+        if (isMounted) {
+          setUserCoords(coords);
+          fetchHeatmap(filterRef.current, coords);
+        }
+      })();
+      return () => {
+        isMounted = false;
+      };
     }, [])
   );
 
   const handleFilterChange = (newFilter: string) => {
     if (newFilter === filter) return;
     setFilter(newFilter);
-    fetchHeatmap(newFilter);
+    fetchHeatmap(newFilter, userCoords);
   };
 
   const filters = ["semua", "kutu-putih", "wereng", "ulat"];
@@ -66,7 +136,7 @@ export default function PetaHamaScreen() {
     "ulat": "Ulat"
   };
 
-  const cells = data?.cells || [];
+  const cells = (data?.cells || []).filter(c => typeof c.lat === 'number' && typeof c.lng === 'number' && !isNaN(c.lat) && !isNaN(c.lng));
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -121,12 +191,21 @@ export default function PetaHamaScreen() {
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
       <script>
-        const map = L.map('map', { zoomControl: false }).setView([-7.35, 112.73], 11);
+        const map = L.map('map', { zoomControl: false }).setView([${userCoords.lat}, ${userCoords.lng}], 12);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        const dataPoints = ${JSON.stringify(cells.map(c => [c.lat, c.lng, c.weight]))};
+        // Marker lokasi user
+        const userIcon = L.divIcon({
+          className: 'custom-user-marker',
+          html: '<div style="background-color: #3FA86B; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.35);"></div>',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+        L.marker([${userCoords.lat}, ${userCoords.lng}], { icon: userIcon }).addTo(map).bindPopup('Lokasi Kamu');
+
+        const dataPoints = ${JSON.stringify(cells.map(c => [c.lat, c.lng, c.weight || 1]))};
         
         if (dataPoints.length > 0) {
           L.heatLayer(dataPoints, {
@@ -152,7 +231,7 @@ export default function PetaHamaScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>🗺️ Peta Wabah Hama</Text>
-          <Text style={styles.subtitle}>Pantauan real-time laporan petani di Surabaya & Sidoarjo</Text>
+          <Text style={styles.subtitle}>Pantauan real-time laporan wabah hama di sekitarmu</Text>
         </View>
       </View>
 
@@ -186,12 +265,13 @@ export default function PetaHamaScreen() {
         {isError ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Gagal memuat peta wabah 😢</Text>
-            <Pressable onPress={() => fetchHeatmap(filter)} style={styles.retryBtn}>
+            <Pressable onPress={() => fetchHeatmap(filter, userCoords)} style={styles.retryBtn}>
               <Text style={styles.retryText}>Coba Lagi</Text>
             </Pressable>
           </View>
         ) : (
           <WebView 
+            key={`map-${userCoords.lat}-${userCoords.lng}-${filter}-${mapRevision}`}
             source={{ html: htmlContent }} 
             originWhitelist={['*']}
             style={styles.map}
@@ -222,8 +302,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     padding: 24, 
-     
-     
     backgroundColor: '#FFECEB' 
   },
   backBtn: {
@@ -231,12 +309,19 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 100,
     borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
     marginRight: 16
   },
   btnPressed: {
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
     transform: [{ scale: 0.98 }]
   },
   title: { fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', marginBottom: 4 },
@@ -244,8 +329,6 @@ const styles = StyleSheet.create({
   statsContainer: {
     padding: 24,
     paddingBottom: 16,
-     
-    
     backgroundColor: '#FFFFFF'
   },
   statsCard: {
@@ -253,8 +336,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
     alignItems: 'center',
     marginBottom: 20
   },
@@ -270,10 +356,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 100,
     borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4
+  },
   filterChipActive: {
-    backgroundColor: '#3FA86B' },
+    backgroundColor: '#3FA86B'
+  },
   filterText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
@@ -306,8 +397,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 100,
     borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4
+  },
   emptyText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 14,
@@ -331,8 +426,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 100,
     borderWidth: 0,
-    
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4
+  },
   retryText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 14,

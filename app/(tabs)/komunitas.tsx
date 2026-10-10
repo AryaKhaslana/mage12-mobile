@@ -592,6 +592,10 @@ export default function KomunitasScreen() {
           data={posts}
           keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
           contentContainerStyle={styles.scrollContent}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          removeClippedSubviews={Platform.OS === 'android'}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -651,7 +655,7 @@ export default function KomunitasScreen() {
                         params: {
                           username: item.username || item.author?.username || item.user_username || item.user_nama || "",
                           nama: item.author?.nama || item.user_nama || "",
-                          avatarUrl: item.author?.avatarUrl || "",
+                          avatarUrl: item.author?.avatarUrl || item.userAvatar || "",
                         },
                       } as any)
                     }

@@ -134,8 +134,30 @@ export default function ProfilScreen() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<"postingan" | "koleksi">("postingan");
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
   const [saved, setSaved] = useState<Record<number, boolean>>({});
+
+  // Fast Cache-First Loader: Langsung tampilkan avatar & profil dari storage lokal (< 50ms)
+  useEffect(() => {
+    const loadCache = async () => {
+      try {
+        const cachedUser = await SecureStore.getItemAsync("userData");
+        const cachedTanaman = await AsyncStorage.getItem("dashboard_tanaman");
+        if (cachedUser) {
+          const parsed = JSON.parse(cachedUser);
+          setUserData(parsed);
+          setIsLoading(false);
+        }
+        if (cachedTanaman) {
+          setTanamanList(JSON.parse(cachedTanaman));
+        }
+      } catch (e) {
+        console.warn("Failed reading cache in profile:", e);
+      }
+    };
+    loadCache();
+  }, []);
 
   const fetchAllData = async (isRefresh = false) => {
     if (isRefresh) {
@@ -143,18 +165,26 @@ export default function ProfilScreen() {
     } else if (!userData) {
       setIsLoading(true);
     }
-    try {
-      const [userRes, tanamanRes, achRes] = await Promise.all([
-        api.get("/user/me").catch((err) => { console.error("Error fetch user:", err); return null; }),
-        api.get("/tanaman").catch((err) => { console.error("Error fetch tanaman:", err); return null; }),
-        getAchievements().catch((err) => { console.error("Error fetch achievements:", err); return null; })
-      ]);
+    if (posts.length === 0) {
+      setIsLoadingPosts(true);
+    }
 
-      if (userRes?.data?.data) {
-        setUserData(userRes.data.data);
-        const username = userRes.data.data.username;
-        if (username) {
-          const postsRes = await getUserCommunityPosts(username, 1, 20).catch(() => null);
+    try {
+      // 1. Tentukan target username seawal mungkin dari state atau cache
+      let targetUsername = userData?.username;
+      if (!targetUsername) {
+        try {
+          const cached = await SecureStore.getItemAsync("userData");
+          if (cached) {
+            targetUsername = JSON.parse(cached).username;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Fetch postingan user secara PARALEL (Hancurkan Waterfall!)
+      const fetchPostsAsync = async (uName: string) => {
+        try {
+          const postsRes = await getUserCommunityPosts(uName, 1, 20);
           if (postsRes?.data) {
             setPosts(postsRes.data);
             const initialLikes: Record<number, { liked: boolean; count: number }> = {};
@@ -163,17 +193,50 @@ export default function ProfilScreen() {
             });
             setLikes(initialLikes);
           }
+        } catch (err) {
+          console.warn("Error fetching user posts:", err);
+        } finally {
+          setIsLoadingPosts(false);
+        }
+      };
+
+      let postsPromise = targetUsername ? fetchPostsAsync(targetUsername) : null;
+
+      // 3. Panggil API User, Tanaman, dan Achievements secara paralel
+      const [userRes, tanamanRes, achRes] = await Promise.all([
+        api.get("/user/me").catch((err) => { console.error("Error fetch user:", err); return null; }),
+        api.get("/tanaman").catch((err) => { console.error("Error fetch tanaman:", err); return null; }),
+        getAchievements().catch((err) => { console.error("Error fetch achievements:", err); return null; })
+      ]);
+
+      if (userRes?.data?.data) {
+        const freshUser = userRes.data.data;
+        setUserData(freshUser);
+        SecureStore.setItemAsync("userData", JSON.stringify(freshUser)).catch(console.error);
+        setIsLoading(false); // Lepas skeleton profil atas seketika!
+
+        // Jika tadi belum punya target username atau username berubah, fetch sekarang
+        if (!postsPromise || freshUser.username !== targetUsername) {
+          postsPromise = fetchPostsAsync(freshUser.username);
         }
       } else {
-        if (!isRefresh) Alert.alert("Gagal Memuat Profil", "Gagal memuat data profil kamu.");
+        if (!isRefresh && !userData) Alert.alert("Gagal Memuat Profil", "Gagal memuat data profil kamu.");
       }
-      if (tanamanRes?.data?.data) setTanamanList(tanamanRes.data.data);
+
+      if (tanamanRes?.data?.data) {
+        setTanamanList(tanamanRes.data.data);
+        AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(tanamanRes.data.data)).catch(() => {});
+      }
       if (achRes) setAchievementsData(achRes);
+
+      // Tunggu posts selesai jika masih diproses
+      if (postsPromise) await postsPromise;
     } catch (error) {
       console.error("Gagal mengambil data profil:", error);
       Alert.alert("Error", "Terjadi kesalahan saat memuat profil.");
     } finally {
       setIsLoading(false);
+      setIsLoadingPosts(false);
       setIsRefreshing(false);
     }
   };
@@ -369,7 +432,7 @@ export default function ProfilScreen() {
         {/* CONTENT */}
         {activeTab === "postingan" ? (
           <View style={{ marginTop: 16, gap: 14 }}>
-            {isLoading ? (
+            {isLoadingPosts && posts.length === 0 ? (
               [1, 2].map((i) => <SkeletonBlock key={i} style={{ height: 150, borderRadius: 20 }} />)
             ) : posts.length === 0 ? (
               <View style={{ marginTop: 24 }}>

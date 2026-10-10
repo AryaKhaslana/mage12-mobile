@@ -1,5 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -45,18 +46,32 @@ const TypingIndicator = () => {
 
 
 const formatMarkdown = (text: string) => {
-  // Parsing sederhana untuk **Bold** dan *Italic* tanpa library berat
-  const parts = text.split(/(\*\*.*?\*\*|\*[^\\n*]+\*)/g);
+  if (!text || typeof text !== 'string') return null;
+  
+  // 1. Bersihkan bullet point markdown agar rapi menjadi simbol '• '
+  let cleanText = text;
+  // Tangani kasus '* **Judul:**' atau '- **Judul:**' -> '• **Judul:**'
+  cleanText = cleanText.replace(/^\s*[*-]\s+\*\*(.*?)\*\*/gm, '• **$1**');
+  // Tangani kasus typo model AI tanpa spasi '*Judul:**' -> '• **Judul:**'
+  cleanText = cleanText.replace(/^\*([^*\n]+?)\*\*/gm, (match, p1) => {
+    const title = p1.replace(/:+$/, '');
+    return `• **${title}:**`;
+  });
+  // Tangani bullet biasa '* ' atau '- ' di awal baris (tidak diikuti asterisk lain)
+  cleanText = cleanText.replace(/^\s*[*-](?!\*)\s+/gm, '• ');
+
+  // 2. Split teks berdasarkan penanda bold (**...**) dan italic (*...*)
+  const parts = cleanText.split(/(\*\*.*?\*\*|\*[^*\n*]+\*)/g);
   return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
       return (
-        <Text key={index} style={{ fontFamily: 'Nunito_800ExtraBold' }}>
+        <Text key={index} style={{ fontFamily: 'Nunito_800ExtraBold', color: '#1c1c17' }}>
           {part.slice(2, -2)}
         </Text>
       );
     } else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
       return (
-        <Text key={index} style={{ fontStyle: 'italic' }}>
+        <Text key={index} style={{ fontStyle: 'italic', color: '#1c1c17' }}>
           {part.slice(1, -1)}
         </Text>
       );
@@ -107,11 +122,9 @@ export default function TanibotScreen() {
     const fetchHistory = async () => {
       try {
         const res = await getTanibotHistory(1, 30);
-        // The endpoint returns messages sorted newest to oldest? Usually history is newest first, or oldest first.
-        // Wait, "urut terlama→terbaru" was specified in the prompt:
-        // "GET /api/tanibot/history?page=1&limit=20 -> ... urut terlama->terbaru"
-        // Wait, the prompt says "GET /api/tanibot/history ... urut terlama->terbaru" for community comments, not bot. But let's assume it returns oldest first as requested. If not, we could reverse it. Assuming the backend does it correctly.
-        setMessages(res.data);
+        const data = res.data || [];
+        const sorted = data.sort((a: ChatMessage, b: ChatMessage) => a.id - b.id);
+        setMessages(sorted);
       } catch (e) {
         console.error(e);
       } finally {
@@ -217,6 +230,7 @@ export default function TanibotScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar style="dark" />
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         
@@ -319,7 +333,7 @@ export default function TanibotScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0' },
+    backgroundColor: '#FFFFFF' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

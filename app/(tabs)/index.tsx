@@ -432,14 +432,45 @@ export default function DashboardScreen() {
     } else if (isManualRefresh) {
       setIsRefreshing(true);
     }
+
+    // Panggil cuaca non-blocking di background agar skeleton tidak terhambat dan langsung lepas cepat!
+    api.get("/weather/today")
+      .then(async (weatherRes) => {
+        if (weatherRes?.data?.data) {
+          const weatherData = weatherRes.data.data;
+          setWeather(weatherData);
+          AsyncStorage.setItem("dashboard_weather", JSON.stringify({ data: weatherData, savedAt: Date.now() })).catch(() => {});
+
+          // Check rain notification
+          if (weatherData.kondisi === "HUJAN" && weatherData.prediksiHujanHariIni) {
+            try {
+              const todayStr = new Date().toDateString();
+              const lastNotified = await AsyncStorage.getItem("last_rain_notified");
+              if (lastNotified !== todayStr) {
+                showNotification(
+                  "☔ Hujan Diprediksi!",
+                  "Penyiraman tanaman ditunda sistem hari ini. Nikmati hujannya, petani! 🌧️",
+                  "info"
+                );
+                await AsyncStorage.setItem("last_rain_notified", todayStr);
+              }
+            } catch (err) {
+              console.error("Failed to check or set rain notif flag", err);
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Weather fetch non-fatal error:", err?.message);
+      });
+
     try {
-      const [meRes, tanamanRes, weatherRes] = await Promise.all([
+      const [meRes, tanamanRes] = await Promise.all([
         api.get("/user/me").catch((e) => {
           if (e.response && e.response.status === 404) return null;
           throw e;
         }),
         api.get("/tanaman"),
-        api.get("/weather/today").catch(() => null),
       ]);
       if (meRes?.data?.data) {
         setUserData((prev: any) => {
@@ -464,33 +495,11 @@ export default function DashboardScreen() {
         setTanamanList(tanamanRes.data.data);
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(tanamanRes.data.data)).catch(() => {});
       }
-      if (weatherRes?.data?.data) {
-        const weatherData = weatherRes.data.data;
-        setWeather(weatherData);
-        AsyncStorage.setItem("dashboard_weather", JSON.stringify({ data: weatherData, savedAt: Date.now() })).catch(() => {});
-
-        // Check rain notification
-        if (weatherData.kondisi === "HUJAN" && weatherData.prediksiHujanHariIni) {
-          try {
-            const todayStr = new Date().toDateString();
-            const lastNotified = await AsyncStorage.getItem("last_rain_notified");
-            if (lastNotified !== todayStr) {
-              showNotification(
-                "☔ Hujan Diprediksi!",
-                "Penyiraman tanaman ditunda sistem hari ini. Nikmati hujannya, petani! 🌧️",
-                "info"
-              );
-              await AsyncStorage.setItem("last_rain_notified", todayStr);
-            }
-          } catch (err) {
-            console.error("Failed to check or set rain notif flag", err);
-          }
-        }
-      } else {
-        setWeather(null);
-      }
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
+      if (tanamanList.length === 0 && !userData) {
+        setIsError(true);
+      }
       showNotification(
         "Gagal Memuat Data",
         error.response?.data?.message ||
@@ -637,7 +646,7 @@ export default function DashboardScreen() {
 
             
             {/* 5. Info Peta Wabah (Dipindah ke atas) */}
-            <View style={{ paddingHorizontal: 24, marginTop: 8 }}>
+            <View style={{ paddingHorizontal: 24, marginTop: 15 }}>
               <InfoCard onPress={() => router.push("/peta-hama" as any)} />
             </View>
 {/* 3. Tugas Hari Ini */}
@@ -653,7 +662,7 @@ export default function DashboardScreen() {
                 />
               ) : (
                 reminders.map((tanaman) => {
-                  const sudahValidasiHariIni = tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+                  const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
                   // Task penyiraman aktif tiap hari, kecuali kalau ditunda hujan
                   const isWateringTask = tanaman.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni;
 

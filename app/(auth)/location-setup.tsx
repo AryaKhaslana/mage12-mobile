@@ -58,7 +58,7 @@ export default function LocationSetupScreen() {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Izin Ditolak", "Tanpa lokasi, kamu nggak bisa pakai fitur komunitas broskie. Buka setting HP buat ngasih izin.");
+        Alert.alert("Izin Lokasi Ditolak", "Untuk menggunakan fitur cuaca dan komunitas, silakan izinkan akses lokasi melalui menu pengaturan perangkat kamu.");
         setIsLoading(false);
         return;
       }
@@ -120,7 +120,7 @@ export default function LocationSetupScreen() {
         
         <Text style={styles.title}>Lokasi Kamu</Text>
         <Text style={styles.subtitle}>
-          TaniSync butuh tau posisi kebun kamu biar bisa ngasih info komunitas dan cuaca yang akurat.
+          TaniSync memerlukan data lokasi kamu agar dapat memberikan informasi cuaca serta rekomendasi komunitas yang akurat.
         </Text>
 
         <View style={styles.statusBox}>

@@ -98,9 +98,9 @@ export default function PengaturanNotifikasiScreen() {
               await SecureStore.setItemAsync('userData', JSON.stringify(u));
             } catch {}
           }
-          showNotification("Sukses", "Reminder aktif! ");
+          showNotification("Berhasil", "Pengingat harian berhasil diaktifkan! 🔔");
         } else {
-          Alert.alert("Izin Ditolak", "Izin notifikasi ditolak — aktifkan dari pengaturan HP");
+          Alert.alert("Izin Notifikasi Ditolak", "Silakan aktifkan izin notifikasi melalui pengaturan perangkat kamu untuk menerima pengingat harian.");
           setIsEnabled(false);
           await SecureStore.setItemAsync('notifEnabled', 'false');
         }
@@ -115,12 +115,12 @@ export default function PengaturanNotifikasiScreen() {
           } catch {}
         }
         await cancelAllPlantReminders();
-        showNotification("Dimatikan", "Reminder dimatikan");
+        showNotification("Dinonaktifkan", "Pengingat harian telah dinonaktifkan.");
       }
     } catch (e) {
       console.error(e);
       setIsEnabled(!value);
-      Alert.alert("Gagal", "Tidak bisa mengatur reminder. Coba lagi.");
+      Alert.alert("Gagal", "Tidak dapat memperbarui pengaturan pengingat. Silakan coba lagi.");
     }
   };
 
@@ -142,12 +142,12 @@ export default function PengaturanNotifikasiScreen() {
       
       if (isEnabled) {
         await scheduleDailyPlantReminder(timeOption.hour, timeOption.minute);
-        showNotification("Diupdate", `Reminder diatur ke jam ${timeOption.label}`);
+        showNotification("Berhasil Diperbarui", `Pengingat diatur untuk pukul ${timeOption.label}`);
       }
     } catch (e) {
       console.error(e);
       setSelectedTime(previousTime);
-      Alert.alert("Gagal", "Tidak bisa mengatur reminder. Coba lagi.");
+      Alert.alert("Gagal", "Tidak dapat mengubah waktu pengingat. Silakan coba lagi.");
     }
   };
 

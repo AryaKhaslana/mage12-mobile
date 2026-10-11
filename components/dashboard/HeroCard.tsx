@@ -33,12 +33,12 @@ export default function HeroCard({ streak, onPress }: { streak: number, onPress:
         
         <View style={styles.textContainer}>
           <Text style={[styles.title, { color: isZero ? '#123924' : '#FFFFFF' }]}>
-            {isZero ? "Mulai Perjalananmu!" : "Kamu lagi on fire!"}
+            {isZero ? "Mulai Perjalanan Kamu!" : "Semangat Berkebun Kamu Luar Biasa!"}
           </Text>
           <Text style={[styles.subtitle, { color: isZero ? '#5C5A4F' : 'rgba(255,255,255,0.75)' }]}>
             {isZero 
-              ? "Siram tanamanmu hari ini untuk mulai streak."
-              : "Pertahankan streak-mu dengan nyiram hari ini."}
+              ? "Siram tanaman kamu hari ini untuk memulai streak."
+              : "Pertahankan streak kamu dengan menyiram tanaman hari ini."}
           </Text>
         </View>
       </View>

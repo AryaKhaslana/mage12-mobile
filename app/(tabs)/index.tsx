@@ -287,7 +287,7 @@ export default function DashboardScreen() {
             {
               rect: results[3] ? { x: results[3].x, y: results[3].y, width: results[3].w, height: results[3].h } : null,
               title: "Panen Terdekat",
-              description: "Pantau tanaman mana yang udah mau panen biar nggak kelewat.",
+              description: "Pantau tanaman yang mendekati masa panen agar tidak terlewatkan.",
               borderRadius: 24 
             },
             {
@@ -354,7 +354,7 @@ export default function DashboardScreen() {
         await AsyncStorage.setItem(key, 'true');
         
         setShowRestorePopup(false);
-        showNotification("Apinya Nyala Lagi! 🔥", "Jangan lupa siram hari ini ya!", "success");
+        showNotification("Streak Dipulihkan! 🔥", "Jangan lupa menyiram tanaman kamu hari ini ya!", "success");
       }
     } catch (e: any) {
       const msg = e.response?.data?.message || "Gagal memulihkan streak, coba lagi nanti.";
@@ -451,8 +451,8 @@ export default function DashboardScreen() {
               const lastNotified = await AsyncStorage.getItem("last_rain_notified");
               if (lastNotified !== todayStr) {
                 showNotification(
-                  "☔ Hujan Diprediksi!",
-                  "Penyiraman tanaman ditunda sistem hari ini. Nikmati hujannya, petani! 🌧️",
+                  "☔ Prakiraan Hujan",
+                  "Penyiraman otomatis ditunda hari ini karena diprediksi turun hujan. Tetap perhatikan kebun kamu ya! 🌧️",
                   "info"
                 );
                 await AsyncStorage.setItem("last_rain_notified", todayStr);
@@ -547,12 +547,12 @@ export default function DashboardScreen() {
         });
         if (d.levelUp) {
           showNotification(
-            "Mantap!",
-            `LEVEL UP! Level ${d.level}`,
+            "Selamat!",
+            `Level Meningkat! Sekarang kamu berada di Level ${d.level} 🎉`,
             "success",
           );
         } else {
-          showNotification("Mantap!", `Berhasil menyiram ${plantName || 'tanaman'}! +${d.expDidapat} EXP! Streak: ${d.streak} hari`, "success");
+          showNotification("Berhasil!", `Berhasil menyiram ${plantName || 'tanaman'}! +${d.expDidapat} EXP! Streak: ${d.streak} hari`, "success");
         }
         // fetchDashboardData berjalan di background tanpa blocking UI
         fetchDashboardData();
@@ -769,9 +769,9 @@ export default function DashboardScreen() {
               {[
                 { lvl: 10, title: "Dewa Tani", desc: "Legenda kebun kota" },
                 { lvl: 8, title: "Sultan Hidroponik", desc: "Punya setup premium" },
-                { lvl: 4, title: "Juragan Panen", desc: "Udah sering bagi-bagi hasil" },
-                { lvl: 2, title: "Tangan Dingin", desc: "Mulai paham ritme tanaman" },
-                { lvl: 1, title: "Petani Balkon", desc: "Baru mulai nyemai bibit" }
+                { lvl: 4, title: "Juragan Panen", desc: "Sering berbagi hasil panen ke sesama" },
+                { lvl: 2, title: "Tangan Dingin", desc: "Mulai memahami ritme tanaman" },
+                { lvl: 1, title: "Petani Balkon", desc: "Baru mulai menyemai benih" }
               ].map((item, idx) => {
                 const userLvl = userData?.level || 1;
                 const isPassed = userLvl >= item.lvl;
@@ -820,7 +820,7 @@ export default function DashboardScreen() {
         onSuccess={(newUsername: string) => {
           setShowProfilePopup(false);
           setUserData((prev: any) => prev ? { ...prev, username: newUsername } : prev);
-          showNotification("Cakep!", "Username lu berhasil disimpen.", "success");
+          showNotification("Berhasil!", "Username kamu berhasil disimpan.", "success");
         }}
       />
 

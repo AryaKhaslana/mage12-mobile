@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -34,11 +35,18 @@ const TypingIndicator = () => {
 
   return (
     <Animated.View style={[styles.bubbleWrapperLeft, { marginTop: 16, opacity: fadeAnim }]}>
-      <View style={[styles.bubbleBot, { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 16 }]}>
-        <ActivityIndicator size="small" color="#5C5A4F" />
-        <Text style={[styles.bubbleText, styles.textBot, { fontStyle: 'italic', color: '#5C5A4F' }]}>
-          TaniBot sedang merangkai kata...
-        </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+        <Image
+          source={require('../../assets/images/tanibot.png')}
+          style={styles.messageBotAvatar}
+          contentFit="contain"
+        />
+        <View style={[styles.bubbleBot, { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 16 }]}>
+          <ActivityIndicator size="small" color="#5C5A4F" />
+          <Text style={[styles.bubbleText, styles.textBot, { fontStyle: 'italic', color: '#5C5A4F' }]}>
+            TaniBot sedang merangkai kata...
+          </Text>
+        </View>
       </View>
     </Animated.View>
   );
@@ -136,8 +144,8 @@ export default function TanibotScreen() {
   const handleClearHistory = () => {
     if (messages.length === 0) return;
     Alert.alert(
-      "Bersihkan Obrolan",
-      "Yakin mau hapus semua riwayat chat dengan TaniBot?",
+      "Hapus Riwayat Percakapan",
+      "Apakah kamu yakin ingin menghapus seluruh riwayat percakapan dengan TaniBot?",
       [
         { text: "Batal", style: "cancel" },
         { 
@@ -201,8 +209,8 @@ export default function TanibotScreen() {
         id: Date.now() + 1,
         role: "BOT",
         message: e.response?.status === 429 
-          ? "Waduh, aku lagi ngos-ngosan nih (terlalu banyak pesan). Kasih aku nafas sekitar 15 menit ya broskie! 😴" 
-          : (e.response?.data?.message || "Duh, koneksiku ke server lagi gangguan nih. Coba lagi nanti ya! 🔌"),
+          ? "Mohon maaf, saat ini sedang ada banyak pesan yang diproses. Silakan beri jeda sekitar 15 menit sebelum bertanya lagi ya! ⏳" 
+          : (e.response?.data?.message || "Mohon maaf, koneksi ke server sedang mengalami gangguan. Silakan coba lagi beberapa saat nanti ya! 🔌"),
         createdAt: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -218,12 +226,32 @@ export default function TanibotScreen() {
     const isUser = item.role === "USER";
     return (
       <View style={[styles.bubbleWrapper, isUser ? styles.bubbleWrapperRight : styles.bubbleWrapperLeft]}>
-        <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleBot]}>
-          <Text style={[styles.bubbleText, isUser ? styles.textUser : styles.textBot]}>
-            {formatMarkdown(item.message)}
-          </Text>
-        </View>
-        <Text style={[styles.timeText, isUser && { textAlign: 'right' }]}>{getRelativeTime(item.createdAt)}</Text>
+        {!isUser ? (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+            <Image
+              source={require('../../assets/images/tanibot.png')}
+              style={styles.messageBotAvatar}
+              contentFit="contain"
+            />
+            <View style={{ flexShrink: 1, maxWidth: '85%' }}>
+              <View style={[styles.bubble, styles.bubbleBot]}>
+                <Text style={[styles.bubbleText, styles.textBot]}>
+                  {formatMarkdown(item.message)}
+                </Text>
+              </View>
+              <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={{ alignSelf: 'flex-end', maxWidth: '85%' }}>
+            <View style={[styles.bubble, styles.bubbleUser]}>
+              <Text style={[styles.bubbleText, styles.textUser]}>
+                {formatMarkdown(item.message)}
+              </Text>
+            </View>
+            <Text style={[styles.timeText, { textAlign: 'right' }]}>{getRelativeTime(item.createdAt)}</Text>
+          </View>
+        )}
       </View>
     );
   };
@@ -236,10 +264,22 @@ export default function TanibotScreen() {
         
         {/* HEADER */}
         <View style={styles.header}>
-          
-          <View>
-            <Text style={styles.headerTitle}>TaniBot </Text>
-            <Text style={styles.headerSubtitle}>Asisten tanamanmu</Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerAvatarContainer}>
+              <Image
+                source={require('../../assets/images/tanibot.png')}
+                style={styles.headerAvatar}
+                contentFit="contain"
+              />
+              <View style={styles.onlineBadge} />
+            </View>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={styles.headerTitle}>TaniBot</Text>
+                <Text style={{ fontSize: 16 }}>🌱</Text>
+              </View>
+              <Text style={styles.headerSubtitle}>Asisten cerdas tanaman kamu</Text>
+            </View>
           </View>
 
           <Pressable 
@@ -267,15 +307,19 @@ export default function TanibotScreen() {
                 <View>
                   <View style={styles.welcomeContainer}>
                     <View style={styles.welcomeIconWrapper}>
-                      <MaterialIcons name="smart-toy" size={48} color="#FFFFFF" />
+                      <Image
+                        source={require('../../assets/images/tanibot.png')}
+                        style={styles.welcomeMascotImage}
+                        contentFit="contain"
+                      />
                     </View>
-                    <Text style={styles.welcomeTitle}>Halo! Aku TaniBot </Text>
+                    <Text style={styles.welcomeTitle}>Halo! Aku TaniBot 🌱</Text>
                     <Text style={styles.welcomeSubtitle}>
-                      Asisten pintar pertanianmu. Tanya apa aja seputar perawatan, panen, atau cuaca hari ini!
+                      Asisten pintar pertanian kamu. Tanyakan apa saja seputar perawatan tanaman, jadwal panen, atau cuaca hari ini!
                     </Text>
                   </View>
                   <View style={{ marginTop: 12, gap: 8, flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {["Tanamanku perlu disiram nggak hari ini?", "Kapan tanamanku panen?", "Apa tips merawat tanaman tomat?"].map((q, i) => (
+                    {["Apakah tanamanku perlu disiram hari ini?", "Kapan tanamanku panen?", "Apa tips merawat tanaman tomat?"].map((q, i) => (
                       <Pressable 
                         key={i}
                         onPress={() => setInputText(q)}
@@ -361,15 +405,53 @@ const styles = StyleSheet.create({
     shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     marginBottom: 20,
     marginTop: 10 },
-  welcomeIconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerAvatarContainer: {
+    position: 'relative',
+  },
+  headerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E8F5E9',
+  },
+  onlineBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#3FA86B',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  messageBotAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E8F5E9',
+    marginBottom: 16,
+  },
+  welcomeIconWrapper: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#E8F5E9',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    borderWidth: 0 },
+    borderWidth: 2.5,
+    borderColor: '#C8E6C9',
+  },
+  welcomeMascotImage: {
+    width: 80,
+    height: 80,
+  },
   welcomeTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',

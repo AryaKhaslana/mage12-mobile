@@ -27,6 +27,10 @@ export default function IndexScreen() {
         const userDataStr = await SecureStore.getItemAsync("userData");
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
+          if (!userData.username) {
+            router.replace("/(auth)/profile-setup");
+            return;
+          }
           if (!userData.latitude) {
             router.replace("/(auth)/location-setup");
             return;

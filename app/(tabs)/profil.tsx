@@ -666,7 +666,7 @@ export default function ProfilScreen() {
             <MaterialIcons name="logout" size={48} color={C.coral} style={{ marginBottom: 12 }} />
             <Text style={{ fontFamily: F.extra, fontSize: 24, color: C.ink, marginBottom: 8, textAlign: 'center' }}>Konfirmasi Keluar</Text>
             <Text style={{ fontFamily: F.medium, fontSize: 16, color: C.muted, textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
-              Beneran mau keluar nih broskie? Nanti harus login lagi loh.
+              Apakah kamu yakin ingin keluar? Kamu perlu masuk kembali untuk mengakses akunmu.
             </Text>
             
             <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
@@ -700,7 +700,7 @@ export default function ProfilScreen() {
             <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.muted, marginBottom: 16 }}>Versi 1.0.0</Text>
             
             <Text style={{ fontFamily: F.medium, fontSize: 14, color: C.ink, textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
-              Aplikasi teman bertani kaum urban. TaniSync membantumu merawat tanaman dengan mudah dan menyenangkan. Dibuat untuk Project MAGE.
+              Aplikasi pendamping bertani kaum urban. TaniSync membantu kamu merawat tanaman dengan mudah dan menyenangkan. Dibuat untuk Project MAGE.
             </Text>
             
             <Pressable 

@@ -402,8 +402,8 @@ export default function KomunitasScreen() {
           lng = user.longitude;
         } else {
           showNotification(
-            "Lokasi Kosong",
-            "Lengkapi lokasi di profil dulu broskie!",
+            "Lokasi Belum Diatur",
+            "Silakan lengkapi data lokasi pada profil kamu terlebih dahulu.",
             "error",
           );
           setIsLoading(false);
@@ -458,7 +458,7 @@ export default function KomunitasScreen() {
   const handleDeletePost = (postId: number) => {
     Alert.alert(
       "Hapus Postingan",
-      "Yakin mau hapus postingan ini? Nggak bisa dikembalikan lho.",
+      "Apakah kamu yakin ingin menghapus postingan ini? Tindakan ini tidak dapat dibatalkan.",
       [
         { text: "Batal", style: "cancel" },
         { 
@@ -467,10 +467,10 @@ export default function KomunitasScreen() {
           onPress: async () => {
             try {
               await deleteCommunityPost(postId);
-              showNotification("Berhasil", "Postingan dihapus.", "success");
+              showNotification("Berhasil", "Postingan berhasil dihapus.", "success");
               fetchPosts(1, true);
             } catch (e: any) {
-              showNotification("Gagal", "Gagal hapus postingan", "error");
+              showNotification("Gagal", "Gagal menghapus postingan.", "error");
             }
           }
         }
@@ -513,7 +513,7 @@ export default function KomunitasScreen() {
 
   const handleSubmitPost = async () => {
     if (!deskripsi.trim()) {
-      showNotification("Error", "Isi belum diisi broskie", "error");
+      showNotification("Perhatian", "Konten postingan tidak boleh kosong.", "error");
       return;
     }
     setIsSubmitting(true);
@@ -536,7 +536,7 @@ export default function KomunitasScreen() {
       }
 
       await createCommunityPost(formData);
-      showNotification("Mantap!", "Berhasil posting broskie!", "success");
+      showNotification("Berhasil!", "Postingan kamu berhasil dibagikan!", "success");
       setIsModalVisible(false);
       setJudul("");
       setLokasiNama("");
@@ -549,8 +549,8 @@ export default function KomunitasScreen() {
     } catch (e: any) {
       console.error(e);
       showNotification(
-        "Gagal",
-        e.response?.data?.message || "Gagal posting",
+        "Gagal Mengunggah",
+        e.response?.data?.message || "Gagal mengunggah postingan, silakan coba lagi.",
         "error",
       );
     } finally {

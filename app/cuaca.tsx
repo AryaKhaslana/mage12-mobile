@@ -69,7 +69,7 @@ export default function CuacaScreen() {
           Gagal Memuat Cuaca
         </Text>
         <Text style={{ fontSize: 14, fontFamily: 'Nunito_500Medium', color: COLORS.muted, textAlign: 'center', marginBottom: 20 }}>
-          Koneksi bermasalah atau koordinat lokasi belum disetel.
+          Terjadi gangguan koneksi atau lokasi belum diatur. Silakan periksa kembali koneksi internet dan pengaturan lokasi kamu.
         </Text>
         <Pressable 
           onPress={fetchWeather} 

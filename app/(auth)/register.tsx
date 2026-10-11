@@ -41,15 +41,15 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!nama || !email || !username || !password || !confirmPassword) {
-      showNotification("Waduh!", "Isi semua datanya dulu broskie biar bisa lanjut.", "info");
+      showNotification("Perhatian", "Silakan lengkapi semua data formulir terlebih dahulu.", "info");
       return;
     }
     if (password !== confirmPassword) {
-      showNotification("Waduh!", "Kata sandi sama konfirmasinya beda nih, coba cek lagi.", "info");
+      showNotification("Perhatian", "Konfirmasi kata sandi tidak cocok. Silakan periksa kembali.", "info");
       return;
     }
     if (!agreeTnc) {
-      showNotification("Waduh!", "Centang dulu syarat & ketentuannya ya broskie.", "info");
+      showNotification("Perhatian", "Silakan setujui syarat & ketentuan terlebih dahulu.", "info");
       return;
     }
 
@@ -76,12 +76,27 @@ export default function RegisterScreen() {
 
       const res = await api.post("/auth/register", payload);
       if (res.data.status === "success") {
+        try {
+          // Otomatis login agar user langsung punya sesi aktif untuk upload avatar & banner
+          const loginRes = await api.post("/auth/login", { email, password });
+          if (loginRes.data?.status === "success" && loginRes.data?.data?.token) {
+            await SecureStore.setItemAsync("userToken", loginRes.data.data.token);
+            await SecureStore.setItemAsync("userData", JSON.stringify(loginRes.data.data.user));
+            showNotification("Akun Berhasil Dibuat!", "Silakan atur foto profil dan banner kebun kamu.", "success");
+            router.replace("/(auth)/avatar-setup");
+            return;
+          }
+        } catch (loginErr) {
+          console.log("Auto-login error:", loginErr);
+        }
+
+        // Fallback jika auto-login gagal: arahkan ke login
         router.replace("/(auth)/login");
-        showNotification("Mantap!", "Akun lu udah jadi broskie, tinggal login aja sekarang.", "success");
+        showNotification("Pendaftaran Berhasil!", "Akun kamu sudah siap digunakan, silakan masuk.", "success");
       }
     } catch (error: any) {
       console.error(error.response?.data || error.message);
-      showNotification("Gagal Daftar", error.response?.data?.message || "Ada yang salah pas daftar nih.", "error");
+      showNotification("Gagal Mendaftar", error.response?.data?.message || "Terjadi kesalahan saat pendaftaran, silakan coba lagi.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -101,10 +116,24 @@ export default function RegisterScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
-            {/* Title and Subtitle */}
-            <View style={{ marginBottom: 24, paddingHorizontal: 8, alignItems: "center" }}>
-              <Text style={{ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4, textAlign: "center" }}>Daftar TaniSync</Text>
-              <Text style={{ fontSize: 16, fontFamily: "Nunito_500Medium", color: "#5C5A4F", textAlign: "center" }}>Ayo mulai perjalanan bertanimu!</Text>
+            {/* Title and Subtitle with Step Indicator */}
+            <View style={{ marginBottom: 20, paddingHorizontal: 8, alignItems: "center" }}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#E8F5E9',
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderRadius: 100,
+                marginBottom: 8,
+              }}>
+                <MaterialIcons name="person-outline" size={14} color="#3FA86B" style={{ marginRight: 4 }} />
+                <Text style={{ fontFamily: "Nunito_700Bold", fontSize: 12, color: "#3FA86B" }}>
+                  Langkah 1 dari 2: Data Akun
+                </Text>
+              </View>
+              <Text style={{ fontSize: 26, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4, textAlign: "center" }}>Daftar Akun TaniSync</Text>
+              <Text style={{ fontSize: 14, fontFamily: "Nunito_500Medium", color: "#5C5A4F", textAlign: "center" }}>Nama dan username wajib diisi untuk identitas kebun kamu</Text>
             </View>
             
             {/* Main Form Card */}
@@ -237,7 +266,7 @@ export default function RegisterScreen() {
                 {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Daftar</Text>
+                  <Text style={styles.primaryButtonText}>Daftar & Lanjutkan</Text>
                 )}
               </Pressable>
               
@@ -299,10 +328,10 @@ export default function RegisterScreen() {
             <Text style={styles.modalTitle}>Syarat & Ketentuan</Text>
             <ScrollView style={{ marginVertical: 16 }}>
               <Text style={{ fontFamily: "Nunito_500Medium", color: "#5C5A4F", lineHeight: 22 }}>
-                1. Data lokasi lu cuma disimpen buat keperluan cuaca dan komunitas, santai ga kita sebar broskie.{"\n\n"}
-                2. Jaga etika pas posting di komunitas ya.{"\n\n"}
-                3. Jangan spam panen kalo emang kaga ada tanaman.{"\n\n"}
-                4. Data login diproses pake enkripsi standar, jadi aman.
+                1. Data lokasi kamu hanya disimpan untuk keperluan fitur cuaca dan komunitas, serta dijaga kerahasiaannya.{"\n\n"}
+                2. Harap saling menghargai dan menjaga etika berkomunikasi di komunitas.{"\n\n"}
+                3. Gunakan fitur pencatatan panen secara bijak dan sesuai dengan kondisi nyata.{"\n\n"}
+                4. Data akun dan kata sandi kamu diamankan menggunakan enkripsi standar industri.
               </Text>
             </ScrollView>
             <Pressable

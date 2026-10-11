@@ -186,10 +186,10 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
             <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0,  padding: 24 }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 8 }}>
-                Yakin mau skip broskie? 🥺
+                Yakin ingin melewati panduan? 🥺
               </Text>
               <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
-                Nanti kamu kebingungan lho pas ngurus tanaman. Bentar doang kok tutorialnya!
+                Panduan ini hanya sebentar dan akan membantu kamu merawat tanaman dengan lebih optimal.
               </Text>
               
               <View style={{ gap: 12 }}>
@@ -199,14 +199,14 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
                     backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 999, borderWidth: 0,  alignItems: 'center'
                   }, pressed && { transform: [{ translateY: 2 }] }]}
                 >
-                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Lanjut Belajar</Text>
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Lanjutkan Panduan</Text>
                 </Pressable>
                 
                 <Pressable
                   onPress={() => { setShowConfirmSkip(false); onSkip(); }}
                   style={{ paddingVertical: 14, alignItems: 'center' }}
                 >
-                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#FF6B5C' }}>Ya, Lewati Aja</Text>
+                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#FF6B5C' }}>Ya, Lewati Saja</Text>
                 </Pressable>
               </View>
             </View>

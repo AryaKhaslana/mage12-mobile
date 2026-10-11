@@ -270,7 +270,7 @@ export default function ProfilPenggunaScreen() {
     } catch {
       setIsFollowing(prevFollowing);
       setFollowerCount(prevCount);
-      showNotification("Ups", "Fitur ikuti belum bisa dipakai, coba lagi nanti ya", "error");
+      showNotification("Gagal", "Tidak dapat mengikuti pengguna saat ini, silakan coba beberapa saat lagi.", "error");
     } finally {
       setIsFollowBusy(false);
     }
@@ -279,7 +279,7 @@ export default function ProfilPenggunaScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Cek kebun ${nama} (${handle}) di TaniSync! 🌱`,
+        message: `Lihat kebun ${nama} (${handle}) di TaniSync! 🌱`,
       });
     } catch {}
   };

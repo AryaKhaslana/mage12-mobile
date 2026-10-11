@@ -32,27 +32,27 @@ const AnimatedExpoImage = Animated.createAnimatedComponent(ExpoImage);
 const slides = [
   {
     id: "1",
-    title: "Kenalin, Si Tani!",
+    title: "Perkenalkan, Si Tani!",
     description:
-      "Dia sahabat kecil yang bakal nemenin kamu ngerawat tanaman, dari bibit sampai panen.",
+      "Sahabat setia yang akan mendampingi kamu merawat tanaman, mulai dari benih hingga masa panen.",
     image: require("../assets/images/icontampilanawal/seedling-halo.svg") },
   {
     id: "2",
-    title: "TaniSync itu apa sih?",
+    title: "Mengenal TaniSync",
     description:
-      "Aplikasi asisten urban farming yang bantu kamu nanem sayur sendiri di rumah — walau cuma punya balkon kecil sekalipun.",
+      "Asisten pertanian urban yang membantu kamu menanam sayuran sendiri di rumah, bahkan di ruang terbatas.",
     image: require("../assets/images/icontampilanawal/seedling-menanam.svg") },
   {
     id: "3",
-    title: "Gak akan lupa lagi",
+    title: "Perawatan Lebih Terjadwal",
     description:
-      "Reminder otomatis kapan harus nyiram & mupuk, plus kumpulin streak tiap kali kamu rajin ngerawat tanaman.",
+      "Pengingat otomatis untuk menyiram dan memupuk tanaman, serta bangun kebiasaan merawat kebun setiap hari.",
     image: require("../assets/images/icontampilanawal/seedling-lompat.svg") },
   {
     id: "4",
-    title: "Kecil tapi berdampak",
+    title: "Langkah Kecil, Dampak Nyata",
     description:
-      "Setiap tanaman yang kamu rawat bantu ketahanan pangan mandiri di kotamu — kecil tapi nyata.",
+      "Setiap tanaman yang kamu rawat berkontribusi nyata bagi ketahanan pangan mandiri di sekitarmu.",
     image: require("../assets/images/icontampilanawal/seedling-meneropong.svg") },
 ];
 export default function OnboardingScreen() {

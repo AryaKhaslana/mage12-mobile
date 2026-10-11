@@ -16,7 +16,7 @@ export default function InfoCard({ onPress }: { onPress: () => void }) {
       </View>
       <View style={styles.info}>
         <Text style={styles.title}>Peta Wabah Hama</Text>
-        <Text style={styles.subtitle}>Pantau kondisi sekitar kebunmu</Text>
+        <Text style={styles.subtitle}>Pantau kondisi sekitar kebun kamu</Text>
       </View>
       <MaterialIcons name="chevron-right" size={24} color="#8F9B94" />
     </Pressable>

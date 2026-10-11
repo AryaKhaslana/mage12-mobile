@@ -76,7 +76,7 @@ export default function KoneksiScreen() {
         onPress={() => {
           const targetParam = item.username || (item.id ? String(item.id) : "");
           if (!targetParam) {
-            Alert.alert("Profil Belum Siap", "Pengguna ini belum dapat diakses.");
+            Alert.alert("Profil Belum Siap", "Profil pengguna ini belum dapat diakses saat ini.");
             return;
           }
           router.push({

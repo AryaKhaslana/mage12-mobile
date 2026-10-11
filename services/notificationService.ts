@@ -47,7 +47,7 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
   // Clear any existing notifications to avoid duplicates
   await cancelAllPlantReminders();
 
-  let body = "Cek kebunmu hari ini ya ";
+  let body = "Saatnya memeriksa kebun kamu hari ini 🌱";
 
   try {
     // Fetch user plants
@@ -70,7 +70,7 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
       }
 
       const plantName = priorityPlant.nickname || priorityPlant.jenisTanaman;
-      body = `${plantName} menunggu kamu nih — cek jadwal siramnya!`;
+      body = `${plantName} membutuhkan perhatian kamu hari ini — periksa jadwal perawatannya!`;
     }
   } catch (error) {
     console.warn(
@@ -80,7 +80,7 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Waktunya merawat tanaman! ",
+      title: "Waktunya Merawat Tanaman! 🌱",
       body: body,
       sound: true,
     },

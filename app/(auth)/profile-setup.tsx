@@ -13,7 +13,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import Animated, {
@@ -214,16 +214,16 @@ export default function ProfileSetupScreen() {
   const isFormValid = nama.trim().length >= 2 && username.trim().length >= 3;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-      <Stack.Screen options={{ headerShown: false }} />
-
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled={Platform.OS === 'ios'}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="none"
           showsVerticalScrollIndicator={false}
         >
           {/* STEP INDICATOR BADGE */}
@@ -283,6 +283,7 @@ export default function ProfileSetupScreen() {
                   onBlur={() => setActiveInput(null)}
                   maxLength={50}
                   autoCapitalize="words"
+                  blurOnSubmit={false}
                 />
                 {nama.length > 0 && (
                   <Pressable onPress={() => handleNamaChange('')} hitSlop={8}>
@@ -324,6 +325,7 @@ export default function ProfileSetupScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                   maxLength={30}
+                  blurOnSubmit={false}
                 />
                 {username.length > 0 && (
                   <Pressable onPress={() => handleUsernameChange('')} hitSlop={8}>
@@ -513,7 +515,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
-    elevation: 2,
   },
   inputIcon: {
     marginRight: 10,

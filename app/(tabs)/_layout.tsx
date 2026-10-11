@@ -44,12 +44,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 style={({ pressed }) => [
                   styles.fab,
                   pressed && styles.fabPressed,
-                  isFocused && { borderColor: '#1B4332', borderWidth: 2 }
+                  isFocused && { borderColor: '#3FA96B', borderWidth: 2.5 }
                 ]}
               >
                 <Image
-                  source={require('../../assets/images/tanibot.png')}
-                  style={{ width: 42, height: 42, borderRadius: 21 }}
+                  source={require('../../assets/images/navbar/chatbot.svg')}
+                  style={{ width: 52, height: 52, transform: [{ translateY: 4 }] }}
                   contentFit="contain"
                 />
               </Pressable>
@@ -180,11 +180,13 @@ const styles = StyleSheet.create({
     height: 60,
     marginTop: -28, // slightly popping up
     borderRadius: 30,
-    backgroundColor: '#3FA96B',
-    shadowColor: '#3FA96B',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#3FA96B',
+    shadowColor: '#1B4332',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
     elevation: 6,
     alignItems: 'center',
     justifyContent: 'center' },

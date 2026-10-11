@@ -93,36 +93,19 @@ export default function CuacaScreen() {
       {/* 1. WEATHER SCENE BACKGROUND */}
       <WeatherScene weatherCondition={weatherData.kondisi} isNight={new Date().getHours() > 18 || new Date().getHours() < 6} />
 
-      {/* 2. HEADER INFO (Over Scene) */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.cityName}>{weatherData.city}</Text>
-        <Text style={styles.temperature}>{weatherData.suhu}°</Text>
-        <View style={styles.conditionBadge}>
-          <Text style={styles.conditionText}>{weatherData.kondisi}</Text>
-        </View>
-      </View>
-
-      {/* 3. BOTTOM SHEET CONTENT */}
+      {/* 2. BOTTOM SHEET CONTENT */}
       <View style={styles.bottomSheet}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          {/* Action Card */}
-          <View style={[
-            styles.actionCard, 
-            { backgroundColor: weatherData.pop >= 40 ? '#FFEFEA' : '#E8F5E9' }
-          ]}>
-            <View style={[styles.actionIconContainer, { backgroundColor: weatherData.pop >= 40 ? COLORS.coral : COLORS.primary }]}>
-              <Text style={styles.actionIcon}>{weatherData.pop >= 40 ? '🚫' : '💧'}</Text>
+          {/* Header Info (Lokasi, Suhu, Kondisi) */}
+          <View style={styles.headerContainer}>
+            <View style={styles.cityRow}>
+              <Ionicons name="location-sharp" size={18} color={COLORS.primary} />
+              <Text style={styles.cityName}>{weatherData.city}</Text>
             </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={[styles.actionTitle, { color: weatherData.pop >= 40 ? COLORS.coral : COLORS.primary }]}>
-                {weatherData.pop >= 40 ? "Tunda Siram Hari Ini" : "Aman Untuk Menyiram"}
-              </Text>
-              {weatherData.pop >= 40 && (
-                <Text style={styles.actionSubtext}>
-                  Cuaca diprediksi hujan, cegah akar busuk!
-                </Text>
-              )}
+            <Text style={styles.temperature}>{weatherData.suhu}°</Text>
+            <View style={styles.conditionBadge}>
+              <Text style={styles.conditionText}>{weatherData.kondisi}</Text>
             </View>
           </View>
 
@@ -201,47 +184,43 @@ const styles = StyleSheet.create({
 
   headerContainer: {
     alignItems: 'center',
-    marginTop: 80,
-    zIndex: 10,
+    marginBottom: 24,
+  },
+  cityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
   },
   cityName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: '#1B4332',
-    textShadowColor: 'rgba(255,255,255,0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   temperature: {
-    fontSize: 72,
+    fontSize: 64,
     fontWeight: '900',
     color: '#1B4332',
-    lineHeight: 80,
-    textShadowColor: 'rgba(255,255,255,0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    lineHeight: 72,
   },
   conditionBadge: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: '#E8F5E9',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 999,
-    marginTop: -4,
-    shadowColor: '#1B4332',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(63, 168, 107, 0.25)',
   },
   conditionText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1B4332',
   },
   bottomSheet: {
     flex: 1,
     backgroundColor: '#FBF8F1',
-    marginTop: 80,
+    marginTop: 210,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     shadowColor: '#000',

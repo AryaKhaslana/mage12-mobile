@@ -117,8 +117,8 @@ export default function WeatherScene({ weatherCondition, isNight }: { weatherCon
             <G>
               <Path d="M100,20 A50,50 0 1,0 130,100 A60,60 0 1,1 100,20 Z" fill="#FFE082" />
               {/* Sleeping face */}
-              <Path d="M60,65 Q65,70 70,65" fill="none" stroke="#5C5A4F" strokeWidth="3" strokeLinecap="round" />
-              <Path d="M85,65 Q90,70 95,65" fill="none" stroke="#5C5A4F" strokeWidth="3" strokeLinecap="round" />
+              <Path d="M60,65 Q65,70 70,65" fill="none" stroke="#ffffffff" strokeWidth="3" strokeLinecap="round" />
+              <Path d="M85,65 Q90,70 95,65" fill="none" stroke="#ffffffff" strokeWidth="3" strokeLinecap="round" />
             </G>
           ) : isCloudy ? (
             // Cute Fluffy Cloud (BERAWAN / CLOUDS)

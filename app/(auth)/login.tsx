@@ -76,9 +76,16 @@ export default function LoginScreen() {
       <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          enabled={Platform.OS === 'ios'}
         >
-          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
+          <ScrollView
+            style={{ zIndex: 2 }}
+            contentContainerStyle={styles.scrollContainer}
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+          >
             {/* Title and Subtitle */}
             <View style={{ marginBottom: 24, paddingHorizontal: 8, alignItems: "center" }}>
               <Text style={{ fontSize: 28, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4, textAlign: "center" }}>Selamat datang balik!</Text>
@@ -98,6 +105,7 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   onFocus={() => setActiveInput('email')}
                   onBlur={() => setActiveInput(null)}
+                  blurOnSubmit={false}
                 />
               </View>
               <View style={styles.inputContainer}>
@@ -108,6 +116,7 @@ export default function LoginScreen() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  blurOnSubmit={false}
                   onFocus={() => {
                     setActiveInput('password');
                     setIsPasswordFocused(true);

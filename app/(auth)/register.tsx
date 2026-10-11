@@ -113,9 +113,16 @@ export default function RegisterScreen() {
       <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          enabled={Platform.OS === 'ios'}
         >
-          <ScrollView style={{ zIndex: 2 }} contentContainerStyle={styles.scrollContainer} bounces={false}>
+          <ScrollView
+            style={{ zIndex: 2 }}
+            contentContainerStyle={styles.scrollContainer}
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+          >
             {/* Title and Subtitle with Step Indicator */}
             <View style={{ marginBottom: 20, paddingHorizontal: 8, alignItems: "center" }}>
               <View style={{
@@ -147,6 +154,7 @@ export default function RegisterScreen() {
                   onChangeText={setNama}
                   onFocus={() => setActiveInput('nama')}
                   onBlur={() => setActiveInput(null)}
+                  blurOnSubmit={false}
                 />
               </View>
 
@@ -161,6 +169,7 @@ export default function RegisterScreen() {
                   autoCapitalize="none"
                   onFocus={() => setActiveInput('email')}
                   onBlur={() => setActiveInput(null)}
+                  blurOnSubmit={false}
                 />
               </View>
 
@@ -175,6 +184,7 @@ export default function RegisterScreen() {
                   autoCapitalize="none"
                   onFocus={() => setActiveInput('username')}
                   onBlur={() => setActiveInput(null)}
+                  blurOnSubmit={false}
                 />
               </View>
 
@@ -186,6 +196,7 @@ export default function RegisterScreen() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  blurOnSubmit={false}
                   onFocus={() => {
                     setActiveInput('password');
                     setIsPasswordFocused(true);
@@ -215,6 +226,7 @@ export default function RegisterScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
+                  blurOnSubmit={false}
                   onFocus={() => {
                     setActiveInput('confirmPassword');
                     setIsPasswordFocused(true);

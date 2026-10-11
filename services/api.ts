@@ -16,21 +16,40 @@ const api = axios.create({
   // agar otomatis menyesuaikan termasuk untuk FormData (multipart/form-data)
 });
 
+let isLoggingOut = false;
+
 export const logoutUser = async () => {
+  if (isLoggingOut) return;
+  isLoggingOut = true;
+
   try {
     await SecureStore.deleteItemAsync("userToken");
     await SecureStore.deleteItemAsync("userData");
     await AsyncStorage.removeItem("dashboard_weather");
     await AsyncStorage.removeItem("dashboard_tanaman");
     await GoogleSignin.signOut().catch(() => null);
-    router.replace("/");
+    router.replace("/(auth)/login");
   } catch (error) {
     console.error("Logout error:", error);
+    router.replace("/(auth)/login");
+  } finally {
+    // Beri jeda singkat agar routing selesai sebelum flag dilepas
+    setTimeout(() => {
+      isLoggingOut = false;
+    }, 1000);
   }
 };
 
 api.interceptors.request.use(
   async (config) => {
+    // Jika sedang dalam proses logout, jangan jalankan request ke backend
+    if (isLoggingOut && !config.url?.includes("/auth/")) {
+      const controller = new AbortController();
+      config.signal = controller.signal;
+      controller.abort("User sedang logout");
+      return config;
+    }
+
     try {
       const token = await SecureStore.getItemAsync("userToken");
       if (token) {
@@ -48,6 +67,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Abaikan jika sedang logout atau request dibatalkan
+    if (isLoggingOut || axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     if (
       error.response?.status === 401 &&
       !error.config?.url?.includes("/auth/")

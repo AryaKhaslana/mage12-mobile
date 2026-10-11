@@ -462,7 +462,7 @@ export default function DetailKomunitasScreen() {
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Postingan?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
-              Postingan ini beserta semua komentarnya akan hilang permanen!
+              Postingan ini beserta seluruh komentarnya akan dihapus secara permanen.
             </Text>
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
               <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 0,  alignItems: 'center' }} onPress={() => setPostToDelete(null)}>
@@ -481,7 +481,7 @@ export default function DetailKomunitasScreen() {
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Komentar?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
-              Komentar ini akan dihapus permanen broskie.
+              Komentar ini akan dihapus secara permanen.
             </Text>
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
               <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, borderWidth: 0,  alignItems: 'center' }} onPress={() => setCommentToDelete(null)}>

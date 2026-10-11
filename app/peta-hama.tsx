@@ -264,7 +264,7 @@ export default function PetaHamaScreen() {
       <View style={styles.mapContainer}>
         {isError ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Gagal memuat peta wabah 😢</Text>
+            <Text style={styles.errorText}>Gagal memuat peta sebaran hama</Text>
             <Pressable onPress={() => fetchHeatmap(filter, userCoords)} style={styles.retryBtn}>
               <Text style={styles.retryText}>Coba Lagi</Text>
             </Pressable>
@@ -288,7 +288,7 @@ export default function PetaHamaScreen() {
         
         {!isLoading && !isError && cells.length === 0 && (
           <View style={styles.emptyOverlay}>
-            <Text style={styles.emptyText}>Belum ada laporan di area ini 🌱</Text>
+            <Text style={styles.emptyText}>Belum ada laporan hama di area ini 🌱</Text>
           </View>
         )}
       </View>

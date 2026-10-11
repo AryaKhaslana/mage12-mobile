@@ -35,8 +35,8 @@ export default function LoginScreen() {
   React.useEffect(() => {
     if (sessionExpired === "true") {
       showNotification(
-        "Sesi Habis",
-        "Sesi login lu udah habis broskie, login lagi ya",
+        "Sesi Berakhir",
+        "Sesi login kamu telah berakhir. Silakan masuk kembali.",
         "info"
       );
     }
@@ -44,7 +44,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showNotification("Waduh!", "Email sama kata sandi jangan dikosongin dong broskie.", "info");
+      showNotification("Perhatian", "Email dan kata sandi wajib diisi ya.", "info");
       return;
     }
     try {
@@ -59,7 +59,7 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       console.error(error.response?.data || error.message);
-      showNotification("Gagal Login", error.response?.data?.message || "Koneksi bermasalah nih broskie.", "error");
+      showNotification("Gagal Masuk", error.response?.data?.message || "Terjadi gangguan koneksi, silakan coba lagi.", "error");
     } finally {
       setIsLoading(false);
     }

@@ -172,8 +172,8 @@ export default function TanamanScreen() {
         nickname: nickname || undefined });
       if (response.data?.status === "success") {
         showNotification(
-          "Sukses",
-          response.data.message || "Tanaman berhasil ditambahkan!",
+          "Berhasil!",
+          response.data.message || "Tanaman berhasil ditambahkan ke kebun kamu!",
           "success"
         );
         setModalVisible(false);
@@ -182,8 +182,8 @@ export default function TanamanScreen() {
     } catch (error: any) {
       console.error("Error tambah tanaman:", error);
       showNotification(
-        "Gagal",
-        error.response?.data?.message || "Terjadi kesalahan.",
+        "Gagal Menambahkan",
+        error.response?.data?.message || "Terjadi kesalahan saat menambahkan tanaman, silakan coba lagi.",
         "error"
       );
     } finally {

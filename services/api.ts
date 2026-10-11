@@ -95,7 +95,10 @@ export const googleSignIn = async () => {
         await SecureStore.setItemAsync("userData", JSON.stringify(userData));
       }
       
-      if (!userData.latitude) {
+      if (!userData?.username) {
+        // Akun baru Google belum memiliki username: arahkan ke Sesi 1 (Identitas Akun)
+        router.replace("/(auth)/profile-setup");
+      } else if (!userData?.latitude) {
         router.replace("/(auth)/location-setup");
       } else {
         router.replace("/");
@@ -111,14 +114,14 @@ export const googleSignIn = async () => {
     
     if (error.response) {
        if (error.response.status === 401) {
-         Alert.alert("Error", "Sesi Google kedaluwarsa, coba lagi");
+         Alert.alert("Gagal Masuk", "Sesi Google telah kedaluwarsa. Silakan coba masuk kembali.");
        } else if (error.response.status === 400) {
-         Alert.alert("Error", error.response.data?.message || "Permintaan tidak valid");
+         Alert.alert("Gagal Masuk", error.response.data?.message || "Permintaan tidak dapat diproses.");
        } else {
-         Alert.alert("Error", error.response.data?.message || "Terjadi kesalahan pada server");
+         Alert.alert("Kesalahan Server", error.response.data?.message || "Terjadi kesalahan pada server. Silakan coba lagi nanti.");
        }
     } else {
-       Alert.alert("Error", error.message || "Gagal masuk dengan Google");
+       Alert.alert("Gagal Masuk", error.message || "Gagal masuk dengan akun Google.");
     }
     
     throw error;

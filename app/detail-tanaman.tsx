@@ -233,11 +233,11 @@ export default function DetailTanamanModal() {
       }
       
       await createCommunityPost(formData);
-      showNotification("Mantap!", "Raport panen lu udah mejeng di Komunitas radius 2km! ", "success");
+      showNotification("Berhasil Dibagikan!", "Laporan panen kamu telah dipublikasikan ke Komunitas di sekitar radius 2km! 🌾", "success");
       setShowCertificate(false);
       router.back();
     } catch (e: any) {
-      showNotification("Gagal Pamer", e.response?.data?.message || "Koneksi lagi ngambek.", "error");
+      showNotification("Gagal Membagikan", e.response?.data?.message || "Terjadi gangguan koneksi, silakan coba lagi.", "error");
     } finally {
       setIsPosting(false);
     }
@@ -306,7 +306,7 @@ export default function DetailTanamanModal() {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        showNotification("Izin Ditolak", "TaniSync butuh izin kamera untuk memvalidasi tanamanmu broskie!", "error");
+        showNotification("Izin Ditolak", "TaniSync membutuhkan izin kamera untuk memvalidasi foto tanaman kamu.", "error");
         return;
       }
 
@@ -317,7 +317,7 @@ export default function DetailTanamanModal() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
         
-        Alert.alert("Validasi Foto", "Yakin mau kirim foto ini?", [
+        Alert.alert("Validasi Foto", "Apakah kamu yakin ingin mengirim foto ini?", [
           { text: "Batal", style: "cancel" },
           { text: "Kirim", onPress: async () => {
               setIsSubmitting(true);
@@ -374,10 +374,10 @@ export default function DetailTanamanModal() {
 
   const handleShare = async () => {
     try {
-      const shareMessage = ` Pamer Progres TaniSync! \n\nGue udah ngerawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari!\nStatus kesehatannya dapet skor ${tanaman?.predictiveScore}/100! \n\nSisa ${tanaman?.sisaHariPanen} hari lagi menuju panen! Yuk buruan mulai kebun lu sendiri di TaniSync! `;
+      const shareMessage = `🌱 Progres Tanaman TaniSync! \n\nSaya sedang merawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari!\nStatus kesehatan tanaman mencapai skor ${tanaman?.predictiveScore}/100! \n\nTersisa ${tanaman?.sisaHariPanen} hari lagi menuju panen. Mari mulai kebun kamu sendiri di TaniSync!`;
       await Share.share({
         message: shareMessage,
-        title: "Pamer Progres TaniSync" });
+        title: "Bagikan Progres Tanaman TaniSync" });
     } catch (error) {
       console.error(error);
     }
@@ -458,7 +458,7 @@ export default function DetailTanamanModal() {
             style={[styles.floatingCamButton, sudahValidasiHariIni && { opacity: 0.5 }]} 
             onPress={() => {
               if (sudahValidasiHariIni) {
-                showNotification("Info", "Tanaman ini sudah disiram hari ini broskie!", "info");
+                showNotification("Informasi", "Tanaman ini sudah disiram hari ini.", "info");
               } else {
                 handleValidasiPhoto();
               }

@@ -43,12 +43,17 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 onLongPress={onLongPress}
                 style={({ pressed }) => [
                   styles.fab,
-                  pressed && styles.fabPressed
+                  pressed && styles.fabPressed,
+                  isFocused && { borderColor: '#1B4332', borderWidth: 2 }
                 ]}
               >
-                <MaterialIcons name="smart-toy" size={28} color="#FFFFFF" />
+                <Image
+                  source={require('../../assets/images/tanibot.png')}
+                  style={{ width: 42, height: 42, borderRadius: 21 }}
+                  contentFit="contain"
+                />
               </Pressable>
-              <Text style={styles.fabLabel}>TaniBot</Text>
+              <Text style={[styles.fabLabel, isFocused && { color: '#3FA96B' }]}>TaniBot</Text>
             </View>
           );
         }

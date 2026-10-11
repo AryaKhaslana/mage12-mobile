@@ -16,7 +16,7 @@ export default function ProfileOnboardingModal({ isVisible, onClose, onSuccess }
 
   const handleSubmit = async () => {
     if (!username.trim()) {
-      setErrorMsg('Username kaga boleh kosong broskie!');
+      setErrorMsg('Username tidak boleh kosong.');
       return;
     }
     
@@ -30,9 +30,9 @@ export default function ProfileOnboardingModal({ isVisible, onClose, onSuccess }
       onSuccess(cleanUsername);
     } catch (error: any) {
       if (error.response?.status === 409) {
-        setErrorMsg('Username udah dipake orang lain, cari nama lain yak!');
+        setErrorMsg('Username ini sudah digunakan, silakan pilih nama lain.');
       } else {
-        setErrorMsg(error.response?.data?.message || 'Gagal nyimpen username, coba lagi deh.');
+        setErrorMsg(error.response?.data?.message || 'Gagal menyimpan username, silakan coba lagi.');
       }
     } finally {
       setIsLoading(false);
@@ -53,16 +53,16 @@ export default function ProfileOnboardingModal({ isVisible, onClose, onSuccess }
                 <Ionicons name="at-outline" size={32} color="#3FA96B" />
               </View>
 
-              <Text style={styles.title}>Bikin Username Dulu Yuk!</Text>
+              <Text style={styles.title}>Buat Username Terlebih Dahulu</Text>
               <Text style={styles.subtitle}>
-                Biar temen-temen di Komunitas gampang nemuin profil lu. (Bisa diganti nanti)
+                Agar teman-teman di Komunitas dapat mengenali profil kamu dengan mudah. (Dapat diubah kapan saja)
               </Text>
 
               <View style={styles.inputContainer}>
                 <Ionicons name="at-outline" size={20} color="#A0AAB5" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="username_keren"
+                  placeholder="nama_pengguna"
                   placeholderTextColor="#A0AAB5"
                   value={username}
                   onChangeText={(text) => {
@@ -93,7 +93,7 @@ export default function ProfileOnboardingModal({ isVisible, onClose, onSuccess }
                 onPress={onClose}
                 disabled={isLoading}
               >
-                <Text style={styles.skipButtonText}>Lewati Dulu (Skip)</Text>
+                <Text style={styles.skipButtonText}>Lewati untuk Sekarang</Text>
               </Pressable>
 
             </View>

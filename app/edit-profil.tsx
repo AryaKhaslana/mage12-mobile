@@ -49,7 +49,7 @@ export default function EditProfilScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Ditolak', 'TaniSync butuh izin akses galeri buat ganti avatar broskie.');
+      Alert.alert('Izin Ditolak', 'TaniSync membutuhkan izin akses galeri untuk mengganti foto profil kamu.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -66,7 +66,7 @@ export default function EditProfilScreen() {
   const pickBanner = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Ditolak', 'TaniSync butuh izin akses galeri buat ganti banner broskie.');
+      Alert.alert('Izin Ditolak', 'TaniSync membutuhkan izin akses galeri untuk mengganti banner profil kamu.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -82,7 +82,7 @@ export default function EditProfilScreen() {
 
   const handleSave = async () => {
     if (!nama.trim()) {
-      Alert.alert("Validasi", "Nama tidak boleh kosong broskie!");
+      Alert.alert("Validasi", "Nama lengkap tidak boleh kosong.");
       return;
     }
 
@@ -121,7 +121,7 @@ export default function EditProfilScreen() {
         await SecureStore.setItemAsync("userData", JSON.stringify(merged));
       }
 
-      showNotification("Sukses", "Profil berhasil diupdate!");
+      showNotification("Berhasil", "Profil berhasil diperbarui!");
       router.back();
     } catch (error: any) {
       console.error(error);
@@ -172,7 +172,7 @@ export default function EditProfilScreen() {
                   <MaterialIcons name="camera-alt" size={14} color="#FFFFFF" />
                 </View>
               </Pressable>
-              <Text style={styles.avatarHint}>Tap untuk ganti banner</Text>
+              <Text style={styles.avatarHint}>Ketuk untuk mengganti banner</Text>
             </View>
 
             {/* AVATAR */}
@@ -189,7 +189,7 @@ export default function EditProfilScreen() {
                   <MaterialIcons name="camera-alt" size={14} color="#FFFFFF" />
                 </View>
               </Pressable>
-              <Text style={styles.avatarHint}>Tap untuk ganti foto</Text>
+              <Text style={styles.avatarHint}>Ketuk untuk mengganti foto</Text>
             </View>
 
             {/* FORM FIELDS */}

@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { Dimensions, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Dimensions, StyleSheet, Text, View, Pressable, useWindowDimensions } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -14,7 +14,6 @@ import Animated, {
 import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { router } from 'expo-router';
 
-const { width } = Dimensions.get('window');
 const SCENE_HEIGHT = 280;
 const RAIN_BOUNDS_HEIGHT = 210; // Hujan dibatasi sampai y=210 agar tidak tumpah ke card (StatCard mulai di y=248)
 
@@ -35,6 +34,11 @@ export default function FarmerScene({
   farmerState,
   onProfilePress,
 }: FarmerSceneProps) {
+  const { width: windowWidth } = useWindowDimensions();
+  const [containerWidth, setContainerWidth] = useState(0);
+  const screenWidth = Dimensions.get('screen').width;
+  const width = Math.max(containerWidth, windowWidth, screenWidth);
+
   const cloudOffset = useSharedValue(0);
 
   // Raindrop animation values (3 layers for depth & parallax)
@@ -54,7 +58,7 @@ export default function FarmerScene({
     return () => {
       cancelAnimation(cloudOffset);
     };
-  }, [cloudOffset]);
+  }, [cloudOffset, width]);
 
   const cloudAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: cloudOffset.value }]
@@ -158,7 +162,7 @@ export default function FarmerScene({
       drops.push({ x, y, len });
     }
     return drops;
-  }, []);
+  }, [width]);
 
   const layer2Drops = useMemo(() => {
     const drops = [];
@@ -170,7 +174,7 @@ export default function FarmerScene({
       drops.push({ x, y, len });
     }
     return drops;
-  }, []);
+  }, [width]);
 
   const layer3Drops = useMemo(() => {
     const drops = [];
@@ -182,14 +186,14 @@ export default function FarmerScene({
       drops.push({ x, y, len });
     }
     return drops;
-  }, []);
+  }, [width]);
 
   const splashPoints = useMemo(() => [
     { x: width * 0.18, y: 190 },
     { x: width * 0.38, y: 180 },
     { x: width * 0.62, y: 185 },
     { x: width * 0.82, y: 195 },
-  ], []);
+  ], [width]);
 
   let skyColor1 = '#DFF3E6';
   let skyColor2 = '#FBF8F1';
@@ -252,9 +256,17 @@ export default function FarmerScene({
   };
 
   return (
-    <View style={styles.sceneContainer}>
-      <View style={StyleSheet.absoluteFill}>
-        <Svg width={width} height={SCENE_HEIGHT}>
+    <View 
+      style={styles.sceneContainer}
+      onLayout={(e) => {
+        const w = e.nativeEvent.layout.width;
+        if (w > 0 && w !== containerWidth) {
+          setContainerWidth(w);
+        }
+      }}
+    >
+      <View style={[StyleSheet.absoluteFill, { width: '100%', overflow: 'hidden' }]}>
+        <Svg width="100%" height={SCENE_HEIGHT}>
           <Defs>
             <LinearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={skyColor1} stopOpacity="1" />
@@ -262,7 +274,7 @@ export default function FarmerScene({
             </LinearGradient>
           </Defs>
           {/* Sky background */}
-          <Rect x="0" y="0" width={width} height={SCENE_HEIGHT} fill="url(#skyGrad)" />
+          <Rect x="-50" y="0" width={width + 100} height={SCENE_HEIGHT} fill="url(#skyGrad)" />
 
           {/* Sun / Moon */}
           {!isRaining && (
@@ -282,9 +294,9 @@ export default function FarmerScene({
           )}
 
           {/* Distant Rolling Hills (Smooth curves instead of sharp lines) */}
-          <Path d={`M -50,160 Q ${width * 0.2},100 ${width * 0.5},140 T ${width + 50},120 L ${width + 50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#B2D8C6" opacity={0.6} />
+          <Path d={`M -50,160 Q ${width * 0.2},100 ${width * 0.5},140 T ${width + 100},120 L ${width + 100},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#B2D8C6" opacity={0.6} />
 
-          <Path d={`M -50,180 Q ${width * 0.3},120 ${width * 0.8},180 T ${width + 50},160 L ${width + 50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#C8EAD4" opacity={0.8} />
+          <Path d={`M -50,180 Q ${width * 0.3},120 ${width * 0.8},180 T ${width + 100},160 L ${width + 100},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#C8EAD4" opacity={0.8} />
 
           {/* Barn and Silo (Using G tag to position correctly inside SVG) */}
           <G x={width * 0.55} y={105}>
@@ -312,7 +324,7 @@ export default function FarmerScene({
           </G>
 
           {/* Mid Hill */}
-          <Path d={`M -50,210 Q ${width * 0.4},150 ${width + 50},200 L ${width + 50},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#DDF1E3" />
+          <Path d={`M -50,210 Q ${width * 0.4},150 ${width + 100},200 L ${width + 100},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#DDF1E3" />
 
           {/* Raised Beds (Kotak Perkebunan / Pot Panjang) */}
           <G x={(width - 250) / 2} y={170}>
@@ -354,11 +366,11 @@ export default function FarmerScene({
 
           {/* Night/Rain Overlay for scene elements */}
           {(isNight || isRaining) && (
-            <Rect x="0" y="0" width={width} height={SCENE_HEIGHT} fill="#091530" opacity={isNight ? 0.3 : 0.1} />
+            <Rect x="-50" y="0" width={width + 100} height={SCENE_HEIGHT} fill="#091530" opacity={isNight ? 0.3 : 0.1} />
           )}
 
           {/* Front Foreground (Cream color matching background to blend perfectly) */}
-          <Path d={`M -20,245 Q ${width / 2},220 ${width + 20},255 L ${width + 20},${SCENE_HEIGHT} L -20,${SCENE_HEIGHT} Z`} fill="#FBF8F1" />
+          <Path d={`M -50,245 Q ${width / 2},220 ${width + 100},245 L ${width + 100},${SCENE_HEIGHT} L -50,${SCENE_HEIGHT} Z`} fill="#FBF8F1" />
         </Svg>
       </View>
 
@@ -405,7 +417,7 @@ export default function FarmerScene({
         <View style={styles.rainContainer} pointerEvents="none">
           {/* Layer 3: Distant / misty raindrops */}
           <Animated.View style={[StyleSheet.absoluteFill, rainStyle3]}>
-            <Svg width={width} height={RAIN_BOUNDS_HEIGHT * 2}>
+            <Svg width="100%" height={RAIN_BOUNDS_HEIGHT * 2}>
               {layer3Drops.map((d, i) => (
                 <G key={`l3-${i}`}>
                   <Line x1={d.x} y1={d.y} x2={d.x - 2} y2={d.y + d.len} stroke="#C4E1F8" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
@@ -417,7 +429,7 @@ export default function FarmerScene({
 
           {/* Layer 2: Midground raindrops */}
           <Animated.View style={[StyleSheet.absoluteFill, rainStyle2]}>
-            <Svg width={width} height={RAIN_BOUNDS_HEIGHT * 2}>
+            <Svg width="100%" height={RAIN_BOUNDS_HEIGHT * 2}>
               {layer2Drops.map((d, i) => (
                 <G key={`l2-${i}`}>
                   <Line x1={d.x} y1={d.y} x2={d.x - 3} y2={d.y + d.len} stroke="#A0CBEF" strokeWidth={1.3} strokeLinecap="round" opacity={0.65} />
@@ -429,7 +441,7 @@ export default function FarmerScene({
 
           {/* Layer 1: Foreground raindrops */}
           <Animated.View style={[StyleSheet.absoluteFill, rainStyle1]}>
-            <Svg width={width} height={RAIN_BOUNDS_HEIGHT * 2}>
+            <Svg width="100%" height={RAIN_BOUNDS_HEIGHT * 2}>
               {layer1Drops.map((d, i) => (
                 <G key={`l1-${i}`}>
                   <Line x1={d.x} y1={d.y} x2={d.x - 4} y2={d.y + d.len} stroke="#85BEE9" strokeWidth={1.7} strokeLinecap="round" opacity={0.85} />
@@ -441,7 +453,7 @@ export default function FarmerScene({
 
           {/* Splash ripples hitting the ground */}
           <Animated.View style={[StyleSheet.absoluteFill, splashStyle]}>
-            <Svg width={width} height={RAIN_BOUNDS_HEIGHT}>
+            <Svg width="100%" height={RAIN_BOUNDS_HEIGHT}>
               {splashPoints.map((p, i) => (
                 <Ellipse
                   key={`splash-${i}`}

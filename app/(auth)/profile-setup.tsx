@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,14 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as SecureStore from 'expo-secure-store';
 import { updateProfile, logoutUser } from '../../services/api';
 import { useNotification } from '../../components/NotificationContext';
@@ -61,37 +54,8 @@ export default function ProfileSetupScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Floating mascot animation
-  const mascotScale = useSharedValue(1);
-  const mascotTranslateY = useSharedValue(0);
-
-  useEffect(() => {
-    mascotScale.value = withRepeat(
-      withSequence(
-        withTiming(1.04, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-    mascotTranslateY.value = withRepeat(
-      withSequence(
-        withTiming(-8, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-  }, []);
-
-  const animatedMascotStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scale: mascotScale.value },
-        { translateY: mascotTranslateY.value },
-      ],
-    };
-  });
+  const namaInputRef = useRef<TextInput>(null);
+  const usernameInputRef = useRef<TextInput>(null);
 
   // Preload user data from Google (if any)
   useEffect(() => {
@@ -236,7 +200,7 @@ export default function ProfileSetupScreen() {
 
           {/* MASCOT GREETING */}
           <View style={styles.mascotContainer}>
-            <Animated.View style={[styles.mascotWrapper, animatedMascotStyle]}>
+            <Animated.View entering={FadeInDown.duration(400)} style={styles.mascotWrapper}>
               <Image
                 source={require('../../assets/images/icontampilanawal/seedling-halo.svg')}
                 style={styles.mascotImage}
@@ -261,11 +225,13 @@ export default function ProfileSetupScreen() {
                 <Text style={styles.label}>Nama Akun / Nama Lengkap</Text>
                 <Text style={styles.requiredTag}>Wajib</Text>
               </View>
-              <View
+              <Pressable
                 style={[
                   styles.inputContainer,
                   activeInput === 'nama' && styles.inputContainerActive,
                 ]}
+                onPress={() => namaInputRef.current?.focus()}
+                accessible={false}
               >
                 <MaterialIcons
                   name="badge"
@@ -274,6 +240,7 @@ export default function ProfileSetupScreen() {
                   style={styles.inputIcon}
                 />
                 <TextInput
+                  ref={namaInputRef}
                   style={styles.textInput}
                   placeholder="Contoh: Budi Santoso"
                   placeholderTextColor="#A0AAB5"
@@ -283,14 +250,24 @@ export default function ProfileSetupScreen() {
                   onBlur={() => setActiveInput(null)}
                   maxLength={50}
                   autoCapitalize="words"
+                  autoCorrect={false}
                   blurOnSubmit={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => usernameInputRef.current?.focus()}
                 />
                 {nama.length > 0 && (
-                  <Pressable onPress={() => handleNamaChange('')} hitSlop={8}>
+                  <Pressable
+                    onPress={() => {
+                      handleNamaChange('');
+                      namaInputRef.current?.focus();
+                    }}
+                    hitSlop={10}
+                    style={styles.clearBtn}
+                  >
                     <MaterialIcons name="cancel" size={18} color="#C4CCC7" />
                   </Pressable>
                 )}
-              </View>
+              </Pressable>
               <Text style={styles.helperText}>
                 Nama ini akan ditampilkan pada profil dan postingan kamu.
               </Text>
@@ -302,11 +279,13 @@ export default function ProfileSetupScreen() {
                 <Text style={styles.label}>Username Akun</Text>
                 <Text style={styles.requiredTag}>Wajib & Unik</Text>
               </View>
-              <View
+              <Pressable
                 style={[
                   styles.inputContainer,
                   activeInput === 'username' && styles.inputContainerActive,
                 ]}
+                onPress={() => usernameInputRef.current?.focus()}
+                accessible={false}
               >
                 <Ionicons
                   name="at"
@@ -315,6 +294,7 @@ export default function ProfileSetupScreen() {
                   style={styles.inputIcon}
                 />
                 <TextInput
+                  ref={usernameInputRef}
                   style={styles.textInput}
                   placeholder="username_kamu"
                   placeholderTextColor="#A0AAB5"
@@ -325,14 +305,23 @@ export default function ProfileSetupScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                   maxLength={30}
-                  blurOnSubmit={false}
+                  blurOnSubmit={true}
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
                 />
                 {username.length > 0 && (
-                  <Pressable onPress={() => handleUsernameChange('')} hitSlop={8}>
+                  <Pressable
+                    onPress={() => {
+                      handleUsernameChange('');
+                      usernameInputRef.current?.focus();
+                    }}
+                    hitSlop={10}
+                    style={styles.clearBtn}
+                  >
                     <MaterialIcons name="cancel" size={18} color="#C4CCC7" />
                   </Pressable>
                 )}
-              </View>
+              </Pressable>
               <View style={styles.usernamePreviewRow}>
                 <Text style={styles.helperText}>
                   {username.length >= 3 ? (
@@ -506,25 +495,28 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.inputBorder,
     paddingHorizontal: 12,
-    height: 50,
+    height: 52,
   },
   inputContainerActive: {
     borderColor: C.inputBorderActive,
     backgroundColor: '#FFFFFF',
-    shadowColor: C.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
   },
   inputIcon: {
     marginRight: 10,
   },
   textInput: {
     flex: 1,
+    height: '100%',
     fontFamily: F.medium,
     fontSize: 15,
     color: C.ink,
     paddingVertical: 0,
+    textAlignVertical: 'center',
+  },
+  clearBtn: {
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   helperText: {
     fontFamily: F.regular,

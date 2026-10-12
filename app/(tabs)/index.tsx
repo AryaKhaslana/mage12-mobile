@@ -608,7 +608,7 @@ export default function DashboardScreen() {
   const farmerState = isRaining ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1' }} edges={["right", "bottom", "left"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1' }} edges={["bottom"]}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }, { paddingBottom: 140 }]}

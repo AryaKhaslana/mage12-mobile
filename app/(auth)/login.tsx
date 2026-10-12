@@ -73,14 +73,14 @@ export default function LoginScreen() {
         
       />
 
-      <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }} edges={['bottom', 'left', 'right']}>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           enabled={Platform.OS === 'ios'}
         >
-          <ScrollView
-            style={{ zIndex: 2 }}
+         <ScrollView
+            style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }}
             contentContainerStyle={styles.scrollContainer}
             bounces={false}
             keyboardShouldPersistTaps="handled"
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 }, 
     shadowOpacity: 0.05, 
     shadowRadius: 14, 
-    elevation: 4,
+    elevation: 2,
     padding: 24,
     paddingTop: 32,
   },

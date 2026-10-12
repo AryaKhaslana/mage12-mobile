@@ -110,14 +110,14 @@ export default function RegisterScreen() {
         
       />
 
-      <SafeAreaView style={{ flex: 1, zIndex: 2 }} edges={['bottom', 'left', 'right']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }} edges={['bottom', 'left', 'right']}>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           enabled={Platform.OS === 'ios'}
         >
           <ScrollView
-            style={{ zIndex: 2 }}
+            style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }}
             contentContainerStyle={styles.scrollContainer}
             bounces={false}
             keyboardShouldPersistTaps="handled"

@@ -8,6 +8,7 @@ import { useCallback, useMemo, useState , useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
+import PlantIllustration from '../components/PlantIllustration';
 import { LogAktivitas, TanamanDetail, createCommunityPost, createLog, deleteTanaman, getLogsByTanaman, getTanamanById, harvestTanaman, updateTanaman } from '../services/api';
 
 
@@ -139,7 +140,7 @@ export default function DetailTanamanModal() {
 
   const latestPhotoUrl = useMemo(() => {
     const photoLog = logs.find(l => l.fotoUrl);
-    return photoLog?.fotoUrl || FALLBACK_HERO;
+    return photoLog?.fotoUrl || null;
   }, [logs]);
 
   const photoLogsAsc = useMemo(() => {
@@ -442,7 +443,17 @@ export default function DetailTanamanModal() {
         {/* HERO SECTION */}
         <View style={styles.heroSection}>
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: isPlayingMemory ? photoLogsAsc[memoryIndex] : latestPhotoUrl }} style={styles.heroImage} />
+            {isPlayingMemory ? (
+              <Image source={{ uri: photoLogsAsc[memoryIndex] }} style={styles.heroImage} />
+            ) : latestPhotoUrl ? (
+              <Image source={{ uri: latestPhotoUrl }} style={styles.heroImage} />
+            ) : (
+              <PlantIllustration 
+                jenisTanaman={tanaman?.jenisTanaman} 
+                size={110} 
+                style={styles.heroImage} 
+              />
+            )}
             
             {/* Memory overlay text */}
             {isPlayingMemory && (

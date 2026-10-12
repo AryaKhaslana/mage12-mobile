@@ -3,9 +3,10 @@ import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, FlatList, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
+import { useNotification } from '../../components/NotificationContext';
 import { ChatMessage, getTanibotHistory, clearTanibotHistory, sendTanibotMessage } from '../../services/api';
 
 const getRelativeTime = (isoString: string) => {
@@ -141,28 +142,31 @@ export default function TanibotScreen() {
     };
     fetchHistory();
   }, []);
+  const { showNotification } = useNotification();
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
   const handleClearHistory = () => {
-    if (messages.length === 0) return;
-    Alert.alert(
-      "Hapus Riwayat Percakapan",
-      "Apakah kamu yakin ingin menghapus seluruh riwayat percakapan dengan TaniBot?",
-      [
-        { text: "Batal", style: "cancel" },
-        { 
-          text: "Hapus", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await clearTanibotHistory();
-              setMessages([]);
-            } catch (e) {
-              console.error(e);
-              Alert.alert("Gagal", "Gagal menghapus riwayat chat.");
-            }
-          }
-        }
-      ]
-    );
+    if (messages.length === 0) {
+      showNotification("Informasi", "Belum ada riwayat percakapan untuk dihapus.", "info");
+      return;
+    }
+    setShowClearModal(true);
+  };
+
+  const confirmClearHistory = async () => {
+    setIsClearing(true);
+    try {
+      await clearTanibotHistory();
+      setMessages([]);
+      setShowClearModal(false);
+      showNotification("Berhasil", "Riwayat percakapan TaniBot berhasil dibersihkan.", "success");
+    } catch (e: any) {
+      console.error(e);
+      showNotification("Gagal", e.response?.data?.message || "Gagal menghapus riwayat chat.", "error");
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   const handleSend = async () => {
@@ -370,6 +374,48 @@ export default function TanibotScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {/* MODAL KONFIRMASI HAPUS RIWAYAT CHAT */}
+      <Modal
+        visible={showClearModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowClearModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Image
+              source={require('../../assets/images/icontampilanawal/seedling-ngantuk.svg')}
+              style={styles.modalMascot}
+              contentFit="contain"
+            />
+            <Text style={styles.modalTitle}>Hapus Riwayat Chat?</Text>
+            <Text style={styles.modalDesc}>
+              Semua percakapan kamu dengan TaniBot akan dibersihkan dan tidak bisa dikembalikan.
+            </Text>
+            <View style={styles.modalButtonRow}>
+              <Pressable
+                style={({ pressed }) => [styles.modalBtnCancel, pressed && { opacity: 0.8 }]}
+                onPress={() => setShowClearModal(false)}
+                disabled={isClearing}
+              >
+                <Text style={styles.modalBtnCancelText}>Batal</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.modalBtnDelete, pressed && { opacity: 0.8 }]}
+                onPress={confirmClearHistory}
+                disabled={isClearing}
+              >
+                {isClearing ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.modalBtnDeleteText}>Hapus</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -531,5 +577,76 @@ const styles = StyleSheet.create({
     
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 }
+    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(18, 57, 36, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#FBF8F0',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#123924',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  modalMascot: {
+    width: 100,
+    height: 100,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 22,
+    color: '#123924',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalDesc: {
+    fontFamily: 'Nunito_500Medium',
+    fontSize: 14,
+    color: '#5C5A4F',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalBtnCancel: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#E8E5DA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBtnCancelText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: '#123924',
+  },
+  modalBtnDelete: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#FF4C4C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBtnDeleteText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
 });

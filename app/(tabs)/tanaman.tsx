@@ -17,6 +17,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
+import PlantIllustration from "../../components/PlantIllustration";
 import api, { TanamanDetail } from "../../services/api";
 
 
@@ -286,12 +287,19 @@ export default function TanamanScreen() {
         onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
       >
         <View style={[styles.imageContainer, { overflow: 'hidden' }]}>
-          <Image 
-            source={{ uri: tanaman.logTerakhir?.fotoUrl || FALLBACK_THUMB }} 
-            style={{ width: '100%', height: '100%' }} 
-            contentFit="cover"
-            transition={200}
-          />
+          {tanaman.logTerakhir?.fotoUrl ? (
+            <Image 
+              source={{ uri: tanaman.logTerakhir.fotoUrl }} 
+              style={{ width: '100%', height: '100%' }} 
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <PlantIllustration 
+              jenisTanaman={tanaman.jenisTanaman} 
+              size={86} 
+            />
+          )}
         </View>
         <View style={styles.cardBody}>
           <Text style={styles.cardTitle} numberOfLines={1}>

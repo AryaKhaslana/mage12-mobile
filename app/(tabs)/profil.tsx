@@ -244,7 +244,7 @@ export default function ProfilScreen() {
     useCallback(() => {
       fetchAllData();
       return () => {};
-    }, [fetchAllData])
+    }, [])
   );
 
   const onRefresh = () => {

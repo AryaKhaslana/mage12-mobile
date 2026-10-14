@@ -220,6 +220,7 @@ export default function DashboardScreen() {
   // Anti-Spam & Mutex Lock untuk stress test penyiraman
   const processingWateringRef = useRef<Set<number>>(new Set());
   const recentlyWateredRef = useRef<Map<number, number>>(new Map());
+  const isFetchingDashboardRef = useRef<boolean>(false);
   
   const insets = useSafeAreaInsets();
   
@@ -424,7 +425,13 @@ export default function DashboardScreen() {
     initApp();
   }, []);
 
-  const fetchDashboardData = async (isManualRefresh = false) => {
+  const lastWeatherFetchRef = useRef<number>(0);
+
+  const fetchDashboardData = useCallback(async (isManualRefresh = false) => {
+    // Cegah panggilan bertumpuk di waktu bersamaan
+    if (isFetchingDashboardRef.current && !isManualRefresh) return;
+    isFetchingDashboardRef.current = true;
+
     if (tanamanList.length === 0 && !userData) {
       setIsLoading(true);
       setIsError(false);
@@ -432,38 +439,55 @@ export default function DashboardScreen() {
       setIsRefreshing(true);
     }
 
-    // Panggil cuaca non-blocking di background agar skeleton tidak terhambat dan langsung lepas cepat!
-    api.get("/weather/today")
-      .then(async (weatherRes) => {
-        if (weatherRes?.data?.data) {
-          const weatherData = weatherRes.data.data;
-          setWeather(weatherData);
-          AsyncStorage.setItem("dashboard_weather", JSON.stringify({ data: weatherData, savedAt: Date.now() })).catch(() => {});
+    // PROTEKSI KUOTA WEATHER: Hanya panggil /weather/today jika manual refresh ATAU sudah lewat 15 menit sejak request terakhir
+    const now = Date.now();
+    const WEATHER_COOLDOWN_MS = 15 * 60 * 1000; // 15 menit
 
-          // Check rain notification
-          const weatherCond = (weatherData.kondisi || '').toUpperCase();
-          const isHujan = weatherCond.includes('HUJAN') || weatherCond.includes('RAIN') || weatherCond.includes('GERIMIS') || weatherCond.includes('DRIZZLE') || weatherCond.includes('THUNDER');
-          if (isHujan && weatherData.prediksiHujanHariIni) {
-            try {
-              const todayStr = new Date().toDateString();
-              const lastNotified = await AsyncStorage.getItem("last_rain_notified");
-              if (lastNotified !== todayStr) {
-                showNotification(
-                  "☔ Prakiraan Hujan",
-                  "Penyiraman otomatis ditunda hari ini karena diprediksi turun hujan. Tetap perhatikan kebun kamu ya! 🌧️",
-                  "info"
-                );
-                await AsyncStorage.setItem("last_rain_notified", todayStr);
+    if (isManualRefresh || now - lastWeatherFetchRef.current > WEATHER_COOLDOWN_MS) {
+      lastWeatherFetchRef.current = now;
+
+      api.get("/weather/today")
+        .then(async (weatherRes) => {
+          if (weatherRes?.data?.data) {
+            const weatherData = weatherRes.data.data;
+            setWeather(weatherData);
+            AsyncStorage.setItem(
+              "dashboard_weather",
+              JSON.stringify({ data: weatherData, savedAt: Date.now() })
+            ).catch(() => {});
+
+            // Check rain notification
+            const weatherCond = (weatherData.kondisi || "").toUpperCase();
+            const isHujan =
+              weatherCond.includes("HUJAN") ||
+              weatherCond.includes("RAIN") ||
+              weatherCond.includes("GERIMIS") ||
+              weatherCond.includes("DRIZZLE") ||
+              weatherCond.includes("THUNDER");
+            if (isHujan && weatherData.prediksiHujanHariIni) {
+              try {
+                const todayStr = new Date().toDateString();
+                const lastNotified = await AsyncStorage.getItem("last_rain_notified");
+                if (lastNotified !== todayStr) {
+                  showNotification(
+                    "☔ Prakiraan Hujan",
+                    "Penyiraman otomatis ditunda hari ini karena diprediksi turun hujan. Tetap perhatikan kebun kamu ya! 🌧️",
+                    "info"
+                  );
+                  await AsyncStorage.setItem("last_rain_notified", todayStr);
+                }
+              } catch (err) {
+                console.error("Failed to check or set rain notif flag", err);
               }
-            } catch (err) {
-              console.error("Failed to check or set rain notif flag", err);
             }
           }
-        }
-      })
-      .catch((err) => {
-        console.warn("Weather fetch non-fatal error:", err?.message);
-      });
+        })
+        .catch((err) => {
+          // Reset timer jika gagal agar bisa dicoba lagi nanti
+          lastWeatherFetchRef.current = 0;
+          console.warn("Weather fetch non-fatal error:", err?.message);
+        });
+    }
 
     try {
       const [meRes, tanamanRes] = await Promise.all([
@@ -481,7 +505,7 @@ export default function DashboardScreen() {
               ...prev,
               ...meRes.data.data,
               exp: meRes.data.data.exp !== undefined ? meRes.data.data.exp : prev.exp,
-              level: meRes.data.data.level !== undefined ? meRes.data.data.level : prev.level
+              level: meRes.data.data.level !== undefined ? meRes.data.data.level : prev.level,
             };
           }
           SecureStore.setItemAsync("userData", JSON.stringify(merged)).catch(console.error);
@@ -506,13 +530,14 @@ export default function DashboardScreen() {
         "Gagal Memuat Data",
         error.response?.data?.message ||
           "Terjadi kesalahan koneksi saat memuat dashboard.",
-        "error",
+        "error"
       );
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+      isFetchingDashboardRef.current = false;
     }
-  };
+  }, []);
 
   // Data Fetcher - Runs on focus
   useFocusEffect(
@@ -528,10 +553,14 @@ export default function DashboardScreen() {
         const cachedUser = await SecureStore.getItemAsync("userData");
         if (cachedUser) {
           const parsed = JSON.parse(cachedUser);
-          setUserData((prev: any) => prev ? { ...prev, exp: parsed.exp, level: parsed.level, streak: parsed.streak } : parsed);
+          setUserData((prev: any) =>
+            prev
+              ? { ...prev, exp: parsed.exp, level: parsed.level, streak: parsed.streak }
+              : parsed
+          );
         }
 
-        fetchDashboardData();
+        fetchDashboardData(false);
       };
       checkAuthAndFetch();
     }, [fetchDashboardData])

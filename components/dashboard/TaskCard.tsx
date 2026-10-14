@@ -63,14 +63,12 @@ export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredT
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 24,
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: Colors.ink,
-    shadowColor: Colors.ink,
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
+    shadowColor: '#1B4332',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
     elevation: 3,
   },
   inner: {
@@ -81,9 +79,7 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 56,
     height: 56,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: Colors.ink,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -94,7 +90,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontFamily: 'Nunito_800ExtraBold',
-    color: Colors.ink,
+    color: '#1B4332',
     marginBottom: 4,
   },
   status: {
@@ -106,7 +102,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: Colors.ink,
+    borderColor: '#FF8A65',
     backgroundColor: '#FFF0ED',
     alignItems: 'center',
     justifyContent: 'center',

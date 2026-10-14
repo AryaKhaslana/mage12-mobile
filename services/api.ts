@@ -1,6 +1,6 @@
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { Alert } from "react-native";
-import axios from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,27 +12,95 @@ const API_URL =
 
 const api = axios.create({
   baseURL: API_URL,
-  // Fix Content-Type: Hapus properti headers 'Content-Type': 'application/json'
-  // agar otomatis menyesuaikan termasuk untuk FormData (multipart/form-data)
+  timeout: 15000,
 });
+
+let cachedToken: string | null = null;
+let tokenPromise: Promise<string | null> | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  cachedToken = token;
+  tokenPromise = null;
+};
 
 let isLoggingOut = false;
 
+const ALL_CACHE_KEYS = [
+  "dashboard_weather",
+  "dashboard_tanaman",
+  "last_rain_notified",
+  "tanibot_history",
+  "tanibot_history_cache",
+  "profile_posts_cache",
+  "profile_posts_cache_v1",
+  "profile_achievements_cache",
+  "profile_achievements_cache_v1",
+  "profile_riwayat_cache",
+  "profile_riwayat_panen_cache_v1",
+  "community_feed_cache_v1",
+  "heatmap_cache_v1_semua",
+  "heatmap_cache_v1_kutu-putih",
+  "heatmap_cache_v1_wereng",
+  "heatmap_cache_v1_ulat",
+  "peta_hama_cache_store",
+];
+
+const inFlightRequests = new Map<string, Promise<any>>();
+
+export const clearInFlightRequests = () => {
+  inFlightRequests.clear();
+};
+
+const getDedupeKey = (url: string, config?: AxiosRequestConfig): string => {
+  try {
+    const rawUri = api.getUri({ url, params: config?.params });
+    const qIndex = rawUri.indexOf("?");
+    if (qIndex === -1) return rawUri;
+
+    const base = rawUri.slice(0, qIndex);
+    const qs = rawUri.slice(qIndex + 1);
+    if (!qs) return base;
+
+    const sp = new URLSearchParams(qs);
+    sp.sort();
+    return `${base}?${sp.toString()}`;
+  } catch {
+    const fallbackParams = config?.params ? JSON.stringify(config.params) : "";
+    return `${url}?${fallbackParams}`;
+  }
+};
+
+const originalGet = api.get.bind(api);
+
+api.get = (function (
+  url: string,
+  config?: any
+): Promise<any> {
+  const dedupeKey = getDedupeKey(url, config);
+
+  const existing = inFlightRequests.get(dedupeKey);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = (originalGet as any)(url, config).finally(() => {
+    inFlightRequests.delete(dedupeKey);
+  });
+
+  inFlightRequests.set(dedupeKey, promise);
+  return promise;
+} as any);
+
 export const logoutUser = async () => {
+  setAuthToken(null);
+  clearInFlightRequests();
   if (isLoggingOut) return;
   isLoggingOut = true;
 
   try {
     await SecureStore.deleteItemAsync("userToken");
     await SecureStore.deleteItemAsync("userData");
-    await AsyncStorage.multiRemove([
-      "dashboard_weather",
-      "dashboard_tanaman",
-      "profile_posts_cache",
-      "profile_achievements_cache",
-      "profile_riwayat_cache",
-      "tanibot_history",
-    ]);
+    await AsyncStorage.multiRemove(ALL_CACHE_KEYS);
     await GoogleSignin.signOut().catch(() => null);
     router.replace("/(auth)/login");
   } catch (error) {
@@ -46,6 +114,18 @@ export const logoutUser = async () => {
   }
 };
 
+const isFormData = (data: any): boolean => {
+  if (!data) return false;
+  if (typeof FormData !== "undefined" && data instanceof FormData) return true;
+  return (
+    typeof data === "object" &&
+    typeof data.append === "function" &&
+    (data.constructor?.name === "FormData" ||
+      data[Symbol.toStringTag] === "FormData" ||
+      Array.isArray(data._parts))
+  );
+};
+
 api.interceptors.request.use(
   async (config) => {
     // Jika sedang dalam proses logout, jangan jalankan request ke backend
@@ -56,10 +136,40 @@ api.interceptors.request.use(
       return config;
     }
 
+    // Penyesuaian timeout khusus untuk tanibot (AI) atau upload FormData
+    const isTanibot = typeof config.url === "string" && config.url.includes("tanibot");
+    const hasFormData = isFormData(config.data);
+
+    if (isTanibot || hasFormData) {
+      config.timeout = 25000;
+    }
+
+    if (hasFormData) {
+      config.headers = config.headers || {};
+      if (typeof (config.headers as any).set === "function") {
+        (config.headers as any).set("Content-Type", "multipart/form-data");
+      } else {
+        config.headers["Content-Type"] = "multipart/form-data";
+      }
+      config.transformRequest = [(data) => data];
+    }
+
     try {
-      const token = await SecureStore.getItemAsync("userToken");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (!cachedToken) {
+        if (!tokenPromise) {
+          tokenPromise = SecureStore.getItemAsync("userToken").finally(() => {
+            tokenPromise = null;
+          });
+        }
+        cachedToken = await tokenPromise;
+      }
+      if (cachedToken) {
+        config.headers = config.headers || {};
+        if (typeof (config.headers as any).set === "function") {
+          (config.headers as any).set("Authorization", `Bearer ${cachedToken}`);
+        } else {
+          config.headers.Authorization = `Bearer ${cachedToken}`;
+        }
       }
     } catch (error) {
       console.error("Error fetching token for request:", error);
@@ -71,7 +181,16 @@ api.interceptors.request.use(
 
 // Response Interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (
+      response.config?.url &&
+      response.config.url.includes("/auth/") &&
+      response.data?.data?.token
+    ) {
+      setAuthToken(response.data.data.token);
+    }
+    return response;
+  },
   async (error) => {
     // Abaikan jika sedang logout atau request dibatalkan
     if (isLoggingOut || axios.isCancel(error)) {
@@ -83,6 +202,52 @@ api.interceptors.response.use(
       !error.config?.url?.includes("/auth/")
     ) {
       await logoutUser();
+    }
+
+    // Normalisasi error jaringan dan timeout
+    const isTimeout =
+      error.code === "ECONNABORTED" ||
+      error.code === "ETIMEDOUT" ||
+      Boolean(error.message && /timeout/i.test(error.message));
+    const isNetworkError =
+      !error.response ||
+      isTimeout ||
+      error.code === "ERR_NETWORK" ||
+      error.message === "Network Error";
+
+    const friendlyMessage =
+      "Koneksi ke server sedang lambat atau terputus. Silakan coba sesaat lagi.";
+
+    if (isNetworkError) {
+      if (!error.response) {
+        error.response = {
+          data: {
+            message: friendlyMessage,
+            status: "error",
+          },
+          status: isTimeout ? 408 : 0,
+          statusText: isTimeout ? "Request Timeout" : "Network Error",
+          headers: {},
+          config: error.config,
+        };
+      } else if (!error.response.data?.message) {
+        if (typeof error.response.data !== "object" || error.response.data === null) {
+          error.response.data = { message: friendlyMessage, status: "error" };
+        } else {
+          error.response.data.message = friendlyMessage;
+        }
+      }
+      error.userMessage = friendlyMessage;
+    } else if (
+      error.response &&
+      error.response.status >= 500 &&
+      (!error.response.data?.message || typeof error.response.data !== "object")
+    ) {
+      error.response.data = {
+        message: friendlyMessage,
+        status: "error",
+      };
+      error.userMessage = friendlyMessage;
     }
     
     // Improved logging to see exactly why it failed
@@ -120,6 +285,7 @@ export const googleSignIn = async () => {
     const userData = response.data?.data?.user;
 
     if (token) {
+      setAuthToken(token);
       await SecureStore.setItemAsync("userToken", token);
       if (userData) {
         await SecureStore.setItemAsync("userData", JSON.stringify(userData));
@@ -296,6 +462,42 @@ export const getLogsByTanaman = async (tanamanId: number): Promise<LogAktivitas[
   return response.data.data;
 };
 
+const getFileInfo = (uri: string) => {
+  const cleanUri = uri.split("?")[0];
+  let rawName = cleanUri.split("/").pop() || "";
+  try {
+    rawName = decodeURIComponent(rawName);
+  } catch {
+    // Keep rawName as is
+  }
+  const lastDot = rawName.lastIndexOf(".");
+  const extMatch = lastDot > 0 ? rawName.slice(lastDot + 1).toLowerCase() : null;
+  const extension = extMatch || "jpg";
+
+  let mimeType = "image/jpeg";
+  if (extension === "png") {
+    mimeType = "image/png";
+  } else if (extension === "webp") {
+    mimeType = "image/webp";
+  } else if (extension === "heic") {
+    mimeType = "image/heic";
+  } else if (extension === "heif") {
+    mimeType = "image/heif";
+  } else if (extension === "gif") {
+    mimeType = "image/gif";
+  } else if (extension === "jpg" || extension === "jpeg") {
+    mimeType = "image/jpeg";
+  }
+
+  const normalizedExt = extension === "jpeg" ? "jpg" : extension;
+  const fileName =
+    lastDot > 0
+      ? rawName
+      : `foto_${Date.now()}.${normalizedExt}`;
+
+  return { fileName, mimeType };
+};
+
 export const createLog = async ({
   tanamanId,
   tipeValidasi,
@@ -313,10 +515,11 @@ export const createLog = async ({
     formData.append("tanamanId", String(tanamanId));
     formData.append("tipeValidasi", tipeValidasi);
     if (fotoUri) {
+      const { fileName, mimeType } = getFileInfo(fotoUri);
       formData.append("foto", {
         uri: fotoUri,
-        name: "foto.jpg",
-        type: "image/jpeg",
+        name: fileName,
+        type: mimeType,
       } as any);
     }
     const response = await api.post("/logs", formData);

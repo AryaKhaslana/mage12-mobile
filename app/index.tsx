@@ -8,6 +8,7 @@ import Animated, {
   Easing,
   interpolate,
   runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -20,6 +21,14 @@ import Svg, { Circle, Ellipse, G, Path, Rect } from "react-native-svg";
 import api from "../services/api";
 
 const { width } = Dimensions.get("window");
+
+// 4 Indikator Milestone Fase Bertani (Nol Emoji)
+const MILESTONES = [
+  { label: "Semai", threshold: 0 },
+  { label: "Nutrisi", threshold: 28 },
+  { label: "Tunas", threshold: 62 },
+  { label: "Kebun Siap", threshold: 92 },
+];
 
 // Helper resolusi rute awal dengan prioritas akun login
 const resolveInitialRoute = async (): Promise<string> => {
@@ -61,9 +70,15 @@ export default function IndexScreen() {
   // Gunakan Ref agar tidak terkena stale closure bug
   const targetRouteRef = useRef<string>("/(tabs)");
   const isNavigatingRef = useRef(false);
+  const isSessionReadyRef = useRef(false);
+  const hasTriggeredCompleteRef = useRef(false);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Animation Shared Values
   const screenOpacity = useSharedValue(1);
+  const stageScale = useSharedValue(1);
+  const bloomScale = useSharedValue(0.7);
+  const bloomOpacity = useSharedValue(0);
 
   // Aura Matahari / Sun Glow
   const sunGlowScale = useSharedValue(0.65);
@@ -109,19 +124,19 @@ export default function IndexScreen() {
   const brandTranslateY = useSharedValue(18);
   const progressValue = useSharedValue(0);
 
-  // 1. Eksekusi Background Setup & Silent Warmup
+  // 1. Eksekusi Background Setup & Silent Warmup (Smart Readiness Gate)
   useEffect(() => {
     let isMounted = true;
 
     const setupSession = async () => {
-      const nextRoute = await resolveInitialRoute();
-      if (isMounted) {
-        targetRouteRef.current = nextRoute;
-      }
+      try {
+        const nextRoute = await resolveInitialRoute();
+        if (isMounted) {
+          targetRouteRef.current = nextRoute;
+        }
 
-      // Silent Preload jika targetnya adalah Beranda
-      if (nextRoute === "/(tabs)") {
-        try {
+        // Silent Preload jika targetnya adalah Beranda
+        if (nextRoute === "/(tabs)") {
           const [weatherRes, tanamanRes] = await Promise.allSettled([
             api.get("/weather/today"),
             api.get("/tanaman"),
@@ -139,8 +154,12 @@ export default function IndexScreen() {
               JSON.stringify(tanamanRes.value.data.data)
             );
           }
-        } catch {
-          // Preload fail-safe
+        }
+      } catch (e) {
+        console.error("Gagal mendeteksi rute awal atau preload:", e);
+      } finally {
+        if (isMounted) {
+          isSessionReadyRef.current = true;
         }
       }
     };
@@ -149,6 +168,10 @@ export default function IndexScreen() {
 
     return () => {
       isMounted = false;
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     };
   }, []);
 
@@ -164,17 +187,102 @@ export default function IndexScreen() {
     } catch {}
   };
 
-  const triggerSelectionHaptic = () => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-  };
-
   const navigateToFinalRoute = () => {
     if (isNavigatingRef.current) return;
     isNavigatingRef.current = true;
     const finalRoute = targetRouteRef.current || "/(tabs)";
     router.replace(finalRoute as any);
+  };
+
+  // Sinkronisasi 1:1 Persentase & Status Berdasarkan Nilai Progress Tunggal
+  const updateProgressState = (pct: number) => {
+    setDisplayPercent(pct);
+    if (pct < 28) {
+      setStatusText("Menabur benih harapan...");
+    } else if (pct < 62) {
+      setStatusText("Menyerap nutrisi embun...");
+    } else if (pct < 92) {
+      setStatusText("Tunas mekar segar...");
+    } else if (pct < 100) {
+      setStatusText("Menyiapkan kebun Anda...");
+    } else {
+      setStatusText("Selamat datang di TaniSync!");
+    }
+  };
+
+  useAnimatedReaction(
+    () => Math.min(100, Math.max(0, Math.round(progressValue.value * 100))),
+    (currentPct, previousPct) => {
+      if (currentPct !== previousPct) {
+        runOnJS(updateProgressState)(currentPct);
+      }
+    }
+  );
+
+  // Transisi Keluar: Cincin Mekar (Bloom Ring), Stage Zoom-Through, dan Navigasi Halus
+  const triggerCompletionEffect = () => {
+    if (hasTriggeredCompleteRef.current) return;
+    hasTriggeredCompleteRef.current = true;
+
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
+
+    // Cincin Mekar Biomorphic
+    bloomScale.value = withTiming(2.4, { duration: 420, easing: Easing.out(Easing.cubic) });
+    bloomOpacity.value = withSequence(
+      withTiming(0.75, { duration: 90 }),
+      withTiming(0, { duration: 330 })
+    );
+
+    // Stage Zoom-Through Halus Masuk ke Beranda
+    stageScale.value = withTiming(1.08, { duration: 360, easing: Easing.out(Easing.cubic) });
+
+    // Fade Out Halus Layar
+    screenOpacity.value = withDelay(
+      180,
+      withTiming(0, { duration: 260, easing: Easing.out(Easing.ease) }, (fadeDone) => {
+        if (fadeDone) {
+          runOnJS(navigateToFinalRoute)();
+        }
+      })
+    );
+  };
+
+  const proceedToCompletion = () => {
+    progressValue.value = withTiming(
+      1,
+      { duration: 320, easing: Easing.out(Easing.cubic) },
+      (done) => {
+        if (done) {
+          runOnJS(triggerCompletionEffect)();
+        }
+      }
+    );
+  };
+
+  const checkGateAndFinish = () => {
+    if (isSessionReadyRef.current) {
+      proceedToCompletion();
+    } else {
+      // Coasting perlahan di 88% - 93% sembari menunggu session siap
+      progressValue.value = withTiming(0.93, { duration: 900, easing: Easing.linear });
+
+      const startTime = Date.now();
+      const MAX_WAIT_MS = 1400; // Maksimal batas waktu agar tidak pernah freeze
+
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        if (isSessionReadyRef.current || elapsed >= MAX_WAIT_MS) {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          proceedToCompletion();
+        }
+      }, 50);
+    }
   };
 
   // 2. Koreografi Animasi Organik Terharmonisasi
@@ -295,57 +403,25 @@ export default function IndexScreen() {
     brandOpacity.value = withDelay(650, withTiming(1, { duration: 450 }));
     brandTranslateY.value = withDelay(650, withSpring(0, { damping: 12, stiffness: 105 }));
 
-    // FASE 6: PROGRESS BAR & COUNTER HALUS KONSISTEN (250ms - 2100ms)
+    // FASE 6: SMART READINESS GATE PROGRESS (0% -> 88% -> 100%)
     progressValue.value = withDelay(
-      250,
-      withTiming(1, { duration: 1850, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (completed) => {
-        if (completed) {
-          runOnJS(triggerSelectionHaptic)();
-          // FADE OUT HALUS MENUJU RUTE TUJUAN
-          screenOpacity.value = withDelay(
-            220,
-            withTiming(0, { duration: 280, easing: Easing.out(Easing.ease) }, (fadeDone) => {
-              if (fadeDone) {
-                runOnJS(navigateToFinalRoute)();
-              }
-            })
-          );
+      220,
+      withTiming(
+        0.88,
+        { duration: 1350, easing: Easing.bezier(0.25, 0.1, 0.25, 1) },
+        (reachedGate) => {
+          if (reachedGate) {
+            runOnJS(checkGateAndFinish)();
+          }
         }
-      })
+      )
     );
 
-    // Counter angka & status tersinkronisasi 100% mulus
-    let progressInterval: ReturnType<typeof setInterval> | null = null;
-    const progressTimer = setTimeout(() => {
-      const startTime = Date.now();
-      const duration = 1850;
-
-      progressInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(1, Math.max(0, elapsed / duration));
-        // Easing curve natural
-        const eased = 1 - Math.pow(1 - progress, 2.2);
-        const pct = Math.min(100, Math.floor(eased * 100));
-        setDisplayPercent(pct);
-
-        if (pct < 28) {
-          setStatusText("Menabur benih harapan...");
-        } else if (pct < 60) {
-          setStatusText("Menyerap nutrisi embun...");
-        } else if (pct < 88) {
-          setStatusText("Tunas mekar segar...");
-        } else if (pct < 100) {
-          setStatusText("Menyiapkan kebun Anda...");
-        } else {
-          setStatusText("Selamat datang di TaniSync!");
-          if (progressInterval) clearInterval(progressInterval);
-        }
-      }, 35);
-    }, 250);
-
     return () => {
-      clearTimeout(progressTimer);
-      if (progressInterval) clearInterval(progressInterval);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     };
   }, []);
 
@@ -432,6 +508,15 @@ export default function IndexScreen() {
     ],
   }));
 
+  const bloomStyle = useAnimatedStyle(() => ({
+    opacity: bloomOpacity.value,
+    transform: [{ scale: bloomScale.value }],
+  }));
+
+  const stageStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: stageScale.value }],
+  }));
+
   const brandStyle = useAnimatedStyle(() => ({
     opacity: brandOpacity.value,
     transform: [{ translateY: brandTranslateY.value }],
@@ -443,8 +528,16 @@ export default function IndexScreen() {
 
   return (
     <Animated.View style={[styles.container, screenStyle]}>
-      {/* 1. STAGE ANIMASI TUMBUH KEMBANG */}
-      <View style={styles.stageContainer}>
+      {/* 1. STAGE ANIMASI TUMBUH KEMBANG (DENGAN ZOOM-THROUGH HALUS) */}
+      <Animated.View style={[styles.stageContainer, stageStyle]}>
+        {/* Cincin Mekar (Bloom Ring) saat 100% Siap */}
+        <Animated.View style={[styles.bloomRing, bloomStyle]} pointerEvents="none">
+          <Svg width={240} height={240} viewBox="0 0 240 240">
+            <Circle cx="120" cy="120" r="92" stroke="#3FA86B" strokeWidth={3} fill="none" opacity={0.65} />
+            <Circle cx="120" cy="120" r="70" stroke="#86EFAC" strokeWidth={2} fill="none" opacity={0.45} />
+          </Svg>
+        </Animated.View>
+
         {/* Aura Matahari Lembut */}
         <Animated.View style={[styles.sunGlow, sunGlowStyle]}>
           <Svg width={200} height={200} viewBox="0 0 200 200">
@@ -613,7 +706,7 @@ export default function IndexScreen() {
             />
           </Svg>
         </Animated.View>
-      </View>
+      </Animated.View>
 
       {/* 2. BRAND IDENTITAS TANISYNC (MURNI TIPOGRAFI, NO EMOJI) */}
       <Animated.View style={[styles.brandContainer, brandStyle]}>
@@ -635,6 +728,37 @@ export default function IndexScreen() {
         <View style={styles.progressInfoRow}>
           <Text style={styles.statusLabel}>{statusText}</Text>
           <Text style={styles.percentText}>{displayPercent}%</Text>
+        </View>
+
+        {/* 4 INDIKATOR MILESTONE FASE BERTANI */}
+        <View style={styles.milestoneRow}>
+          {MILESTONES.map((m, idx) => {
+            const isPassed = displayPercent >= m.threshold;
+            const isCurrent =
+              isPassed &&
+              (idx === MILESTONES.length - 1 || displayPercent < MILESTONES[idx + 1].threshold);
+
+            return (
+              <View key={m.label} style={styles.milestoneItem}>
+                <View
+                  style={[
+                    styles.milestoneDot,
+                    isPassed && styles.milestoneDotPassed,
+                    isCurrent && styles.milestoneDotCurrent,
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.milestoneText,
+                    isPassed && styles.milestoneTextPassed,
+                    isCurrent && styles.milestoneTextCurrent,
+                  ]}
+                >
+                  {m.label}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </View>
     </Animated.View>
@@ -820,6 +944,51 @@ const styles = StyleSheet.create({
   },
   percentText: {
     fontSize: 12,
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#123924",
+  },
+  bloomRing: {
+    position: "absolute",
+    bottom: -15,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  milestoneRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 14,
+    paddingHorizontal: 2,
+  },
+  milestoneItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  milestoneDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#D8D5CB",
+  },
+  milestoneDotPassed: {
+    backgroundColor: "#3FA86B",
+  },
+  milestoneDotCurrent: {
+    backgroundColor: "#16A34A",
+    transform: [{ scale: 1.3 }],
+  },
+  milestoneText: {
+    fontSize: 10,
+    fontFamily: "Nunito_700Bold",
+    color: "#8C897E",
+  },
+  milestoneTextPassed: {
+    color: "#2D4A3E",
+  },
+  milestoneTextCurrent: {
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
   },

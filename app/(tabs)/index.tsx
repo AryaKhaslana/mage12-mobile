@@ -397,6 +397,9 @@ export default function DashboardScreen() {
     setShowRestorePopup(false);
   };
 
+  const hasLoadedDataRef = useRef(false);
+  const lastWeatherFetchRef = useRef<number>(0);
+
   // SWR Cache Loader - Only runs ONCE on mount
   useEffect(() => {
     const initApp = async () => {
@@ -412,12 +415,18 @@ export default function DashboardScreen() {
         if (cachedTanaman) { setTanamanList(sortTanamanItems(JSON.parse(cachedTanaman))); hasCache = true; }
         if (cachedWeather) {
           const parsed = JSON.parse(cachedWeather);
+          if (parsed.savedAt) {
+            lastWeatherFetchRef.current = parsed.savedAt;
+          }
           if (parsed.savedAt && Date.now() - parsed.savedAt < 3 * 60 * 60 * 1000) {
             setWeather(parsed.data);
             hasCache = true;
           }
         }
-        if (hasCache) setIsLoading(false);
+        if (hasCache) {
+          hasLoadedDataRef.current = true;
+          setIsLoading(false);
+        }
       } catch (e) {
         console.log("Cache read error:", e);
       }
@@ -425,14 +434,13 @@ export default function DashboardScreen() {
     initApp();
   }, []);
 
-  const lastWeatherFetchRef = useRef<number>(0);
-
   const fetchDashboardData = useCallback(async (isManualRefresh = false) => {
     // Cegah panggilan bertumpuk di waktu bersamaan
     if (isFetchingDashboardRef.current && !isManualRefresh) return;
     isFetchingDashboardRef.current = true;
 
-    if (tanamanList.length === 0 && !userData) {
+    // Hindari Stale Closure: gunakan hasLoadedDataRef.current
+    if (!hasLoadedDataRef.current) {
       setIsLoading(true);
       setIsError(false);
     } else if (isManualRefresh) {
@@ -498,6 +506,7 @@ export default function DashboardScreen() {
         api.get("/tanaman"),
       ]);
       if (meRes?.data?.data) {
+        hasLoadedDataRef.current = true;
         setUserData((prev: any) => {
           let merged = meRes.data.data;
           if (prev) {
@@ -517,13 +526,14 @@ export default function DashboardScreen() {
         }
       }
       if (tanamanRes?.data?.data) {
+        hasLoadedDataRef.current = true;
         const sorted = sortTanamanItems(tanamanRes.data.data);
         setTanamanList(sorted);
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(sorted)).catch(() => {});
       }
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
-      if (tanamanList.length === 0 && !userData) {
+      if (!hasLoadedDataRef.current) {
         setIsError(true);
       }
       showNotification(

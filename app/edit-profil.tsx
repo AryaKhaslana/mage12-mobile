@@ -1,10 +1,21 @@
 import * as SecureStore from "expo-secure-store";
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Image, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  ScrollView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import api, { updateProfile } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 
@@ -16,86 +27,168 @@ export default function EditProfilScreen() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
-  
+
   const [fotoBaru, setFotoBaru] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [bannerBaru, setBannerBaru] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  
+
+  const isDirtyRef = useRef(false);
+  const savingLockRef = useRef(false);
   const { showNotification } = useNotification();
 
+  // 0ms Cache-First Form Loader
   useEffect(() => {
-    const fetchUser = async () => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      // 1. Baca cache SecureStore instan 0ms
+      try {
+        const cachedRaw = await SecureStore.getItemAsync("userData");
+        if (cachedRaw && isMounted) {
+          const cachedUser = JSON.parse(cachedRaw);
+          setInitialData(cachedUser);
+          setNama(cachedUser.nama || '');
+          setUsername(cachedUser.username || '');
+          setNoHp(cachedUser.noHp || '');
+          setBio(cachedUser.bio || '');
+          setAvatarUrl(cachedUser.avatarUrl || null);
+          setBannerUrl(cachedUser.bannerUrl || null);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.warn("Gagal membaca cache userData di edit profil:", err);
+      }
+
+      // 2. Fetch data terbaru di background secara silent jika form belum diedit
       try {
         const res = await api.get("/user/me");
-        const user = res.data.data;
-        setInitialData(user);
-        setNama(user.nama || '');
-        setUsername(user.username || '');
-        setNoHp(user.noHp || '');
-        setBio(user.bio || '');
-        setAvatarUrl(user.avatarUrl || null);
-        setBannerUrl(user.bannerUrl || null);
+        if (res.data?.data && isMounted) {
+          const freshUser = res.data.data;
+          setInitialData(freshUser);
+
+          // Update SecureStore dengan data terbaru
+          await SecureStore.setItemAsync("userData", JSON.stringify(freshUser));
+
+          // Hanya isi field jika pengguna belum mengetik
+          if (!isDirtyRef.current) {
+            setNama(freshUser.nama || '');
+            setUsername(freshUser.username || '');
+            setNoHp(freshUser.noHp || '');
+            setBio(freshUser.bio || '');
+            setAvatarUrl(freshUser.avatarUrl || null);
+            setBannerUrl(freshUser.bannerUrl || null);
+          }
+        }
       } catch (error) {
-        console.error("Failed to fetch user data", error);
-        Alert.alert("Error", "Gagal memuat data profil.");
+        console.warn("Gagal menyinkronkan data profil terbaru dari server:", error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
-    fetchUser();
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Izin Ditolak', 'TaniSync membutuhkan izin akses galeri untuk mengganti foto profil kamu.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7 });
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showNotification(
+          'Izin Ditolak',
+          'TaniSync membutuhkan izin akses galeri untuk mengganti foto profil kamu.',
+          'error'
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setFotoBaru(result.assets[0]);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        isDirtyRef.current = true;
+        setFotoBaru(result.assets[0]);
+      }
+    } catch {
+      showNotification('Error', 'Gagal membuka galeri foto.', 'error');
     }
   };
 
   const pickBanner = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Izin Ditolak', 'TaniSync membutuhkan izin akses galeri untuk mengganti banner profil kamu.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.7 });
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showNotification(
+          'Izin Ditolak',
+          'TaniSync membutuhkan izin akses galeri untuk mengganti banner profil kamu.',
+          'error'
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.7,
+      });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setBannerBaru(result.assets[0]);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        isDirtyRef.current = true;
+        setBannerBaru(result.assets[0]);
+      }
+    } catch {
+      showNotification('Error', 'Gagal membuka galeri banner.', 'error');
     }
   };
 
   const handleSave = async () => {
-    if (!nama.trim()) {
-      Alert.alert("Validasi", "Nama lengkap tidak boleh kosong.");
+    if (savingLockRef.current) return;
+
+    const cleanNama = nama.trim();
+    const cleanUsername = username.trim().replace(/\s+/g, '').toLowerCase();
+    const cleanNoHp = noHp.trim();
+    const cleanBio = bio.trim();
+
+    if (!cleanNama) {
+      showNotification("Validasi", "Nama lengkap tidak boleh kosong.", "error");
       return;
     }
 
+    // Cek apakah ada perubahan data atau gambar
+    const hasChanges =
+      cleanNama !== (initialData?.nama ?? "") ||
+      cleanUsername !== (initialData?.username ?? "") ||
+      cleanNoHp !== (initialData?.noHp ?? "") ||
+      cleanBio !== (initialData?.bio ?? "") ||
+      Boolean(fotoBaru) ||
+      Boolean(bannerBaru);
+
+    if (!hasChanges) {
+      showNotification("Info", "Tidak ada perubahan profil.", "info");
+      router.back();
+      return;
+    }
+
+    savingLockRef.current = true;
     setIsSaving(true);
+
     try {
       const formData = new FormData();
-      
-      // Append only changed fields
-      if (nama !== initialData.nama) formData.append("nama", nama);
-      if (username !== (initialData.username || '')) formData.append("username", username);
-      if (noHp !== (initialData.noHp || '')) formData.append("noHp", noHp);
-      if (bio !== (initialData.bio || '')) formData.append("bio", bio);
-      
+
+      if (cleanNama !== (initialData?.nama ?? "")) formData.append("nama", cleanNama);
+      if (cleanUsername !== (initialData?.username ?? "")) formData.append("username", cleanUsername);
+      if (cleanNoHp !== (initialData?.noHp ?? "")) formData.append("noHp", cleanNoHp);
+      if (cleanBio !== (initialData?.bio ?? "")) formData.append("bio", cleanBio);
+
       if (fotoBaru) {
         formData.append("avatar", {
           uri: fotoBaru.uri,
@@ -103,7 +196,7 @@ export default function EditProfilScreen() {
           type: "image/jpeg"
         } as any);
       }
-      
+
       if (bannerBaru) {
         formData.append("banner", {
           uri: bannerBaru.uri,
@@ -113,21 +206,32 @@ export default function EditProfilScreen() {
       }
 
       const updatedUser = await updateProfile(formData);
-      
-      const cachedStr = await SecureStore.getItemAsync("userData");
-      if (cachedStr) {
-        const cached = JSON.parse(cachedStr);
-        const merged = { ...cached, ...updatedUser };
-        await SecureStore.setItemAsync("userData", JSON.stringify(merged));
-      }
 
-      showNotification("Berhasil", "Profil berhasil diperbarui!");
+      // Gabungkan data lokal dan server ke SecureStore agar 0ms sync di Profil & Beranda
+      const cachedStr = await SecureStore.getItemAsync("userData");
+      const cached = cachedStr ? JSON.parse(cachedStr) : (initialData || {});
+      const merged = {
+        ...cached,
+        nama: cleanNama,
+        username: cleanUsername,
+        noHp: cleanNoHp,
+        bio: cleanBio,
+        ...(updatedUser || {})
+      };
+      await SecureStore.setItemAsync("userData", JSON.stringify(merged));
+
+      showNotification("Berhasil", "Profil berhasil diperbarui!", "success");
       router.back();
     } catch (error: any) {
-      console.error(error);
-      Alert.alert("Gagal", error.response?.data?.message || "Gagal menyimpan profil.");
+      console.error("Gagal simpan profil:", error);
+      showNotification(
+        "Gagal",
+        error.response?.data?.message || "Gagal menyimpan perubahan profil.",
+        "error"
+      );
     } finally {
       setIsSaving(false);
+      savingLockRef.current = false;
     }
   };
 
@@ -147,10 +251,10 @@ export default function EditProfilScreen() {
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        
+
         {/* HEADER */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={{ marginRight: 16 }} hitSlop={10}>
+          <Pressable onPress={() => router.back()} style={{ marginRight: 16 }} hitSlop={10} accessibilityLabel="Kembali">
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
           </Pressable>
           <Text style={styles.headerTitle}>Edit Profil</Text>
@@ -158,38 +262,51 @@ export default function EditProfilScreen() {
 
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
-            {/* BANNER SECTION */}
-            <View style={styles.bannerSection}>
-              <Pressable onPress={pickBanner} style={({ pressed }) => [styles.bannerContainer, pressed && { opacity: 0.8 }]}>
+
+            {/* BANNER & AVATAR COMPOSITE (OVERLAP SEPERTI PROFIL SCREEN) */}
+            <View style={styles.mediaCompositeSection}>
+              {/* BANNER */}
+              <Pressable onPress={pickBanner} style={({ pressed }) => [styles.bannerContainer, pressed && { opacity: 0.85 }]}>
                 {displayBannerUri ? (
-                  <Image source={{ uri: displayBannerUri }} style={styles.bannerImage} />
+                  <Image
+                    source={{ uri: displayBannerUri }}
+                    style={styles.bannerImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                  />
                 ) : (
                   <View style={styles.bannerPlaceholder}>
-                    <MaterialIcons name="image" size={32} color="#a09d91" />
+                    <MaterialIcons name="image" size={32} color="#A09D91" />
                   </View>
                 )}
                 <View style={styles.bannerEditBadge}>
                   <MaterialIcons name="camera-alt" size={14} color="#FFFFFF" />
                 </View>
               </Pressable>
-              <Text style={styles.avatarHint}>Ketuk untuk mengganti banner</Text>
-            </View>
 
-            {/* AVATAR */}
-            <View style={styles.avatarSection}>
-              <Pressable onPress={pickImage} style={({ pressed }) => [styles.avatarContainer, pressed && { opacity: 0.8 }]}>
-                {displayAvatarUri ? (
-                  <Image source={{ uri: displayAvatarUri }} style={styles.avatarImage} />
-                ) : (
-                  <Text style={styles.avatarInitials}>
-                    {nama.charAt(0).toUpperCase() || 'P'}
-                  </Text>
-                )}
-                <View style={styles.avatarEditBadge}>
-                  <MaterialIcons name="camera-alt" size={14} color="#FFFFFF" />
+              {/* AVATAR OVERLAPPING BANNER */}
+              <View style={styles.avatarRow}>
+                <Pressable onPress={pickImage} style={({ pressed }) => [styles.avatarContainer, pressed && { opacity: 0.85 }]}>
+                  {displayAvatarUri ? (
+                    <Image
+                      source={{ uri: displayAvatarUri }}
+                      style={styles.avatarImage}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                    />
+                  ) : (
+                    <Text style={styles.avatarInitials}>
+                      {nama.charAt(0).toUpperCase() || 'P'}
+                    </Text>
+                  )}
+                  <View style={styles.avatarEditBadge}>
+                    <MaterialIcons name="camera-alt" size={14} color="#FFFFFF" />
+                  </View>
+                </Pressable>
+                <View style={styles.mediaHintWrapper}>
+                  <Text style={styles.mediaHintText}>Ketuk foto atau banner untuk mengganti</Text>
                 </View>
-              </Pressable>
-              <Text style={styles.avatarHint}>Ketuk untuk mengganti foto</Text>
+              </View>
             </View>
 
             {/* FORM FIELDS */}
@@ -198,7 +315,10 @@ export default function EditProfilScreen() {
               <TextInput
                 style={styles.inputField}
                 value={nama}
-                onChangeText={setNama}
+                onChangeText={(text) => {
+                  isDirtyRef.current = true;
+                  setNama(text);
+                }}
                 placeholder="Masukkan nama"
                 placeholderTextColor="#5C5A4F"
               />
@@ -209,7 +329,10 @@ export default function EditProfilScreen() {
               <TextInput
                 style={styles.inputField}
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(text) => {
+                  isDirtyRef.current = true;
+                  setUsername(text.replace(/\s+/g, '').toLowerCase());
+                }}
                 placeholder="Masukkan username"
                 placeholderTextColor="#5C5A4F"
                 autoCapitalize="none"
@@ -221,7 +344,10 @@ export default function EditProfilScreen() {
               <TextInput
                 style={styles.inputField}
                 value={noHp}
-                onChangeText={setNoHp}
+                onChangeText={(text) => {
+                  isDirtyRef.current = true;
+                  setNoHp(text);
+                }}
                 placeholder="08xxxxxxxxxx"
                 placeholderTextColor="#5C5A4F"
                 keyboardType="phone-pad"
@@ -229,14 +355,21 @@ export default function EditProfilScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Bio Singkat</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.inputLabel}>Bio Singkat</Text>
+                <Text style={styles.charCount}>{bio.length}/160</Text>
+              </View>
               <TextInput
-                style={[styles.inputField, { height: 80, paddingTop: 12 }]}
+                style={[styles.inputField, styles.bioField]}
                 value={bio}
-                onChangeText={setBio}
-                placeholder="Ceritakan sedikit tentang dirimu..."
+                onChangeText={(text) => {
+                  isDirtyRef.current = true;
+                  setBio(text);
+                }}
+                placeholder="Ceritakan sedikit tentang kebunmu..."
                 placeholderTextColor="#5C5A4F"
                 multiline
+                maxLength={160}
                 textAlignVertical="top"
               />
             </View>
@@ -245,16 +378,20 @@ export default function EditProfilScreen() {
 
         {/* BOTTOM ACTION */}
         <View style={styles.bottomBar}>
-          <Pressable 
-            style={[styles.saveButton, isSaving && { opacity: 0.7 }]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.saveButton,
+              isSaving && { opacity: 0.7 },
+              pressed && { transform: [{ scale: 0.98 }] }
+            ]}
             onPress={handleSave}
             disabled={isSaving}
           >
             {isSaving ? (
-              <ActivityIndicator color="#123924" />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <MaterialIcons name="save" size={20} color="#123924" />
+                <MaterialIcons name="save" size={20} color="#FFFFFF" />
                 <Text style={styles.saveButtonText}>Simpan Perubahan</Text>
               </>
             )}
@@ -269,37 +406,44 @@ export default function EditProfilScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FBF8F0' },
+    backgroundColor: '#FBF8F0'
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    
+    borderBottomWidth: 1,
     borderBottomColor: '#E8E5DA',
-    backgroundColor: '#FFFFFF' },
+    backgroundColor: '#FFFFFF'
+  },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924' },
+    color: '#123924'
+  },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40 },
+    paddingBottom: 40
+  },
   card: {
     backgroundColor: '#FFFFFF',
     borderWidth: 0,
-    
     borderRadius: 24,
     padding: 20,
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
-  bannerSection: {
-    alignItems: 'center',
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4
+  },
+  mediaCompositeSection: {
     marginBottom: 24
   },
   bannerContainer: {
     width: '100%',
-    height: 120,
-    borderRadius: 16,
+    height: 128,
+    borderRadius: 18,
     backgroundColor: '#E8E5DA',
     justifyContent: 'center',
     alignItems: 'center',
@@ -307,8 +451,7 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     width: '100%',
-    height: '100%',
-    resizeMode: 'cover'
+    height: '100%'
   },
   bannerPlaceholder: {
     width: '100%',
@@ -330,51 +473,81 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFFFFF'
   },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 24 },
+  avatarRow: {
+    marginTop: -44,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 12,
+    gap: 14
+  },
   avatarContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 88,
+    height: 88,
+    borderRadius: 24,
     backgroundColor: '#3FA86B',
-    borderWidth: 0,
-    
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
     justifyContent: 'center',
-    alignItems: 'center' },
+    alignItems: 'center',
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4
+  },
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 48,
-    resizeMode: 'cover' },
+    borderRadius: 21
+  },
   avatarInitials: {
-    fontSize: 40,
+    fontSize: 36,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#FFFFFF' },
+    color: '#FFFFFF'
+  },
   avatarEditBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: -4,
+    right: -4,
     backgroundColor: '#123924',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 0,
-    borderColor: '#FFFFFF' },
-  avatarHint: {
-    marginTop: 8,
+    borderWidth: 2,
+    borderColor: '#FFFFFF'
+  },
+  mediaHintWrapper: {
+    flex: 1,
+    marginBottom: 8
+  },
+  mediaHintText: {
     fontSize: 12,
-    fontFamily: 'Nunito_500Medium',
-    color: '#5C5A4F' },
+    fontFamily: 'Nunito_600SemiBold',
+    color: '#5C5A4F'
+  },
   inputGroup: {
-    marginBottom: 16 },
+    marginBottom: 16
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8
+  },
   inputLabel: {
     fontSize: 14,
     fontFamily: 'Nunito_700Bold',
     color: '#123924',
-    marginBottom: 8 },
+    marginBottom: 8
+  },
+  charCount: {
+    fontSize: 11,
+    fontFamily: 'Nunito_600SemiBold',
+    color: '#5C5A4F',
+    marginBottom: 8
+  },
   inputField: {
     backgroundColor: '#FBF8F0',
     borderWidth: 1,
@@ -384,25 +557,35 @@ const styles = StyleSheet.create({
     height: 48,
     fontFamily: 'Nunito_500Medium',
     fontSize: 14,
-    color: '#123924' },
+    color: '#123924'
+  },
+  bioField: {
+    height: 88,
+    paddingTop: 12
+  },
   bottomBar: {
     padding: 20,
     backgroundColor: '#FFFFFF',
-    
-    borderTopColor: '#E8E5DA' },
+    borderTopWidth: 1,
+    borderTopColor: '#E8E5DA'
+  },
   saveButton: {
     backgroundColor: '#3FA86B',
-    borderWidth: 0,
-    
     borderRadius: 100,
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
-    gap: 8 },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
+    gap: 8
+  },
   saveButtonText: {
     fontSize: 16,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#123924' }
+    color: '#FFFFFF'
+  }
 });

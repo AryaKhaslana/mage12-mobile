@@ -1,8 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
@@ -21,7 +23,6 @@ const getRelativeTime = (isoString: string) => {
   return date.toLocaleDateString("id-ID");
 };
 
-
 const TypingIndicator = () => {
   const fadeAnim = useRef(new Animated.Value(0.3)).current;
   
@@ -35,11 +36,11 @@ const TypingIndicator = () => {
   }, []);
 
   return (
-    <Animated.View style={[styles.bubbleWrapperLeft, { marginTop: 16, opacity: fadeAnim }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+    <Animated.View style={[styles.bubbleWrapperLeft, { marginTop: 8, opacity: fadeAnim }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Image
           source={require('../../assets/images/tanibot.png')}
-          style={styles.messageBotAvatar}
+          style={[styles.messageBotAvatar, { marginBottom: 0 }]}
           contentFit="contain"
         />
         <View style={[styles.bubbleBot, { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 16 }]}>
@@ -90,6 +91,40 @@ const formatMarkdown = (text: string) => {
 };
 
 
+const ChatMessageItem = memo(({ item }: { item: ChatMessage }) => {
+  const isUser = item.role === "USER";
+  return (
+    <View style={[styles.bubbleWrapper, isUser ? styles.bubbleWrapperRight : styles.bubbleWrapperLeft]}>
+      {!isUser ? (
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+          <Image
+            source={require('../../assets/images/tanibot.png')}
+            style={styles.messageBotAvatar}
+            contentFit="contain"
+          />
+          <View style={{ flexShrink: 1 }}>
+            <View style={[styles.bubble, styles.bubbleBot]}>
+              <Text style={[styles.bubbleText, styles.textBot]}>
+                {formatMarkdown(item.message)}
+              </Text>
+            </View>
+            <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
+          </View>
+        </View>
+      ) : (
+        <View style={{ alignSelf: 'flex-end' }}>
+          <View style={[styles.bubble, styles.bubbleUser]}>
+            <Text style={[styles.bubbleText, styles.textUser]}>
+              {formatMarkdown(item.message)}
+            </Text>
+          </View>
+          <Text style={[styles.timeText, { textAlign: 'right' }]}>{getRelativeTime(item.createdAt)}</Text>
+        </View>
+      )}
+    </View>
+  );
+});
+
 const ChatSkeleton = () => {
   const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
@@ -117,6 +152,8 @@ export default function TanibotScreen() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const coordsRef = useRef<{ lat?: number; lng?: number }>({});
+  const sendingLockRef = useRef(false);
 
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -126,7 +163,36 @@ export default function TanibotScreen() {
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
+  // Cache user coordinates in memory once on mount
+  useEffect(() => {
+    SecureStore.getItemAsync("userData").then(userDataStr => {
+      if (userDataStr) {
+        try {
+          const user = JSON.parse(userDataStr);
+          coordsRef.current = { lat: user.latitude, lng: user.longitude };
+        } catch {}
+      }
+    }).catch(() => {});
+  }, []);
 
+  // 0ms instant history load from AsyncStorage
+  useEffect(() => {
+    const loadCache = async () => {
+      try {
+        const cached = await AsyncStorage.getItem("tanibot_history");
+        if (cached) {
+          const parsed: ChatMessage[] = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+            setIsLoadingHistory(false);
+          }
+        }
+      } catch {}
+    };
+    loadCache();
+  }, []);
+
+  // Fetch updated history from server in background
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -134,6 +200,7 @@ export default function TanibotScreen() {
         const data = res.data || [];
         const sorted = data.sort((a: ChatMessage, b: ChatMessage) => a.id - b.id);
         setMessages(sorted);
+        AsyncStorage.setItem("tanibot_history", JSON.stringify(sorted)).catch(() => {});
       } catch (e) {
         console.error(e);
       } finally {
@@ -142,6 +209,7 @@ export default function TanibotScreen() {
     };
     fetchHistory();
   }, []);
+
   const { showNotification } = useNotification();
   const [showClearModal, setShowClearModal] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -159,6 +227,7 @@ export default function TanibotScreen() {
     try {
       await clearTanibotHistory();
       setMessages([]);
+      AsyncStorage.removeItem("tanibot_history").catch(() => {});
       setShowClearModal(false);
       showNotification("Berhasil", "Riwayat percakapan TaniBot berhasil dibersihkan.", "success");
     } catch (e: any) {
@@ -169,10 +238,15 @@ export default function TanibotScreen() {
     }
   };
 
-  const handleSend = async () => {
-    if (!inputText.trim() || isSending) return;
-    const textToSend = inputText.trim();
+  const handleSend = async (customText?: string) => {
+    const rawText = typeof customText === 'string' ? customText : inputText;
+    if (!rawText.trim() || sendingLockRef.current || isSending) return;
     
+    sendingLockRef.current = true;
+    setIsSending(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const textToSend = rawText.trim();
     const userMsg: ChatMessage = {
       id: Date.now(),
       role: "USER",
@@ -180,85 +254,61 @@ export default function TanibotScreen() {
       createdAt: new Date().toISOString()
     };
     
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => {
+      const next = [...prev, userMsg];
+      AsyncStorage.setItem("tanibot_history", JSON.stringify(next)).catch(() => {});
+      return next;
+    });
     setInputText("");
-    setIsSending(true);
     Keyboard.dismiss();
     
-    // auto scroll to bottom after user sends
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
     try {
-      let lat = undefined;
-      let lng = undefined;
-      const userDataStr = await SecureStore.getItemAsync("userData");
-      if (userDataStr) {
-        const user = JSON.parse(userDataStr);
-        lat = user.latitude;
-        lng = user.longitude;
-      }
-      
+      const { lat, lng } = coordsRef.current;
       const replyText = await sendTanibotMessage(textToSend, lat, lng);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
       const botMsg: ChatMessage = {
         id: Date.now() + 1,
         role: "BOT",
         message: replyText,
         createdAt: new Date().toISOString()
       };
-      setMessages(prev => [...prev, botMsg]);
+      setMessages(prev => {
+        const next = [...prev, botMsg];
+        AsyncStorage.setItem("tanibot_history", JSON.stringify(next)).catch(() => {});
+        return next;
+      });
     } catch (e: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       const errorMsg: ChatMessage = {
         id: Date.now() + 1,
         role: "BOT",
         message: e.response?.status === 429 
-          ? "Mohon maaf, saat ini sedang ada banyak pesan yang diproses. Silakan beri jeda sekitar 15 menit sebelum bertanya lagi ya! ⏳" 
-          : (e.response?.data?.message || "Mohon maaf, koneksi ke server sedang mengalami gangguan. Silakan coba lagi beberapa saat nanti ya! 🔌"),
+          ? "Mohon maaf, saat ini sedang ada banyak pesan yang diproses. Silakan beri jeda sekitar 15 menit sebelum bertanya lagi ya!" 
+          : (e.response?.data?.message || "Mohon maaf, koneksi ke server sedang mengalami gangguan. Silakan coba lagi beberapa saat nanti ya."),
         createdAt: new Date().toISOString()
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages(prev => {
+        const next = [...prev, errorMsg];
+        AsyncStorage.setItem("tanibot_history", JSON.stringify(next)).catch(() => {});
+        return next;
+      });
     } finally {
       setIsSending(false);
+      sendingLockRef.current = false;
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, 150);
     }
   };
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
-    const isUser = item.role === "USER";
-    return (
-      <View style={[styles.bubbleWrapper, isUser ? styles.bubbleWrapperRight : styles.bubbleWrapperLeft]}>
-        {!isUser ? (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
-            <Image
-              source={require('../../assets/images/tanibot.png')}
-              style={styles.messageBotAvatar}
-              contentFit="contain"
-            />
-            <View style={{ flexShrink: 1, maxWidth: '85%' }}>
-              <View style={[styles.bubble, styles.bubbleBot]}>
-                <Text style={[styles.bubbleText, styles.textBot]}>
-                  {formatMarkdown(item.message)}
-                </Text>
-              </View>
-              <Text style={styles.timeText}>{getRelativeTime(item.createdAt)}</Text>
-            </View>
-          </View>
-        ) : (
-          <View style={{ alignSelf: 'flex-end', maxWidth: '85%' }}>
-            <View style={[styles.bubble, styles.bubbleUser]}>
-              <Text style={[styles.bubbleText, styles.textUser]}>
-                {formatMarkdown(item.message)}
-              </Text>
-            </View>
-            <Text style={[styles.timeText, { textAlign: 'right' }]}>{getRelativeTime(item.createdAt)}</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
+  const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
+    return <ChatMessageItem item={item} />;
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -278,10 +328,7 @@ export default function TanibotScreen() {
               <View style={styles.onlineBadge} />
             </View>
             <View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={styles.headerTitle}>TaniBot</Text>
-                <Text style={{ fontSize: 16 }}>🌱</Text>
-              </View>
+              <Text style={styles.headerTitle}>TaniBot</Text>
               <Text style={styles.headerSubtitle}>Asisten cerdas tanaman kamu</Text>
             </View>
           </View>
@@ -305,7 +352,6 @@ export default function TanibotScreen() {
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={{ padding: 20 }}
               keyboardShouldPersistTaps="handled"
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
               onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
               ListEmptyComponent={
                 <View>
@@ -317,30 +363,36 @@ export default function TanibotScreen() {
                         contentFit="contain"
                       />
                     </View>
-                    <Text style={styles.welcomeTitle}>Halo! Aku TaniBot 🌱</Text>
+                    <Text style={styles.welcomeTitle}>Halo! Aku TaniBot</Text>
                     <Text style={styles.welcomeSubtitle}>
                       Asisten pintar pertanian kamu. Tanyakan apa saja seputar perawatan tanaman, jadwal panen, atau cuaca hari ini!
                     </Text>
                   </View>
-                  <View style={{ marginTop: 12, gap: 8, flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {["Apakah tanamanku perlu disiram hari ini?", "Kapan tanamanku panen?", "Apa tips merawat tanaman tomat?"].map((q, i) => (
-                      <Pressable 
-                        key={i}
-                        onPress={() => setInputText(q)}
-                        style={({ pressed }) => [
-                          {
-                            backgroundColor: '#E8F5E9',
-                            borderWidth: 0,
-                            borderColor: '#3FA86B',
-                            borderRadius: 100,
-                            paddingHorizontal: 16,
-                            paddingVertical: 8 },
-                          pressed && { opacity: 0.7 }
-                        ]}
-                      >
-                        <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924' }}>{q}</Text>
-                      </Pressable>
-                    ))}
+
+                  <View style={styles.quickPromptSection}>
+                    <View style={styles.quickPromptHeader}>
+                      <MaterialIcons name="lightbulb-outline" size={16} color="#3FA86B" />
+                      <Text style={styles.quickPromptLabel}>Coba tanyakan langsung:</Text>
+                    </View>
+                    <View style={styles.quickPromptChipsWrap}>
+                      {[
+                        "Apakah tanamanku perlu disiram hari ini?",
+                        "Kapan tanamanku panen?",
+                        "Apa tips merawat tanaman tomat?",
+                      ].map((q, i) => (
+                        <Pressable 
+                          key={i}
+                          onPress={() => handleSend(q)}
+                          style={({ pressed }) => [
+                            styles.quickPromptChip,
+                            pressed && { opacity: 0.75, backgroundColor: '#D4EED8' }
+                          ]}
+                        >
+                          <MaterialIcons name="chat-bubble-outline" size={14} color="#1F5C3D" style={{ marginRight: 6 }} />
+                          <Text style={styles.quickPromptText}>{q}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
                 </View>
               }
@@ -367,7 +419,7 @@ export default function TanibotScreen() {
           />
           <Pressable 
             style={[styles.sendButton, (!inputText.trim() || isSending) && { opacity: 0.6 }]}
-            onPress={handleSend}
+            onPress={() => handleSend()}
             disabled={!inputText.trim() || isSending}
           >
             <MaterialIcons name="send" size={20} color="#FFFFFF" />
@@ -430,9 +482,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    
+    borderBottomWidth: 1,
     borderBottomColor: '#E8E5DA',
-    backgroundColor: '#FFFFFF' },
+    backgroundColor: '#FFFFFF',
+  },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_800ExtraBold',
@@ -447,9 +500,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     borderWidth: 0,
-    
     shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
-    marginBottom: 20,
+    marginBottom: 16,
     marginTop: 10 },
   headerLeft: {
     flexDirection: 'row',
@@ -510,9 +562,44 @@ const styles = StyleSheet.create({
     color: '#5C5A4F',
     textAlign: 'center',
     lineHeight: 22 },
+  quickPromptSection: {
+    marginTop: 4,
+  },
+  quickPromptHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+    paddingHorizontal: 4,
+  },
+  quickPromptLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: '#5C5A4F',
+  },
+  quickPromptChipsWrap: {
+    gap: 8,
+  },
+  quickPromptChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  quickPromptText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: '#123924',
+    flexShrink: 1,
+  },
   bubbleWrapper: {
-    marginBottom: 24,
-    maxWidth: '80%' },
+    marginBottom: 20,
+    maxWidth: '82%',
+  },
   bubbleWrapperLeft: {
     alignSelf: 'flex-start' },
   bubbleWrapperRight: {
@@ -526,10 +613,16 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4 },
   bubbleBot: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 0,
-    
+    borderWidth: 1,
+    borderColor: '#E8E5DA',
     borderRadius: 18,
-    borderBottomLeftRadius: 4 },
+    borderBottomLeftRadius: 4,
+    shadowColor: '#123924',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
   bubbleText: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
@@ -547,13 +640,13 @@ const styles = StyleSheet.create({
   inputArea: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    
-    padding:16,
+    padding: 16,
     paddingBottom: 110,
     backgroundColor: '#FFFFFF',
-    
+    borderTopWidth: 1,
     borderTopColor: '#E8E5DA',
-    gap: 12 },
+    gap: 12,
+  },
   inputField: {
     flex: 1,
     minHeight: 48,

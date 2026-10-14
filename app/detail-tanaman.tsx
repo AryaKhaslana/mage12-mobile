@@ -76,6 +76,7 @@ export default function DetailTanamanModal() {
   const { showNotification } = useNotification();
 
   const [logs, setLogs] = useState<LogAktivitas[]>([]);
+  const [showAllLogs, setShowAllLogs] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPlayingMemory, setIsPlayingMemory] = useState(false);
@@ -147,6 +148,10 @@ export default function DetailTanamanModal() {
     return logs.filter(l => !!l.fotoUrl).map(l => l.fotoUrl as string).reverse();
   }, [logs]);
 
+  const wateringCount = useMemo(() => logs.filter(l => l.tipeValidasi !== 'photo').length, [logs]);
+  const photoCount = useMemo(() => logs.filter(l => l.tipeValidasi === 'photo').length, [logs]);
+  const displayedLogs = useMemo(() => showAllLogs ? logs : logs.slice(0, 3), [logs, showAllLogs]);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isPlayingMemory && photoLogsAsc.length > 1) {
@@ -210,7 +215,7 @@ export default function DetailTanamanModal() {
       const localHariKe = tanaman ? Math.floor((Date.now() - new Date(tanaman.tanggalTanam || Date.now()).getTime()) / 86400000) + 1 : 0;
       const formData = new FormData();
       formData.append("tipe", "PANEN");
-      formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya nih bosku! `);
+      formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya dari kebun TaniSync.`);
 
       const cached = await SecureStore.getItemAsync("userData");
       if (cached) {
@@ -234,7 +239,7 @@ export default function DetailTanamanModal() {
       }
       
       await createCommunityPost(formData);
-      showNotification("Berhasil Dibagikan!", "Laporan panen kamu telah dipublikasikan ke Komunitas di sekitar radius 2km! 🌾", "success");
+      showNotification("Berhasil Dibagikan!", "Laporan panen kamu telah dipublikasikan ke Komunitas di sekitar radius 2km!", "success");
       setShowCertificate(false);
       router.back();
     } catch (e: any) {
@@ -373,9 +378,14 @@ export default function DetailTanamanModal() {
   const estPanenDate = new Date(new Date(tanaman.tanggalTanam || Date.now()).getTime() + ((tanaman.daysToHarvest || 0) * 86400000));
   const estPanenString = isNaN(estPanenDate.getTime()) ? '-' : estPanenDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
+  const totalDays = tanaman.daysToHarvest || 30;
+  const remainingDays = Math.max(0, tanaman.sisaHariPanen ?? 0);
+  const elapsedDays = Math.max(0, totalDays - remainingDays);
+  const progressPercent = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
+
   const handleShare = async () => {
     try {
-      const shareMessage = `🌱 Progres Tanaman TaniSync! \n\nSaya sedang merawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari!\nStatus kesehatan tanaman mencapai skor ${tanaman?.predictiveScore}/100! \n\nTersisa ${tanaman?.sisaHariPanen} hari lagi menuju panen. Mari mulai kebun kamu sendiri di TaniSync!`;
+      const shareMessage = `Progres Tanaman TaniSync\n\nSaya sedang merawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari.\nStatus kesehatan tanaman mencapai skor ${tanaman?.predictiveScore}/100.\n\nTersisa ${tanaman?.sisaHariPanen} hari lagi menuju panen. Mari mulai kebun kamu sendiri di TaniSync!`;
       await Share.share({
         message: shareMessage,
         title: "Bagikan Progres Tanaman TaniSync" });
@@ -386,30 +396,36 @@ export default function DetailTanamanModal() {
 
   let badgeBgColor = "#E8F5E9";
   let badgeBorderColor = "#3FA86B";
-  let badgeTextColor = "#123924";
+  let badgeTextColor = "#1B5E20";
   let badgeText = "Aman";
+  let badgeIcon: keyof typeof MaterialIcons.glyphMap = "check-circle";
+
   if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
     badgeBgColor = "#FFECEB";
     badgeBorderColor = "#FF6B5C";
-    badgeTextColor = "#FF6B5C";
+    badgeTextColor = "#D32F2F";
     badgeText = "Perlu Disiram";
+    badgeIcon = "water-drop";
   } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
     badgeBgColor = "#FFF9E6";
     badgeBorderColor = "#FFB627";
-    badgeTextColor = "#FFB627";
+    badgeTextColor = "#B45309";
     badgeText = "Ditunda Hujan";
+    badgeIcon = "cloud";
   } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
     badgeBgColor = "#E8F5E9";
     badgeBorderColor = "#3FA86B";
-    badgeTextColor = "#123924";
-    badgeText = "Sudah Disiram Hari Ini";
+    badgeTextColor = "#1B5E20";
+    badgeText = "Sudah Disiram";
+    badgeIcon = "check-circle";
   }
 
   if (sudahValidasiHariIni) {
     badgeBgColor = "#E8F5E9";
     badgeBorderColor = "#3FA86B";
-    badgeTextColor = "#123924";
-    badgeText = "Sudah Disiram Hari Ini";
+    badgeTextColor = "#1B5E20";
+    badgeText = "Sudah Disiram";
+    badgeIcon = "check-circle";
   }
 
   return (
@@ -497,24 +513,68 @@ export default function DetailTanamanModal() {
           )}
         </View>
 
-        {/* TITLE SECTION */}
+        {/* TITLE & BADGE HEADER */}
         <View style={styles.titleSection}>
-          <Text style={styles.plantTitle}>{tanaman.nickname ?? tanaman?.jenisTanaman}</Text>
-          <Text style={styles.plantSubtitle}>Ditanam sejak {hariKe} hari lalu</Text>
-          
-          <View style={[styles.badge, { backgroundColor: badgeBgColor, borderColor: badgeBorderColor, marginTop: 8, alignSelf: 'flex-start' }]}>
-            <Text style={[styles.badgeText, { color: badgeTextColor }]}>{badgeText}</Text>
+          <View style={styles.titleTopRow}>
+            <View style={styles.titleLeftCol}>
+              <Text style={styles.plantTitle} numberOfLines={1}>
+                {tanaman.nickname ?? tanaman.jenisTanaman}
+              </Text>
+              <TouchableOpacity 
+                style={styles.editTitleBtn}
+                onPress={handleOpenEdit}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <MaterialIcons name="edit" size={15} color="#7D7A6E" />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.badge, { backgroundColor: badgeBgColor, borderColor: badgeBorderColor }]}>
+              <MaterialIcons name={badgeIcon} size={13} color={badgeTextColor} style={{ marginRight: 4 }} />
+              <Text style={[styles.badgeText, { color: badgeTextColor }]}>{badgeText}</Text>
+            </View>
+          </View>
+
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <MaterialIcons name="eco" size={14} color="#3FA86B" style={{ marginRight: 4 }} />
+              <Text style={styles.metaText}>{tanaman.jenisTanaman}</Text>
+            </View>
+            <Text style={styles.metaDot}>•</Text>
+            <View style={styles.metaItem}>
+              <MaterialIcons name="calendar-today" size={13} color="#7D7A6E" style={{ marginRight: 4 }} />
+              <Text style={styles.metaText}>Hari ke-{hariKe}</Text>
+            </View>
+            <Text style={styles.metaDot}>•</Text>
+            <View style={styles.metaItem}>
+              <MaterialIcons name="verified" size={13} color="#FFB627" style={{ marginRight: 4 }} />
+              <Text style={styles.metaText}>Skor {tanaman.predictiveScore ?? 0}</Text>
+            </View>
           </View>
         </View>
 
-        {/* HARVEST CARD */}
+        {/* HARVEST ESTIMATION CARD */}
         <View style={styles.harvestCard}>
-          <View style={styles.harvestIconCircle}>
-            <MaterialIcons name="stars" size={32} color="#FFB627" />
+          <View style={styles.harvestTopRow}>
+            <View style={styles.harvestLeft}>
+              <View style={styles.harvestIconPill}>
+                <MaterialIcons name="event-available" size={18} color="#FFB627" />
+              </View>
+              <View style={styles.harvestInfoCol}>
+                <Text style={styles.harvestLabel}>ESTIMASI PANEN</Text>
+                <Text style={styles.harvestCountdown} numberOfLines={1}>
+                  {remainingDays <= 0 ? "Siap Dipanen Sekarang" : `Sisa ${remainingDays} Hari Lagi`}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.harvestRight}>
+              <Text style={styles.harvestDateText}>{estPanenString}</Text>
+              <Text style={styles.harvestPercentText}>{progressPercent}% Tumbuh</Text>
+            </View>
           </View>
-          <View style={styles.harvestTextContainer}>
-            <Text style={styles.harvestTitle}>Estimasi Panen</Text>
-            <Text style={styles.harvestSubtitle}>Sisa {tanaman.sisaHariPanen || 0} hari lagi ({estPanenString})</Text>
+
+          <View style={styles.harvestProgressBarTrack}>
+            <View style={[styles.harvestProgressBarFill, { width: `${progressPercent}%` }]} />
           </View>
         </View>
 
@@ -529,7 +589,7 @@ export default function DetailTanamanModal() {
               {isHarvesting ? (
                 <ActivityIndicator color="#123924" />
               ) : (
-                <Text style={styles.harvestActionBtnText}>Panen! </Text>
+                <Text style={styles.harvestActionBtnText}>Panen!</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -539,11 +599,11 @@ export default function DetailTanamanModal() {
         {(tanaman.sisaHariPanen ?? 999) > 0 && (
           sudahValidasiHariIni ? (
             <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
-              Tanaman ini sudah divalidasi hari ini, balik lagi besok ya! 
+              Tanaman ini sudah divalidasi hari ini, balik lagi besok ya!
             </Text>
           ) : tanaman.statusPenyiraman === "DITUNDA_HUJAN" ? (
-            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924', textAlign: 'center', backgroundColor: '#E3F5EC', padding: 16, borderRadius: 16, borderWidth: 0, borderColor: '#3FA86B' }}>
-              Penyiraman ditunda karena sistem mendeteksi hujan lebat hari ini! 🌧️ Streak kamu aman!
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924', textAlign: 'center', backgroundColor: '#E3F5EC', padding: 16, borderRadius: 16, borderWidth: 0, borderColor: '#3FA86B', marginHorizontal: 20, marginBottom: 20 }}>
+              Penyiraman ditunda karena sistem mendeteksi cuaca hujan lebat hari ini! Streak kamu aman!
             </Text>
           ) : (
             true && (
@@ -561,30 +621,74 @@ export default function DetailTanamanModal() {
 
         {/* HISTORY SECTION */}
         <View style={styles.historySection}>
-          <Text style={styles.historySectionTitle}>Riwayat Perawatan</Text>
+          <View style={styles.historyHeaderRow}>
+            <Text style={styles.historySectionTitle}>Riwayat Perawatan</Text>
+            {logs.length > 0 && (
+              <View style={styles.historySummaryChips}>
+                <View style={styles.summaryChip}>
+                  <MaterialIcons name="water-drop" size={12} color="#1F5C3D" style={{ marginRight: 3 }} />
+                  <Text style={styles.summaryChipText}>{wateringCount}x Disiram</Text>
+                </View>
+                {photoCount > 0 && (
+                  <View style={styles.summaryChip}>
+                    <MaterialIcons name="photo-camera" size={12} color="#1F5C3D" style={{ marginRight: 3 }} />
+                    <Text style={styles.summaryChipText}>{photoCount}x Jurnal</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
           
           {logs.length === 0 ? (
             <View style={styles.emptyState}>
-              <MaterialIcons name="history" size={48} color="#a09d91" style={{marginBottom: 8}}/>
+              <MaterialIcons name="history" size={40} color="#a09d91" style={{ marginBottom: 6 }}/>
               <Text style={styles.emptyText}>Belum ada jurnal perawatan</Text>
             </View>
           ) : (
-            logs.map((log, index) => (
-              <View key={log.id} style={[styles.historyItem, index === logs.length - 1 && { borderBottomWidth: 0 }]}>
-                {log.tipeValidasi === 'photo' ? (
-                  <Image source={{ uri: log.fotoUrl || FALLBACK_THUMB }} style={styles.historyImage} />
-                ) : (
-                  <View style={[styles.historyImage, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <MaterialIcons name="check-circle" size={24} color="#3FA86B" />
+            <>
+              {displayedLogs.map((log, index) => (
+                <View 
+                  key={log.id} 
+                  style={[
+                    styles.historyItem, 
+                    index === displayedLogs.length - 1 && (!(!showAllLogs && logs.length > 3)) && { borderBottomWidth: 0 }
+                  ]}
+                >
+                  {log.tipeValidasi === 'photo' ? (
+                    <Image source={{ uri: log.fotoUrl || FALLBACK_THUMB }} style={styles.historyImage} />
+                  ) : (
+                    <View style={[styles.historyImage, styles.historyIconPlaceholder]}>
+                      <MaterialIcons name="check-circle" size={22} color="#3FA86B" />
+                    </View>
+                  )}
+                  
+                  <View style={styles.historyTextCol}>
+                    <Text style={styles.historyTitle}>{log.tipeValidasi === 'photo' ? 'Validasi Foto' : 'Konfirmasi Penyiraman'}</Text>
+                    <Text style={styles.historySubtitle}>{formatDate(log.createdAt)}</Text>
                   </View>
-                )}
-                
-                <View style={styles.historyTextCol}>
-                  <Text style={styles.historyTitle}>{log.tipeValidasi === 'photo' ? 'Validasi Foto' : 'Konfirmasi Penyiraman'}</Text>
-                  <Text style={styles.historySubtitle}>{formatDate(log.createdAt)}</Text>
                 </View>
-              </View>
-            ))
+              ))}
+
+              {logs.length > 3 && (
+                <TouchableOpacity 
+                  style={styles.toggleLogsButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowAllLogs(prev => !prev);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.toggleLogsText}>
+                    {showAllLogs ? "Tampilkan Lebih Sedikit" : `Lihat Semua Riwayat (${logs.length})`}
+                  </Text>
+                  <MaterialIcons 
+                    name={showAllLogs ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+                    size={18} 
+                    color="#1F5C3D" 
+                  />
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
       </ScrollView>
@@ -687,7 +791,7 @@ export default function DetailTanamanModal() {
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Image source={require("../assets/images/icontampilanawal/seedling-lompat.svg")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini? </Text>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Perjuanganmu merawat {tanaman?.nickname || tanaman?.jenisTanaman} sudah selesai! Tanaman ini akan dicatat di riwayat panenmu.
             </Text>
@@ -708,7 +812,7 @@ export default function DetailTanamanModal() {
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, overflow: 'hidden', borderWidth: 0, borderColor: '#FFB627', paddingBottom: 24, shadowColor: '#FFB627', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 }}>
             
             <View style={{ backgroundColor: '#FFB627', paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', }}>
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>Sertifikat Lulus Panen </Text>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>Sertifikat Lulus Panen</Text>
             </View>
 
             <View style={{ padding: 24, alignItems: 'center' }}>
@@ -749,7 +853,7 @@ export default function DetailTanamanModal() {
                 disabled={isPosting}
               >
                 <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>
-                  {isPosting ? "Menerbitkan..." : "Pamer ke Komunitas "}
+                  {isPosting ? "Menerbitkan..." : "Pamer ke Komunitas"}
                 </Text>
               </TouchableOpacity>
               
@@ -866,28 +970,154 @@ const styles = StyleSheet.create({
   imageWrapper: { width: '100%', aspectRatio: 1, borderRadius: 20, borderWidth: 0,  overflow: 'hidden', backgroundColor: '#96d4ad', elevation: 4 },
   heroImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   floatingCamButton: { position: 'absolute', bottom: -16, right: 24, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 0,  alignItems: 'center', justifyContent: 'center', elevation: 5, zIndex: 10 },
-  titleSection: { paddingHorizontal: 20, marginBottom: 20 },
-  plantTitle: { fontSize: 24, fontWeight: '800', color: '#1F5C3D', marginBottom: 4 },
-  plantSubtitle: { fontSize: 12, color: '#5C5A4F' },
-  harvestCard: { marginHorizontal: 20, backgroundColor: '#1F5C3D', borderRadius: 28, padding: 24, flexDirection: 'row', alignItems: 'center', marginBottom: 24, shadowColor: '#123924', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 },
-  harvestIconCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 0, borderColor: '#FFB627', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  harvestTextContainer: { marginLeft: 16, flex: 1 },
-  harvestTitle: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-  harvestSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  titleSection: { 
+    paddingHorizontal: 20, 
+    marginBottom: 16,
+  },
+  titleTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  titleLeftCol: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  plantTitle: { 
+    fontSize: 22, 
+    fontFamily: 'Nunito_800ExtraBold', 
+    color: '#123924', 
+    flexShrink: 1,
+  },
+  editTitleBtn: {
+    padding: 4,
+    borderRadius: 8,
+    backgroundColor: '#ECEAE2',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: 12,
+    fontFamily: 'Nunito_600SemiBold',
+    color: '#5C5A4F',
+  },
+  metaDot: {
+    fontSize: 12,
+    color: '#B0ADA0',
+    marginHorizontal: 2,
+  },
+  badge: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10, 
+    paddingVertical: 4, 
+    borderRadius: 12, 
+    borderWidth: 1,
+  },
+  badgeText: { 
+    fontSize: 11, 
+    fontFamily: 'Nunito_700Bold',
+  },
+
+  harvestCard: { 
+    marginHorizontal: 20, 
+    backgroundColor: '#1F5C3D', 
+    borderRadius: 20, 
+    padding: 16, 
+    marginBottom: 20, 
+    shadowColor: '#123924', 
+    shadowOffset: { width: 0, height: 6 }, 
+    shadowOpacity: 0.12, 
+    shadowRadius: 12, 
+    elevation: 4,
+  },
+  harvestTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  harvestLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  harvestIconPill: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 182, 39, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  harvestInfoCol: {
+    flex: 1,
+  },
+  harvestLabel: {
+    fontSize: 10,
+    fontFamily: 'Nunito_700Bold',
+    color: 'rgba(255, 255, 255, 0.7)',
+    letterSpacing: 0.5,
+  },
+  harvestCountdown: {
+    fontSize: 14,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#FFFFFF',
+    marginTop: 1,
+  },
+  harvestRight: {
+    alignItems: 'flex-end',
+  },
+  harvestDateText: {
+    fontSize: 11,
+    fontFamily: 'Nunito_600SemiBold',
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  harvestPercentText: {
+    fontSize: 11,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#FFB627',
+    marginTop: 1,
+  },
+  harvestProgressBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    marginTop: 12,
+    overflow: 'hidden',
+  },
+  harvestProgressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: '#3FA86B',
+  },
 
   harvestActionBtn: {
     backgroundColor: '#FFB627',
     borderWidth: 0,
-    
     borderRadius: 30,
     minHeight: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4 },
+    elevation: 4,
+  },
   harvestActionBtnText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 20,
-    color: '#123924' },
+    color: '#123924',
+  },
 
   actionRow: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, marginBottom: 20 },
   actionBtn: { flex: 1, minHeight: 56, borderRadius: 999, borderWidth: 0,  alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, elevation: 3 },
@@ -895,15 +1125,90 @@ const styles = StyleSheet.create({
   btnGreen: { backgroundColor: '#3FA86B' },
   btnWhiteText: { fontSize: 12, fontWeight: '700', color: '#123924', textAlign: 'center' },
   btnGreenText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
-  historySection: { paddingHorizontal: 20 },
-  historySectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F5C3D', marginBottom: 12 },
-  historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12,  },
-  historyImage: { width: 40, height: 40, borderRadius: 8, borderWidth: 0,  marginRight: 12, backgroundColor: '#e5e2db' },
+
+  historySection: { 
+    paddingHorizontal: 20,
+    marginTop: 4,
+  },
+  historyHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  historySectionTitle: { 
+    fontSize: 16, 
+    fontFamily: 'Nunito_800ExtraBold', 
+    color: '#123924',
+  },
+  historySummaryChips: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  summaryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+  },
+  summaryChipText: {
+    fontSize: 11,
+    fontFamily: 'Nunito_700Bold',
+    color: '#1F5C3D',
+  },
+  historyItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E5DA',
+  },
+  historyImage: { 
+    width: 42, 
+    height: 42, 
+    borderRadius: 10, 
+    marginRight: 12, 
+    backgroundColor: '#e5e2db',
+  },
+  historyIconPlaceholder: {
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: '#F0F5F2',
+    borderWidth: 1,
+    borderColor: '#E1EBE5',
+  },
   historyTextCol: { flex: 1 },
-  historyTitle: { fontSize: 12, fontWeight: '700', color: '#123924' },
-  historySubtitle: { fontSize: 11, color: '#5C5A4F', marginTop: 2 },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 0 },
-  badgeText: { fontSize: 10, fontWeight: "800" },
+  historyTitle: { 
+    fontSize: 13, 
+    fontFamily: 'Nunito_700Bold', 
+    color: '#123924',
+  },
+  historySubtitle: { 
+    fontSize: 11, 
+    fontFamily: 'Nunito_500Medium',
+    color: '#7D7A6E', 
+    marginTop: 2,
+  },
+  toggleLogsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    marginTop: 8,
+    borderRadius: 12,
+    backgroundColor: '#EAE7DD',
+    gap: 4,
+  },
+  toggleLogsText: {
+    fontSize: 12,
+    fontFamily: 'Nunito_700Bold',
+    color: '#1F5C3D',
+  },
+
   toast: { position: 'absolute', top: 20, left: 20, right: 20, backgroundColor: '#FFB627', padding: 16, borderRadius: 12, zIndex: 50, elevation: 10, borderWidth: 0 },
   toastText: { color: '#123924', fontWeight: '800', textAlign: 'center' },
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,57,36,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },

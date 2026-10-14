@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -79,7 +80,30 @@ export default function DetailTanamanModal() {
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isPlayingMemory, setIsPlayingMemory] = useState(false);
+
+  useEffect(() => {
+    // 0ms instant display from cache
+    const loadCachedTanaman = async () => {
+      try {
+        const cached = await AsyncStorage.getItem("dashboard_tanaman");
+        if (cached) {
+          const list: TanamanDetail[] = JSON.parse(cached);
+          const found = list.find((t) => t.id === tanamanId);
+          if (found) {
+            setTanaman(found);
+            setIsLoading(false);
+          }
+        }
+      } catch (e) {
+        // non-fatal
+      }
+    };
+    if (tanamanId) {
+      loadCachedTanaman();
+    }
+  }, [tanamanId]);
   const [memoryIndex, setMemoryIndex] = useState(0);
   const [isHarvesting, setIsHarvesting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -270,12 +294,47 @@ export default function DetailTanamanModal() {
   const handleValidasiButton = async () => {
     if (isSubmitting) return;
     
-    // Optimistic UI Update: Langsung ubah state lokal biar tombolnya instan berubah
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const optimisticLog: LogAktivitas = {
+      id: Date.now(),
+      userId: tanaman?.userId ?? 0,
+      tanamanId,
+      tipeValidasi: "button_only",
+      fotoUrl: null,
+      createdAt: new Date().toISOString()
+    };
+
+    const optimisticLogTerakhir = {
+      id: optimisticLog.id,
+      tipeValidasi: "button_only",
+      fotoUrl: null,
+      createdAt: optimisticLog.createdAt
+    };
+
+    // Optimistic UI Update: Langsung ubah state lokal tanaman & logs biar instan 0ms
     setTanaman((prev: any) => prev ? {
       ...prev,
       statusPenyiraman: 'SUDAH_DISIRAM',
-      logTerakhir: { createdAt: new Date().toISOString() }
+      logTerakhir: optimisticLogTerakhir
     } : prev);
+
+    setLogs(prev => [optimisticLog, ...prev]);
+
+    // Update local cache asynchronously
+    AsyncStorage.getItem("dashboard_tanaman").then(cached => {
+      if (cached) {
+        try {
+          const list: TanamanDetail[] = JSON.parse(cached);
+          const idx = list.findIndex(t => t.id === tanamanId);
+          if (idx !== -1) {
+            list[idx].statusPenyiraman = 'SUDAH_DISIRAM';
+            list[idx].logTerakhir = optimisticLogTerakhir;
+            AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(list)).catch(() => {});
+          }
+        } catch {}
+      }
+    }).catch(() => {});
 
     setIsSubmitting(true);
     try {
@@ -307,7 +366,7 @@ export default function DetailTanamanModal() {
   };
 
   const handleValidasiPhoto = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isUploadingPhoto) return;
     
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -327,6 +386,7 @@ export default function DetailTanamanModal() {
           { text: "Batal", style: "cancel" },
           { text: "Kirim", onPress: async () => {
               setIsSubmitting(true);
+              setIsUploadingPhoto(true);
               try {
                 const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uri });
                 if (res.levelUp) {
@@ -348,12 +408,14 @@ export default function DetailTanamanModal() {
                 showNotification("Gagal", e.response?.data?.message || "Gagal upload foto", "error");
               } finally {
                 setIsSubmitting(false);
+                setIsUploadingPhoto(false);
               }
           }}
         ]);
       }
     } catch (e: any) {
       setIsSubmitting(false);
+      setIsUploadingPhoto(false);
       showNotification("Gagal", e?.message || "Gagal membuka kamera", "error");
     }
   };
@@ -490,14 +552,14 @@ export default function DetailTanamanModal() {
                 handleValidasiPhoto();
               }
             }} 
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingPhoto}
           >
-            <MaterialIcons name="photo-camera" size={24} color="#123924" />
+            <MaterialIcons name="photo-camera" size={22} color="#123924" />
           </TouchableOpacity>
           
           {photoLogsAsc.length > 1 && (
             <TouchableOpacity 
-              style={[styles.floatingCamButton, { right: undefined, left: 24, backgroundColor: isPlayingMemory ? '#FF6B5C' : '#3FA86B' }]} 
+              style={[styles.floatingCamButton, { right: undefined, left: 12, backgroundColor: isPlayingMemory ? '#FF6B5C' : '#3FA86B' }]} 
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 if (!isPlayingMemory) {
@@ -508,7 +570,7 @@ export default function DetailTanamanModal() {
                 }
               }}
             >
-              <MaterialIcons name={isPlayingMemory ? "stop" : "play-arrow"} size={24} color="#FFFFFF" />
+              <MaterialIcons name={isPlayingMemory ? "stop" : "play-arrow"} size={22} color="#FFFFFF" />
             </TouchableOpacity>
           )}
         </View>
@@ -692,7 +754,7 @@ export default function DetailTanamanModal() {
           )}
         </View>
       </ScrollView>
-      {(isSubmitting || isHarvesting) && (
+      {(isUploadingPhoto || isHarvesting) && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
@@ -965,11 +1027,28 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FBF8F0' },
   scrollContent: { paddingBottom: 40 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, marginBottom: 16 },
-  iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 0,  alignItems: 'center', justifyContent: 'center', elevation: 4 },
-  heroSection: { marginHorizontal: 20, position: 'relative', marginBottom: 16 },
+  iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 0, alignItems: 'center', justifyContent: 'center', elevation: 4 },
+  heroSection: { marginHorizontal: 20, position: 'relative', marginBottom: 20 },
   imageWrapper: { width: '100%', aspectRatio: 1, borderRadius: 20, borderWidth: 0,  overflow: 'hidden', backgroundColor: '#96d4ad', elevation: 4 },
   heroImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  floatingCamButton: { position: 'absolute', bottom: -16, right: 24, width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 0,  alignItems: 'center', justifyContent: 'center', elevation: 5, zIndex: 10 },
+  floatingCamButton: { 
+    position: 'absolute', 
+    bottom: 12, 
+    right: 12, 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: '#FFFFFF', 
+    borderWidth: 0,  
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    elevation: 4, 
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    zIndex: 10 
+  },
   titleSection: { 
     paddingHorizontal: 20, 
     marginBottom: 16,

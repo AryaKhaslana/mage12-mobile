@@ -1,4 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState , useRef } from "react";
 import {
@@ -118,6 +119,9 @@ export default function TanamanScreen() {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const filters = ["Semua", "Perlu Disiram", "Sudah Disiram"];
   const [tanamanList, setTanamanList] = useState<TanamanDetail[]>([]);
+  const tanamanListRef = useRef<TanamanDetail[]>([]);
+  tanamanListRef.current = tanamanList;
+
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -128,6 +132,26 @@ export default function TanamanScreen() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
 
+  // 0ms instant render from cache
+  useEffect(() => {
+    const loadCache = async () => {
+      try {
+        const cached = await AsyncStorage.getItem("dashboard_tanaman");
+        if (cached) {
+          const parsed: TanamanDetail[] = JSON.parse(cached);
+          if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+            setTanamanList(parsed);
+            tanamanListRef.current = parsed;
+            setIsLoading(false);
+          }
+        }
+      } catch (e) {
+        // non-fatal
+      }
+    };
+    loadCache();
+  }, []);
+
   useEffect(() => {
     if (params.openModal === 'true') {
       setModalVisible(true);
@@ -136,21 +160,25 @@ export default function TanamanScreen() {
   }, [params.openModal]);
 
   const fetchTanaman = async (isManualRefresh = false) => {
-    if (tanamanList.length === 0) {
+    // Gunakan tanamanListRef.current untuk menghindari stale closure
+    if (tanamanListRef.current.length === 0) {
       setIsLoading(true);
       setIsError(false);
     } else if (isManualRefresh) {
       setIsRefreshing(true);
     }
-    // Jika bukan manual refresh dan list sudah ada, fetch berjalan SILENT (tanpa loading indicator apa pun)
+    // Jika bukan manual refresh dan list sudah ada, fetch berjalan SILENT (tanpa skeleton / kedipan)
     try {
       const response = await api.get("/tanaman");
       if (response.data?.status === "success") {
-        setTanamanList(response.data.data);
+        const data = response.data.data;
+        setTanamanList(data);
+        tanamanListRef.current = data;
+        AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(data)).catch(() => {});
       }
     } catch (error: any) {
       console.error("Error get tanaman:", error);
-      if (tanamanList.length === 0) {
+      if (tanamanListRef.current.length === 0) {
         setIsError(true);
       }
     } finally {
@@ -172,13 +200,24 @@ export default function TanamanScreen() {
         jenisTanaman: selectedTanaman,
         nickname: nickname || undefined });
       if (response.data?.status === "success") {
+        const newTanaman = response.data.data;
         showNotification(
           "Berhasil!",
           response.data.message || "Tanaman berhasil ditambahkan ke kebun kamu!",
           "success"
         );
         setModalVisible(false);
-        fetchTanaman();
+        setNickname("");
+        
+        // Instant state & cache prepend: tidak perlu nunggu GET /tanaman ulang
+        if (newTanaman) {
+          const updated = [newTanaman, ...tanamanListRef.current];
+          setTanamanList(updated);
+          tanamanListRef.current = updated;
+          AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated)).catch(() => {});
+        } else {
+          fetchTanaman();
+        }
       }
     } catch (error: any) {
       console.error("Error tambah tanaman:", error);
@@ -242,40 +281,45 @@ export default function TanamanScreen() {
   );
 
   const renderItem = ({ item: tanaman }: { item: TanamanDetail }) => {
-    const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam).getTime()) / 86400000) + 1;
     let bgColor = "#E8F5E9";
     let borderColor = "#3FA86B";
-    let textColor = "#123924";
+    let textColor = "#1B5E20";
     let statusText = "Aman";
+    let iconName: keyof typeof MaterialIcons.glyphMap = "check-circle";
     
     if ((tanaman.sisaHariPanen ?? 999) <= 0) {
       bgColor = "#FFF9E6";
       borderColor = "#FFB627";
-      textColor = "#FFB627";
-      statusText = "Siap Panen 🌾";
+      textColor = "#B45309";
+      statusText = "Siap Panen";
+      iconName = "event-available";
     } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
       bgColor = "#FFECEB";
       borderColor = "#FF6B5C";
-      textColor = "#FF6B5C";
+      textColor = "#D32F2F";
       statusText = "Perlu Disiram";
+      iconName = "water-drop";
     } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
       bgColor = "#FFF9E6";
       borderColor = "#FFB627";
-      textColor = "#FFB627";
+      textColor = "#B45309";
       statusText = "Ditunda Hujan";
+      iconName = "cloud";
     } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
       bgColor = "#E8F5E9";
       borderColor = "#3FA86B";
-      textColor = "#123924";
+      textColor = "#1B5E20";
       statusText = "Sudah Disiram";
+      iconName = "check-circle";
     }
     
     const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
     if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
       bgColor = "#E8F5E9";
       borderColor = "#3FA86B";
-      textColor = "#123924";
-      statusText = "Sudah Disiram Hari Ini 💧";
+      textColor = "#1B5E20";
+      statusText = "Sudah Disiram";
+      iconName = "check-circle";
     }
 
     return (
@@ -305,9 +349,10 @@ export default function TanamanScreen() {
           <Text style={styles.cardTitle} numberOfLines={1}>
             {tanaman.nickname || tanaman.jenisTanaman}
           </Text>
-          <Text style={styles.cardSubtitle}>Skor: {tanaman.predictiveScore} • Panen: {tanaman.sisaHariPanen}hr</Text>
+          <Text style={styles.cardSubtitle}>Skor {tanaman.predictiveScore ?? 0} • Panen {tanaman.sisaHariPanen ?? 0} hari</Text>
           <View style={styles.cardFooter}>
-            <View style={[styles.badge, { backgroundColor: bgColor, borderColor: borderColor }]}>
+            <View style={[styles.badge, { backgroundColor: bgColor, borderColor: borderColor, flexDirection: 'row', alignItems: 'center' }]}>
+              <MaterialIcons name={iconName} size={11} color={textColor} style={{ marginRight: 3 }} />
               <Text style={[styles.badgeText, { color: textColor }]}>
                 {statusText}
               </Text>

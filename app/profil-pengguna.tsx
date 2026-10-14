@@ -481,7 +481,7 @@ export default function ProfilPenggunaScreen() {
                     </View>
 
                     <Pressable
-                      onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id } } as any)}
+                      onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id, initialData: JSON.stringify(post) } } as any)}
                       style={({ pressed }) => pressed && { opacity: 0.85 }}
                     >
                       {post.judul ? <Text style={styles.postTitle}>{post.judul}</Text> : null}
@@ -497,7 +497,7 @@ export default function ProfilPenggunaScreen() {
                         <Text style={[styles.postActionText, like.liked && { color: C.coral }]}>{like.count} suka</Text>
                       </Pressable>
                       <Pressable
-                        onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id } } as any)}
+                        onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id, initialData: JSON.stringify(post) } } as any)}
                         style={styles.postAction}
                         hitSlop={8}
                       >

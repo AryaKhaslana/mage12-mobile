@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import api, { getCommunityPostDetail, getCommunityComments, addCommunityComment, deleteCommunityComment, toggleCommunityLike, deleteCommunityPost, CommunityPostDetail, CommunityComment } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
+import * as Haptics from 'expo-haptics';
 import { useNotification } from '../components/NotificationContext';
 
 const getRelativeTime = (isoString: string) => {
@@ -85,14 +86,31 @@ export default function DetailKomunitasScreen() {
   const { showNotification } = useNotification();
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
-  const { id } = useLocalSearchParams();
+  const { id, initialData } = useLocalSearchParams();
   const postId = Number(id);
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [post, setPost] = useState<CommunityPostDetail | null>(null);
+  const [post, setPost] = useState<CommunityPostDetail | null>(() => {
+    if (initialData && typeof initialData === 'string') {
+      try {
+        const parsed = JSON.parse(initialData);
+        return {
+          ...parsed,
+          jumlahKomentar: parsed.jumlahKomentar ?? 0,
+          jumlahLike: parsed.jumlahLike ?? 0,
+          isLiked: !!parsed.isLiked,
+          isOwner: false,
+        };
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [comments, setComments] = useState<CommunityComment[]>([]);
   
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !initialData);
   const [isError, setIsError] = useState(false);
 
   const [page, setPage] = useState(1);
@@ -112,10 +130,14 @@ export default function DetailKomunitasScreen() {
         const stored = await SecureStore.getItemAsync("userData");
         if (stored) {
           const p = JSON.parse(stored);
+          setCurrentUser(p);
           if (p.id) setCurrentUserId(p.id);
         } else {
           const res = await api.get("/user/me").catch(() => null);
-          if (res?.data?.data?.id) setCurrentUserId(res.data.data.id);
+          if (res?.data?.data) {
+            setCurrentUser(res.data.data);
+            if (res.data.data.id) setCurrentUserId(res.data.data.id);
+          }
         }
       } catch {}
     };
@@ -123,24 +145,24 @@ export default function DetailKomunitasScreen() {
   }, []);
 
   const fetchDetail = useCallback(async () => {
-    setIsLoading(true);
     setIsError(false);
     try {
-      const data = await getCommunityPostDetail(postId);
+      const [data, comm] = await Promise.all([
+        getCommunityPostDetail(postId),
+        getCommunityComments(postId, 1, 20),
+      ]);
       setPost(data);
-      
-      const comm = await getCommunityComments(postId, 1, 20);
       const commentList = Array.isArray(comm?.data) ? comm.data : [];
       setComments(commentList);
       setHasMore(commentList.length >= 20);
       setPage(1);
     } catch (e) {
       console.error(e);
-      setIsError(true);
+      if (!post) setIsError(true);
     } finally {
       setIsLoading(false);
     }
-  }, [postId]);
+  }, [postId, post]);
 
   useEffect(() => {
     let ignore = false;
@@ -160,7 +182,7 @@ export default function DetailKomunitasScreen() {
         }
       } catch (e) {
         console.error(e);
-        if (!ignore) setIsError(true);
+        if (!ignore && !post) setIsError(true);
       } finally {
         if (!ignore) setIsLoading(false);
       }
@@ -213,15 +235,38 @@ export default function DetailKomunitasScreen() {
   };
 
   const handleSendComment = async () => {
-    if (!commentText.trim() || isSending || !post) return;
+    const trimmed = commentText.trim();
+    if (!trimmed || isSending || !post) return;
+
+    // 1. Instant 0ms Haptics & input clearing
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCommentText("");
+    Keyboard.dismiss();
+
+    // 2. Optimistic comment addition
+    const tempId = Date.now();
+    const optimisticComment: CommunityComment = {
+      id: tempId,
+      userId: currentUserId || 0,
+      userNama: currentUser?.nama || "Saya",
+      userAvatar: currentUser?.avatarUrl || null,
+      teks: trimmed,
+      createdAt: new Date().toISOString(),
+    };
+
+    setComments(prev => [...prev, optimisticComment]);
+    setPost(prev => prev ? { ...prev, jumlahKomentar: prev.jumlahKomentar + 1 } : null);
+
+    // 3. Background server call
     setIsSending(true);
     try {
-      const newComm = await addCommunityComment(postId, commentText.trim());
-      setComments(prev => [...prev, newComm]);
-      setCommentText("");
-      setPost(prev => prev ? { ...prev, jumlahKomentar: prev.jumlahKomentar + 1 } : null);
-      Keyboard.dismiss();
+      const newComm = await addCommunityComment(postId, trimmed);
+      setComments(prev => prev.map(c => c.id === tempId ? newComm : c));
     } catch(e: any) {
+      // Rollback on failure
+      setComments(prev => prev.filter(c => c.id !== tempId));
+      setPost(prev => prev ? { ...prev, jumlahKomentar: Math.max(0, prev.jumlahKomentar - 1) } : null);
+      setCommentText(trimmed);
       showNotification("Gagal", e.response?.data?.message || "Gagal mengirim komentar.", "error");
     } finally {
       setIsSending(false);
@@ -235,6 +280,7 @@ export default function DetailKomunitasScreen() {
 
   const confirmDeletePost = async () => {
     if (!postToDelete) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await deleteCommunityPost(postToDelete);
       setPostToDelete(null);
@@ -274,18 +320,21 @@ export default function DetailKomunitasScreen() {
     let badgeBg = "";
     let badgeColor = "";
     if (post.tipePost === "progress_update") {
-      badgeText = "Progress ";
+      badgeText = "Progress";
       badgeBg = "#E8F5E9";
       badgeColor = "#3FA86B";
     } else if (post.tipePost === "panen_surplus") {
-      badgeText = "Panen Surplus ";
+      badgeText = "Panen Surplus";
       badgeBg = "#FFF9E6";
       badgeColor = "#B8860B";
     } else if (post.tipePost === "pertanyaan") {
-      badgeText = "Pertanyaan ❓";
+      badgeText = "Pertanyaan";
       badgeBg = "#FFECEB";
       badgeColor = "#FF6B5C";
     }
+
+    const avatarUri = post.userAvatar || post.author?.avatarUrl;
+    const authorName = post.user_nama || post.author?.nama || "Petani";
 
     return (
       <View style={{ paddingBottom: 16 }}>
@@ -306,20 +355,36 @@ export default function DetailKomunitasScreen() {
                   params: {
                     username: targetParam,
                     userId: uid ? String(uid) : undefined,
-                    nama: post.user_nama || post.author?.nama || "",
-                    avatarUrl: post.userAvatar || post.author?.avatarUrl || "",
+                    nama: authorName,
+                    avatarUrl: avatarUri || "",
                   },
                 } as any);
               }}
               style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center' }, pressed && { opacity: 0.7 }]}
             >
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarInitials}>{post.user_nama?.charAt(0) || '?'.toUpperCase()}</Text>
-            </View>
-            <View style={styles.postMeta}>
-              <Text style={styles.authorName}>{post.user_nama}</Text>
-              <Text style={styles.timeText}>{getRelativeTime(post.createdAt)}</Text>
-            </View>
+              <View style={styles.avatarContainer}>
+                {avatarUri ? (
+                  <Image
+                    source={{ uri: avatarUri }}
+                    style={{ width: '100%', height: '100%', borderRadius: 20 }}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                  />
+                ) : (
+                  <Text style={styles.avatarInitials}>
+                    {authorName.charAt(0).toUpperCase()}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.postMeta}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.authorName}>{authorName}</Text>
+                  {post.lokasiNama ? (
+                    <Text style={styles.locationBadge}>#{post.lokasiNama}</Text>
+                  ) : null}
+                </View>
+                <Text style={styles.timeText}>{getRelativeTime(post.createdAt)}</Text>
+              </View>
             </Pressable>
             {badgeText ? (
               <View style={[styles.badge, { backgroundColor: badgeBg }]}>
@@ -333,11 +398,19 @@ export default function DetailKomunitasScreen() {
             )}
           </View>
 
+          {post.judul ? (
+            <Text style={styles.postTitle}>{post.judul}</Text>
+          ) : null}
           <Text style={styles.postCaption}>{post.deskripsi}</Text>
 
           {post.fotoUrl && (
             <View style={styles.postImageContainer}>
-              <Image source={{ uri: post.fotoUrl }} style={styles.postImage} />
+              <Image
+                source={{ uri: post.fotoUrl }}
+                style={styles.postImage}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
             </View>
           )}
 
@@ -423,7 +496,12 @@ export default function DetailKomunitasScreen() {
             <View style={styles.commentItem}>
               <View style={[styles.avatarContainer, { width: 32, height: 32, borderRadius: 16 }]}>
                 {item.userAvatar ? (
-                  <Image source={{ uri: item.userAvatar }} style={{ width: '100%', height: '100%', borderRadius: 16 }} />
+                  <Image
+                    source={{ uri: item.userAvatar }}
+                    style={{ width: '100%', height: '100%', borderRadius: 16 }}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                  />
                 ) : (
                   <Text style={[styles.avatarInitials, { fontSize: 14 }]}>{item.userNama.charAt(0).toUpperCase()}</Text>
                 )}
@@ -589,6 +667,23 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 10,
     fontFamily: 'Nunito_700Bold' },
+  locationBadge: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 10,
+    color: '#3FA86B',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  postTitle: {
+    fontSize: 18,
+    fontFamily: 'Nunito_800ExtraBold',
+    color: '#123924',
+    marginBottom: 8,
+    lineHeight: 24,
+  },
   postCaption: {
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',

@@ -1,7 +1,8 @@
-import {
+import React, {
+  memo,
   useCallback,
   useEffect,
-  useState
+  useState,
 } from "react";
 import {
   KeyboardAvoidingView,
@@ -9,8 +10,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
-  Image,
-  Alert, Modal,
+  Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -19,6 +19,8 @@ import {
   View,
   Share,
 } from "react-native";
+import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from "@expo/vector-icons";
@@ -245,6 +247,304 @@ const PostSkeleton = () => {
   );
 };
 
+const getRelativeTime = (isoString: string) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 60) return `${Math.max(1, diffMins)} mnt lalu`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} jam lalu`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays} hari lalu`;
+  return date.toLocaleDateString("id-ID");
+};
+
+interface PostCardItemProps {
+  item: any;
+  currentUser: any;
+  isLiked: boolean;
+  likeCount: number;
+  onLike: (id: number) => void;
+  onDelete: (id: number) => void;
+  onOpenDetail: (item: any) => void;
+  onOpenProfile: (item: any) => void;
+}
+
+const PostCardItem = memo(
+  ({
+    item,
+    currentUser,
+    isLiked,
+    likeCount,
+    onLike,
+    onDelete,
+    onOpenDetail,
+    onOpenProfile,
+  }: PostCardItemProps) => {
+    let badgeBg = "#E8E5DA";
+    let badgeColor = "#123924";
+    let labelTipe = "Info";
+
+    if (item.tipePost === "progress_update") {
+      badgeBg = "#E8F5E9";
+      badgeColor = "#3FA86B";
+      labelTipe = "Progress";
+    } else if (item.tipePost === "pertanyaan") {
+      badgeBg = "#FFECEB";
+      badgeColor = "#FF6B5C";
+      labelTipe = "Pertanyaan";
+    } else if (item.tipePost === "panen_surplus") {
+      badgeBg = "#FFF9E6";
+      badgeColor = "#B8860B";
+      labelTipe = "Panen Surplus";
+    }
+
+    const avatarUri = item.author?.avatarUrl || item.userAvatar || item.avatarUrl;
+    const authorName = item.author?.nama || item.user_nama || "Petani";
+    const isOwner = Boolean(
+      currentUser?.id &&
+        (item.author?.id === currentUser.id ||
+          item.user_id === currentUser.id ||
+          item.userId === currentUser.id)
+    );
+
+    return (
+      <View style={styles.postCard}>
+        <View style={styles.postHeader}>
+          <Pressable
+            onPress={() => onOpenProfile(item)}
+            style={({ pressed }) => [
+              { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <View style={styles.avatarContainer}>
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={{ width: "100%", height: "100%", borderRadius: 20 }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+              ) : (
+                <Text
+                  style={{
+                    fontFamily: "Nunito_800ExtraBold",
+                    color: "#FFFFFF",
+                    fontSize: 16,
+                  }}
+                >
+                  {authorName.charAt(0).toUpperCase()}
+                </Text>
+              )}
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "Nunito_800ExtraBold",
+                    color: "#123924",
+                    fontSize: 16,
+                  }}
+                  numberOfLines={1}
+                >
+                  {authorName}
+                </Text>
+                {item.lokasiNama ? (
+                  <Text
+                    style={{
+                      fontFamily: "Nunito_800ExtraBold",
+                      fontSize: 10,
+                      color: "#3FA86B",
+                      backgroundColor: "#E8F5E9",
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderRadius: 6,
+                      overflow: "hidden",
+                    }}
+                  >
+                    #{item.lokasiNama}
+                  </Text>
+                ) : null}
+              </View>
+              <Text
+                style={{
+                  fontFamily: "Nunito_500Medium",
+                  color: "#5C5A4F",
+                  fontSize: 12,
+                }}
+              >
+                {getRelativeTime(item.createdAt)}
+              </Text>
+            </View>
+          </Pressable>
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View
+              style={{
+                backgroundColor: badgeBg,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 100,
+                borderWidth: 0,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "Nunito_800ExtraBold",
+                  fontSize: 11,
+                  color: badgeColor,
+                }}
+              >
+                {labelTipe}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <Pressable
+          onPress={() => onOpenDetail(item)}
+          style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+        >
+          {item.judul ? (
+            <Text
+              style={{
+                fontFamily: "Nunito_800ExtraBold",
+                color: "#123924",
+                marginBottom: 4,
+                fontSize: 16,
+              }}
+            >
+              {item.judul}
+            </Text>
+          ) : null}
+          <Text
+            style={{
+              fontFamily: "Nunito_500Medium",
+              color: "#123924",
+              fontSize: 14,
+              marginBottom: 12,
+              lineHeight: 22,
+            }}
+          >
+            {item.deskripsi}
+          </Text>
+          {item.tags && item.tags !== `#${item.lokasiNama}` ? (
+            <Text
+              style={{
+                fontFamily: "Nunito_700Bold",
+                color: "#3FA86B",
+                marginBottom: 12,
+                fontSize: 13,
+              }}
+            >
+              {item.tags}
+            </Text>
+          ) : null}
+          {item.fotoUrl ? (
+            <Image
+              source={{ uri: item.fotoUrl }}
+              style={{
+                width: "100%",
+                height: 200,
+                borderRadius: 16,
+                marginBottom: 12,
+              }}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+            />
+          ) : null}
+        </Pressable>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 4,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+            <Pressable
+              onPress={() => onLike(item.id)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <MaterialIcons
+                name={isLiked ? "favorite" : "favorite-border"}
+                size={24}
+                color={isLiked ? "#FF6B5C" : "#123924"}
+              />
+              <Text
+                style={{
+                  fontFamily: "Nunito_700Bold",
+                  color: isLiked ? "#FF6B5C" : "#123924",
+                }}
+              >
+                {likeCount}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onOpenDetail(item)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <MaterialIcons
+                name="chat-bubble-outline"
+                size={24}
+                color="#123924"
+              />
+              <Text style={{ fontFamily: "Nunito_700Bold", color: "#123924" }}>
+                {item.jumlahKomentar ?? 0}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={async () => {
+                try {
+                  await Share.share({
+                    message: `Lihat postingan ini dari ${authorName}: ${item.judul || item.deskripsi}`,
+                  });
+                } catch (error) {
+                  console.error(error);
+                }
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <MaterialIcons name="share" size={24} color="#123924" />
+            </Pressable>
+          </View>
+
+          {isOwner && (
+            <Pressable
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => onDelete(item.id)}
+            >
+              <MaterialIcons name="delete-outline" size={24} color="#FF6B5C" />
+            </Pressable>
+          )}
+        </View>
+      </View>
+    );
+  }
+);
+
 export default function KomunitasScreen() {
   const { showNotification } = useNotification();
 
@@ -392,41 +692,52 @@ export default function KomunitasScreen() {
     return () => clearTimeout(timer);
   }, [fetchPosts]);
 
-  const handleDeletePost = (postId: number) => {
-    Alert.alert(
-      "Hapus Postingan",
-      "Apakah kamu yakin ingin menghapus postingan ini? Tindakan ini tidak dapat dibatalkan.",
-      [
-        { text: "Batal", style: "cancel" },
-        { 
-          text: "Hapus", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteCommunityPost(postId);
-              showNotification("Berhasil", "Postingan berhasil dihapus.", "success");
-              fetchPosts(1, true);
-            } catch {
-              showNotification("Gagal", "Gagal menghapus postingan.", "error");
-            }
-          }
-        }
-      ]
-    );
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
+  const [isDeletingPost, setIsDeletingPost] = useState(false);
+
+  const handleDeletePost = useCallback((postId: number) => {
+    setPostToDelete(postId);
+  }, []);
+
+  const confirmDeletePost = async () => {
+    if (!postToDelete) return;
+    const idToDelete = postToDelete;
+    setPostToDelete(null);
+    setIsDeletingPost(true);
+
+    // Optimistic UI: remove immediately from list with haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const previousPosts = [...posts];
+    setPosts((prev) => prev.filter((p) => p.id !== idToDelete));
+
+    try {
+      await deleteCommunityPost(idToDelete);
+      showNotification("Berhasil", "Postingan berhasil dihapus.", "success");
+    } catch (err: any) {
+      setPosts(previousPosts);
+      showNotification(
+        "Gagal",
+        err.response?.data?.message || "Gagal menghapus postingan.",
+        "error"
+      );
+    } finally {
+      setIsDeletingPost(false);
+    }
   };
 
-  const handleLike = async (postId: number) => {
+  const handleLike = useCallback(async (postId: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLikes((prev) => {
+      const curr = prev[postId] || { liked: false, count: 0 };
+      return {
+        ...prev,
+        [postId]: {
+          liked: !curr.liked,
+          count: curr.liked ? Math.max(0, curr.count - 1) : curr.count + 1,
+        },
+      };
+    });
     try {
-      setLikes((prev) => {
-        const curr = prev[postId] || { liked: false, count: 0 };
-        return {
-          ...prev,
-          [postId]: {
-            liked: !curr.liked,
-            count: curr.liked ? Math.max(0, curr.count - 1) : curr.count + 1,
-          },
-        };
-      });
       const result = await toggleCommunityLike(postId);
       setLikes((prev) => ({
         ...prev,
@@ -435,7 +746,33 @@ export default function KomunitasScreen() {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
+
+  const handleOpenProfile = useCallback((item: any) => {
+    const uname = item.username || item.author?.username || item.user_username;
+    const uid = item.author?.id || item.userId;
+    const targetParam = uname || (uid ? String(uid) : "");
+    if (!targetParam) return;
+    router.push({
+      pathname: "/profil-pengguna",
+      params: {
+        username: targetParam,
+        userId: uid ? String(uid) : undefined,
+        nama: item.author?.nama || item.user_nama || "",
+        avatarUrl: item.author?.avatarUrl || item.userAvatar || "",
+      },
+    } as any);
+  }, []);
+
+  const handleOpenDetail = useCallback((item: any) => {
+    router.push({
+      pathname: "/detail-komunitas",
+      params: {
+        id: item.id,
+        initialData: JSON.stringify(item),
+      },
+    } as any);
+  }, []);
 
   const handlePickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -511,16 +848,75 @@ export default function KomunitasScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Komunitas</Text>
           <Text style={styles.headerSubtitle}>
-            Tempat nongkrongnya petani digital 🌱
+            Tempat nongkrongnya petani digital
           </Text>
           
-          <View style={{ flexDirection: "row", marginTop: 16, marginBottom: 20, gap: 12 }}>
+          <View style={{ flexDirection: "row", marginTop: 16, marginBottom: 12, gap: 12 }}>
             <View style={{ flex: 1, height: 52, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 16, borderRadius: 20, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4 }}>
               <MaterialIcons name="search" size={24} color="#5C5A4F" />
               <TextInput style={{ flex: 1, marginLeft: 8, height: '100%', fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924', paddingVertical: 0 }} placeholder="Cari username, lokasi..." placeholderTextColor="#5C5A4F" value={searchQuery} onChangeText={setSearchQuery} />
             </View>
             <Pressable onPress={() => setIsFilterModalVisible(true)} style={({ pressed }) => [{ backgroundColor: '#FFFFFF', width: 52, height: 52, borderRadius: 20, alignItems: 'center', justifyContent: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4 }, pressed && { opacity: 0.7 }]}>
               <MaterialIcons name="tune" size={24} color="#123924" />
+            </Pressable>
+          </View>
+
+          {/* Segmented Control: Nasional vs Terdekat */}
+          <View style={styles.segmentedContainer}>
+            <Pressable
+              onPress={() => {
+                if (activeTab !== "terbaru") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setActiveTab("terbaru");
+                }
+              }}
+              style={[
+                styles.segmentTab,
+                activeTab === "terbaru" && styles.segmentTabActive,
+              ]}
+            >
+              <MaterialIcons
+                name="public"
+                size={18}
+                color={activeTab === "terbaru" ? "#FFFFFF" : "#5C5A4F"}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeTab === "terbaru" && styles.segmentTextActive,
+                ]}
+              >
+                Nasional (Terbaru)
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                if (activeTab !== "terdekat") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setActiveTab("terdekat");
+                }
+              }}
+              style={[
+                styles.segmentTab,
+                activeTab === "terdekat" && styles.segmentTabActive,
+              ]}
+            >
+              <MaterialIcons
+                name="near-me"
+                size={18}
+                color={activeTab === "terdekat" ? "#FFFFFF" : "#5C5A4F"}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeTab === "terdekat" && styles.segmentTextActive,
+                ]}
+              >
+                Terdekat (2 KM)
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -547,6 +943,7 @@ export default function KomunitasScreen() {
               <View style={{ paddingVertical: 12 }}>
                 <PostSkeleton />
                 <PostSkeleton />
+                <PostSkeleton />
               </View>
             ) : isError ? (
               <EmptyHint
@@ -564,267 +961,18 @@ export default function KomunitasScreen() {
               />
             )
           }
-          renderItem={({ item }: { item: any }) => {
-            let badgeBg = "#E8E5DA";
-            let badgeColor = "#123924";
-            let labelTipe = "INFO";
-            if (item.tipePost === "progress_update") {
-              badgeBg = "#E8F5E9";
-              badgeColor = "#3FA86B";
-              labelTipe = "UPDATE";
-            } else if (item.tipePost === "pertanyaan") {
-              badgeBg = "#FFECEB";
-              badgeColor = "#FF6B5C";
-              labelTipe = "TANYA";
-            } else if (item.tipePost === "panen_surplus") {
-              badgeBg = "#E3F2FD";
-              badgeColor = "#1E88E5";
-              labelTipe = "PANEN";
-            }
-
-            return (
-              <View style={styles.postCard}>
-                <View style={styles.postHeader}>
-                  <Pressable
-                    onPress={() => {
-                      const uname = item.username || item.author?.username || item.user_username;
-                      const uid = item.author?.id || item.userId;
-                      const targetParam = uname || (uid ? String(uid) : "");
-                      if (!targetParam) return;
-                      router.push({
-                        pathname: "/profil-pengguna",
-                        params: {
-                          username: targetParam,
-                          userId: uid ? String(uid) : undefined,
-                          nama: item.author?.nama || item.user_nama || "",
-                          avatarUrl: item.author?.avatarUrl || item.userAvatar || "",
-                        },
-                      } as any);
-                    }}
-                    style={({ pressed }) => [
-                      { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
-                      pressed && { opacity: 0.7 },
-                    ]}
-                  >
-                  <View style={styles.avatarContainer}>
-                    <Text
-                      style={{
-                        fontFamily: "Nunito_800ExtraBold",
-                        color: "#FFFFFF",
-                      }}
-                    >
-                      {(item.author?.nama || item.user_nama || "?")
-                        .charAt(0)
-                        .toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontFamily: "Nunito_800ExtraBold",
-                          color: "#123924",
-                          fontSize: 16,
-                        }}
-                        numberOfLines={1}
-                      >
-                        {item.author?.nama || item.user_nama}
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: "Nunito_800ExtraBold",
-                          fontSize: 10,
-                          color: "#3FA86B",
-                          backgroundColor: "#E8F5E9",
-                          paddingHorizontal: 6,
-                          paddingVertical: 2,
-                          borderRadius: 6,
-                          overflow: "hidden",
-                        }}
-                      >
-                        #{item.lokasiNama}
-                      </Text>
-                    </View>
-                    <Text
-                      style={{
-                        fontFamily: "Nunito_500Medium",
-                        color: "#5C5A4F",
-                        fontSize: 12,
-                      }}
-                    >
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  </Pressable>
-
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <View
-                      style={{
-                        backgroundColor: badgeBg,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: badgeColor,
-                        shadowColor: badgeColor,
-                        shadowOffset: { width: 2, height: 2 },
-                        shadowOpacity: 1,
-                        shadowRadius: 0,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontFamily: "Nunito_800ExtraBold",
-                          fontSize: 10,
-                          color: badgeColor,
-                        }}
-                      >
-                        {labelTipe}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <Pressable
-                  onPress={() =>
-                    router.push({
-                      pathname: "/detail-komunitas",
-                      params: { id: item.id },
-                    } as any)
-                  }
-                  style={({ pressed }) => [pressed && { opacity: 0.8 }]}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "Nunito_800ExtraBold",
-                      color: "#123924",
-                      marginBottom: 4,
-                      fontSize: 16,
-                    }}
-                  >
-                    {item.judul}
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: "Nunito_500Medium",
-                      color: "#123924",
-                      fontSize: 14,
-                      marginBottom: 12,
-                      lineHeight: 22,
-                    }}
-                  >
-                    {item.deskripsi}
-                  </Text>
-                  {item.tags && (
-                    <Text
-                      style={{
-                        fontFamily: "Nunito_700Bold",
-                        color: "#3FA86B",
-                        marginBottom: 12,
-                      }}
-                    >
-                      {item.lokasiNama ? `#${item.lokasiNama}` : ""}
-                    </Text>
-                  )}
-                  {item.fotoUrl ? (
-                    <Image
-                      source={{ uri: item.fotoUrl }}
-                      style={{
-                        width: "100%",
-                        height: 200,
-                        borderRadius: 12,
-                        marginBottom: 12,
-                        resizeMode: "cover",
-                      }}
-                    />
-                  ) : null}
-                </Pressable>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginTop: 4,
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-                  <Pressable
-                    onPress={() => handleLike(item.id)}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <MaterialIcons
-                      name={likes[item.id]?.liked ? "favorite" : "favorite-border"}
-                      size={24}
-                      color={likes[item.id]?.liked ? "#FF6B5C" : "#123924"}
-                    />
-                    <Text
-                      style={{ fontFamily: "Nunito_700Bold", color: likes[item.id]?.liked ? "#FF6B5C" : "#123924" }}
-                    >
-                      {likes[item.id]?.count ?? 0}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: item.id } } as any)}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <MaterialIcons
-                      name="chat-bubble-outline"
-                      size={24}
-                      color="#123924"
-                    />
-                    <Text
-                      style={{ fontFamily: "Nunito_700Bold", color: "#123924" }}
-                    >
-                      {item.jumlahKomentar ?? 0}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={async () => {
-                      try {
-                        await Share.share({
-                          message: `Lihat postingan ini dari ${item.author?.nama || item.user_nama || "Petani"}: ${item.judul}`,
-                        });
-                      } catch (error) {
-                        console.error(error);
-                      }
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <MaterialIcons name="share" size={24} color="#123924" />
-                  </Pressable>
-                  </View>
-
-                  {(item.author?.id === currentUser?.id || item.user_id === currentUser?.id || item.userId === currentUser?.id) && (
-                    <Pressable
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      onPress={() => handleDeletePost(item.id)}
-                    >
-                      <MaterialIcons name="delete-outline" size={24} color="#FF6B5C" />
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            );
-          }}
+          renderItem={({ item }) => (
+            <PostCardItem
+              item={item}
+              currentUser={currentUser}
+              isLiked={!!likes[item.id]?.liked}
+              likeCount={likes[item.id]?.count ?? 0}
+              onLike={handleLike}
+              onDelete={handleDeletePost}
+              onOpenDetail={handleOpenDetail}
+              onOpenProfile={handleOpenProfile}
+            />
+          )}
         />
       </View>
 
@@ -1098,24 +1246,55 @@ export default function KomunitasScreen() {
               </Pressable>
             </View>
 
-            {userFilter === 'semua' && (
-              <>
-                <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924', marginBottom: 12, fontSize: 14 }}>Urutkan</Text>
-                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-                  <Pressable onPress={() => setActiveTab('terbaru')} style={[{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24 }, activeTab === 'terbaru' ? { backgroundColor: '#FFB627' } : { backgroundColor: '#FFFFFF' }]}>
-                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924' }}>Terbaru</Text>
-                  </Pressable>
-                  <Pressable onPress={() => setActiveTab('terdekat')} style={[{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 24 }, activeTab === 'terdekat' ? { backgroundColor: '#FFB627' } : { backgroundColor: '#FFFFFF' }]}>
-                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#123924' }}>Terdekat</Text>
-                  </Pressable>
-                </View>
-              </>
-            )}
-
             <Pressable onPress={() => { setIsFilterModalVisible(false); fetchPosts(1, true); }} style={{ backgroundColor: '#123924', paddingVertical: 16, borderRadius: 24, alignItems: 'center', marginTop: 12 }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', color: '#FFFFFF', fontSize: 16 }}>Terapkan Filter</Text>
             </Pressable>
 
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL KONFIRMASI HAPUS POSTINGAN */}
+      <Modal
+        visible={!!postToDelete}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setPostToDelete(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.4)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFECEB', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <MaterialIcons name="delete-outline" size={26} color="#FF6B5C" />
+            </View>
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Postingan?</Text>
+            <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>
+              Apakah kamu yakin ingin menghapus postingan ini? Tindakan ini tidak dapat dibatalkan.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <Pressable
+                style={({ pressed }) => [
+                  { flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: '#E8E5DA', alignItems: 'center' },
+                  pressed && { opacity: 0.8 }
+                ]}
+                onPress={() => setPostToDelete(null)}
+              >
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 15, color: '#123924' }}>Batal</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  { flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: '#FF6B5C', alignItems: 'center' },
+                  pressed && { opacity: 0.8 }
+                ]}
+                onPress={confirmDeletePost}
+                disabled={isDeletingPost}
+              >
+                {isDeletingPost ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: '#FFFFFF' }}>Hapus</Text>
+                )}
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1127,6 +1306,39 @@ export default function KomunitasScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FBF8F0" },
   container: { flex: 1 },
+  segmentedContainer: {
+    flexDirection: "row",
+    backgroundColor: "#EDE9DF",
+    borderRadius: 16,
+    padding: 4,
+    marginBottom: 4,
+    gap: 4,
+  },
+  segmentTab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  segmentTabActive: {
+    backgroundColor: "#3FA86B",
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  segmentText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 13,
+    color: "#5C5A4F",
+  },
+  segmentTextActive: {
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#FFFFFF",
+  },
   scrollContent: {
     paddingBottom: 140,
     paddingHorizontal: 20,

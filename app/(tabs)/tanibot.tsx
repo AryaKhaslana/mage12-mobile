@@ -203,8 +203,11 @@ export default function TanibotScreen() {
         const res = await getTanibotHistory(1, 30);
         const data = res.data || [];
         const sorted = data.sort((a: ChatMessage, b: ChatMessage) => a.id - b.id);
-        setMessages(sorted);
-        AsyncStorage.setItem("tanibot_history", JSON.stringify(sorted)).catch(() => {});
+        // Jangan timpa state jika user sudah terlanjur mengirim pesan baru!
+        if (!sendingLockRef.current) {
+          setMessages(sorted);
+          AsyncStorage.setItem("tanibot_history", JSON.stringify(sorted)).catch(() => {});
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -657,14 +660,14 @@ const styles = StyleSheet.create({
     maxHeight: 120,
     backgroundColor: '#FBF8F0',
     borderWidth: 0,
-    
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 12,
-    
+    paddingBottom: 12,
     fontFamily: 'Nunito_500Medium',
     fontSize: 14,
-    color: '#123924' },
+    color: '#123924',
+  },
   sendButton: {
     width: 48,
     height: 48,

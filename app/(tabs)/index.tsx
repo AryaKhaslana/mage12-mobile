@@ -115,18 +115,20 @@ const EmptyHint = forwardRef<View, {
   </View>
 ));
 
+EmptyHint.displayName = "EmptyHint";
+
 
 
 const FadeInSlideUp = ({ children, delay = 0, style }: any) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(20));
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, delay, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 600, delay, useNativeDriver: true })
     ]).start();
-  }, [fadeAnim, slideAnim]);
+  }, [fadeAnim, slideAnim, delay]);
 
   return (
     <Animated.View style={[style, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -135,10 +137,8 @@ const FadeInSlideUp = ({ children, delay = 0, style }: any) => {
   );
 };
 
-
-
 const HomeSkeleton = () => {
-  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
     Animated.loop(
@@ -424,29 +424,6 @@ export default function DashboardScreen() {
     initApp();
   }, []);
 
-  // Data Fetcher - Runs on focus
-  useFocusEffect(
-    useCallback(() => {
-      const checkAuthAndFetch = async () => {
-        const token = await SecureStore.getItemAsync("userToken");
-        if (!token) {
-          router.replace("/(auth)/login");
-          return;
-        }
-        
-        // Sync local cache first (in case detail screen updated EXP/Level)
-        const cachedUser = await SecureStore.getItemAsync("userData");
-        if (cachedUser) {
-          const parsed = JSON.parse(cachedUser);
-          setUserData((prev: any) => prev ? { ...prev, exp: parsed.exp, level: parsed.level, streak: parsed.streak } : parsed);
-        }
-
-        fetchDashboardData();
-      };
-      checkAuthAndFetch();
-    }, [])
-  );
-
   const fetchDashboardData = async (isManualRefresh = false) => {
     if (tanamanList.length === 0 && !userData) {
       setIsLoading(true);
@@ -536,6 +513,29 @@ export default function DashboardScreen() {
       setIsRefreshing(false);
     }
   };
+
+  // Data Fetcher - Runs on focus
+  useFocusEffect(
+    useCallback(() => {
+      const checkAuthAndFetch = async () => {
+        const token = await SecureStore.getItemAsync("userToken");
+        if (!token) {
+          router.replace("/(auth)/login");
+          return;
+        }
+
+        // Sync local cache first (in case detail screen updated EXP/Level)
+        const cachedUser = await SecureStore.getItemAsync("userData");
+        if (cachedUser) {
+          const parsed = JSON.parse(cachedUser);
+          setUserData((prev: any) => prev ? { ...prev, exp: parsed.exp, level: parsed.level, streak: parsed.streak } : parsed);
+        }
+
+        fetchDashboardData();
+      };
+      checkAuthAndFetch();
+    }, [fetchDashboardData])
+  );
 
   const handleLogAktivitas = async (tanamanId: number, plantName?: string) => {
     // 1. Guard Mutex: Jika sedang diproses, abaikan spam klik

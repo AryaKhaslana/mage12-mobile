@@ -1,10 +1,8 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Tabs, router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Tabs } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/colors';
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -32,7 +30,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             target: route.key });
         };
 
-        const color = isFocused ? '#3FA96B' : '#8F9B94';
+        const color = isFocused ? Colors.primary : '#8F9B94';
 
         // Add button (FAB) - map it to 'tanibot' route
         if (route.name === 'tanibot') {
@@ -44,7 +42,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 style={({ pressed }) => [
                   styles.fab,
                   pressed && styles.fabPressed,
-                  isFocused && { borderColor: '#3FA96B', borderWidth: 2.5 }
+                  isFocused && { borderColor: Colors.primary, borderWidth: 2.5 }
                 ]}
               >
                 <Image
@@ -53,7 +51,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                   contentFit="contain"
                 />
               </Pressable>
-              <Text style={[styles.fabLabel, isFocused && { color: '#3FA96B' }]}>TaniBot</Text>
+              <Text style={[styles.fabLabel, { color: isFocused ? Colors.primary : '#8F9B94' }]}>TaniBot</Text>
             </View>
           );
         }
@@ -169,7 +167,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: 6,
     height: 6,
-    backgroundColor: '#3FA96B',
+    backgroundColor: Colors.primary,
     borderRadius: 3 },
   fabWrapper: {
     flex: 1,
@@ -182,8 +180,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: '#3FA96B',
-    shadowColor: '#1B4332',
+    borderColor: Colors.primary,
+    shadowColor: Colors.ink,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 10,
@@ -195,6 +193,5 @@ const styles = StyleSheet.create({
   fabLabel: {
     fontSize: 12,
     fontFamily: 'Nunito_800ExtraBold',
-    color: 'transparent',
     marginTop: 2 }
 });

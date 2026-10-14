@@ -96,7 +96,7 @@ api.interceptors.response.use(
 export default api;
 
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "694319697914-5ov6mf48s2votq1htk2tm5toeiap7jbs.apps.googleusercontent.com",
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "",
 });
 
 export const googleSignIn = async () => {
@@ -266,11 +266,7 @@ export interface CommunityPost {
 }
 
 export const createCommunityPost = async (formData: FormData): Promise<any> => {
-  const response = await api.post("/community", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await api.post("/community", formData);
   return response.data;
 };
 
@@ -377,9 +373,7 @@ export const getTanibotHistory = async (page: number = 1, limit: number = 20): P
 
 
 export const updateProfile = async (formData: FormData): Promise<any> => {
-  const response = await api.put("/user/me", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.put("/user/me", formData);
   return response.data.data;
 };
 

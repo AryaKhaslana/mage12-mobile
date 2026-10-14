@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, RefreshControl, FlatList, StyleSheet, Text, View, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -87,7 +87,7 @@ const BotanicBanner = () => (
 );
 
 const SkeletonBlock = ({ style }: { style: any }) => {
-  const fade = useRef(new Animated.Value(0.4)).current;
+  const [fade] = useState(() => new Animated.Value(0.4));
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -136,7 +136,6 @@ export default function ProfilScreen() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
-  const [saved, setSaved] = useState<Record<number, boolean>>({});
 
   // Fast Cache-First Loader: Langsung tampilkan avatar & profil dari storage lokal (< 50ms)
   useEffect(() => {
@@ -159,7 +158,7 @@ export default function ProfilScreen() {
     loadCache();
   }, []);
 
-  const fetchAllData = async (isRefresh = false) => {
+  const fetchAllData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setIsRefreshing(true);
     } else if (!userData) {
@@ -178,7 +177,7 @@ export default function ProfilScreen() {
           if (cached) {
             targetUsername = JSON.parse(cached).username;
           }
-        } catch (e) {}
+        } catch {}
       }
 
       // 2. Fetch postingan user secara PARALEL (Hancurkan Waterfall!)
@@ -239,13 +238,13 @@ export default function ProfilScreen() {
       setIsLoadingPosts(false);
       setIsRefreshing(false);
     }
-  };
+  }, [userData, posts.length]);
 
   useFocusEffect(
     useCallback(() => {
       fetchAllData();
       return () => {};
-    }, [])
+    }, [fetchAllData])
   );
 
   const onRefresh = () => {
@@ -442,7 +441,6 @@ export default function ProfilScreen() {
               posts.map((post) => {
                 const badge = POST_BADGE[post.tipePost];
                 const like = likes[post.id] ?? { liked: false, count: 0 };
-                const isSaved = !!saved[post.id];
                 return (
                   <View key={post.id} style={[styles.postCard, shadowSubtle]}>
                     <View style={styles.postHeader}>

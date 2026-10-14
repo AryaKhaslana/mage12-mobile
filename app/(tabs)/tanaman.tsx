@@ -1,7 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState , useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator, Animated,
     FlatList,
@@ -14,16 +14,12 @@ import {
     TextInput,
     View
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import PlantIllustration from "../../components/PlantIllustration";
 import api, { TanamanDetail } from "../../services/api";
-
-
-
-const FALLBACK_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA";
 
 const JENIS_TANAMAN_ENUM = [
   "Padi",
@@ -49,7 +45,7 @@ const JENIS_TANAMAN_ENUM = [
 ];
 
 const PlantGridSkeleton = () => {
-  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
     Animated.loop(
@@ -76,24 +72,8 @@ const PlantGridSkeleton = () => {
   );
 };
 
-const FadeInSlideUp = ({ children, delay = 0, style }: any) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, delay, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, delay, useNativeDriver: true })
-    ]).start();
-  }, [fadeAnim, slideAnim]);
-  return (
-    <Animated.View style={[style, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      {children}
-    </Animated.View>
-  );
-};
-
 const BouncingFAB = ({ onPress, style, children }: any) => {
-  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const [bounceAnim] = useState(() => new Animated.Value(0));
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -101,7 +81,7 @@ const BouncingFAB = ({ onPress, style, children }: any) => {
         Animated.timing(bounceAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
       ])
     ).start();
-  }, []);
+  }, [bounceAnim]);
   return (
     <Animated.View style={[style, { transform: [{ translateY: bounceAnim }] }]}>
       <Pressable onPress={onPress} style={({ pressed }) => [
@@ -130,7 +110,6 @@ export default function TanamanScreen() {
   const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
 
   // 0ms instant render from cache
   useEffect(() => {
@@ -154,12 +133,14 @@ export default function TanamanScreen() {
 
   useEffect(() => {
     if (params.openModal === 'true') {
-      setModalVisible(true);
-      router.setParams({ openModal: '' });
+      const timer = setTimeout(() => {
+        setModalVisible(true);
+        router.setParams({ openModal: '' });
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [params.openModal]);
-
-  const fetchTanaman = async (isManualRefresh = false) => {
+  const fetchTanaman = useCallback(async (isManualRefresh = false) => {
     // Gunakan tanamanListRef.current untuk menghindari stale closure
     if (tanamanListRef.current.length === 0) {
       setIsLoading(true);
@@ -185,12 +166,12 @@ export default function TanamanScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [tanamanList.length]);
 
   useFocusEffect(
     useCallback(() => {
       fetchTanaman();
-    }, [])
+    }, [fetchTanaman])
   );
 
   const handleTambahTanaman = async () => {
@@ -401,15 +382,12 @@ export default function TanamanScreen() {
               </View>
         
       {/* FAB */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.fab,
-          pressed && { opacity: 0.8 }
-        ]}
+      <BouncingFAB
+        style={styles.fab}
         onPress={() => setModalVisible(true)}
       >
         <MaterialIcons name="add" size={32} color="#FFFFFF" />
-      </Pressable>
+      </BouncingFAB>
 
       <Modal
           animationType="slide"

@@ -5,17 +5,12 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from "expo-secure-store";
-import { useCallback, useMemo, useState , useEffect, useRef } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
 import PlantIllustration from '../components/PlantIllustration';
 import { LogAktivitas, TanamanDetail, createCommunityPost, createLog, deleteTanaman, getLogsByTanaman, getTanamanById, harvestTanaman, updateTanaman } from '../services/api';
-
-
-
-
-const FALLBACK_HERO = 'https://lh3.googleusercontent.com/aida-public/AOSwzR6X7y3O2Q2_0uXwFhK8TQKf0vFvP4o7SjYdJ9k-h-5E8tV8D2Q3g0K_b8QkLp6g5zZ9n3nK2N8k5L0g-v4c0r9r6p2y2J5b8w';
 
 const JENIS_TANAMAN_ENUM = [
   "Padi", "Jagung", "Singkong", "Ubi Jalar", "Kedelai", "Kacang Tanah", 
@@ -34,7 +29,7 @@ const formatDate = (isoString: string) => {
 };
 
 const DetailTanamanSkeleton = () => {
-  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
     Animated.loop(
@@ -138,7 +133,7 @@ export default function DetailTanamanModal() {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!tanamanId) return;
     try {
       // Tidak set isLoading(true) di sini karena state awal sudah true.
@@ -155,12 +150,12 @@ export default function DetailTanamanModal() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tanamanId, showNotification, router]);
 
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [tanamanId])
+    }, [fetchData])
   );
 
   const latestPhotoUrl = useMemo(() => {
@@ -420,6 +415,19 @@ export default function DetailTanamanModal() {
     }
   };
 
+  const [currentTimestamp] = useState(() => Date.now());
+
+  const { hariKe, estPanenString } = useMemo(() => {
+    if (!tanaman) return { hariKe: 0, estPanenString: '-' };
+    const plantDate = new Date(tanaman.tanggalTanam || currentTimestamp).getTime();
+    const h = Math.floor((currentTimestamp - plantDate) / 86400000) + 1;
+    const est = new Date(plantDate + ((tanaman.daysToHarvest || 0) * 86400000));
+    return {
+      hariKe: h,
+      estPanenString: isNaN(est.getTime()) ? '-' : est.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    };
+  }, [tanaman, currentTimestamp]);
+
   if (isLoading && !tanaman) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -435,11 +443,6 @@ export default function DetailTanamanModal() {
   }
 
   if (!tanaman) return null;
-
-  const hariKe = Math.floor((Date.now() - new Date(tanaman.tanggalTanam || Date.now()).getTime()) / 86400000) + 1;
-  const estPanenDate = new Date(new Date(tanaman.tanggalTanam || Date.now()).getTime() + ((tanaman.daysToHarvest || 0) * 86400000));
-  const estPanenString = isNaN(estPanenDate.getTime()) ? '-' : estPanenDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
   const totalDays = tanaman.daysToHarvest || 30;
   const remainingDays = Math.max(0, tanaman.sisaHariPanen ?? 0);
   const elapsedDays = Math.max(0, totalDays - remainingDays);
@@ -505,6 +508,9 @@ export default function DetailTanamanModal() {
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#E3F5EC' }]} onPress={handleOpenEdit}>
+              <MaterialIcons name="edit" size={20} color="#123924" />
+            </TouchableOpacity>
             <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#FFB627' }]} onPress={handleShare}>
               <MaterialIcons name="share" size={24} color="#123924" />
             </TouchableOpacity>

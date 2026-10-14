@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence } from 'react-native-reanimated';
+import { Colors } from '../../constants/colors';
 
 export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredToday }: { task: any, onTaskPress: () => void, isWateringTask: boolean, isWateredToday?: boolean }) {
   const scale = useSharedValue(1);
@@ -34,19 +35,19 @@ export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredT
         ]} 
         onPress={handlePress}
       >
-        <View style={[styles.iconBox, { backgroundColor: isWateringTask && !isWateredToday ? '#FFECE8' : '#E5F5EB' }]}>
-          <MaterialIcons name={isWateringTask ? "water-drop" : "eco"} size={28} color={isWateringTask && !isWateredToday ? "#FF8A65" : "#3FA96B"} />
+        <View style={[styles.iconBox, { backgroundColor: isWateringTask && !isWateredToday ? '#FFECE8' : Colors.primaryLight }]}>
+          <MaterialIcons name={isWateringTask ? "water-drop" : "eco"} size={28} color={isWateringTask && !isWateredToday ? Colors.coral : Colors.primary} />
         </View>
         
         <View style={styles.info}>
           <Text style={styles.title}>{task.nickname || task.jenisTanaman}</Text>
-          <Text style={[styles.status, { color: isWateringTask && !isWateredToday ? "#FF8A65" : "#3FA96B" }]}>
+          <Text style={[styles.status, { color: isWateringTask && !isWateredToday ? Colors.coral : Colors.primary }]}>
             {isWateringTask ? (isWateredToday ? "Sudah disiram hari ini" : "Perlu disiram hari ini") : "Pertumbuhan baik"}
           </Text>
         </View>
 
         {isWateringTask && (
-          <View style={[styles.checkbox, isWateredToday && { borderColor: '#3FA96B', backgroundColor: '#3FA96B' }]}>
+          <View style={[styles.checkbox, isWateredToday && { borderColor: Colors.primary, backgroundColor: Colors.primary }]}>
             {isWateredToday ? (
               <MaterialIcons name="check" size={24} color="#FFFFFF" />
             ) : (
@@ -62,12 +63,14 @@ export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredT
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 20,
     marginBottom: 16,
-    shadowColor: '#1B4332',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.ink,
+    shadowColor: Colors.ink,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     elevation: 3,
   },
   inner: {
@@ -78,7 +81,9 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 56,
     height: 56,
-    borderRadius: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: Colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -89,7 +94,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#1B4332',
+    color: Colors.ink,
     marginBottom: 4,
   },
   status: {
@@ -101,7 +106,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: '#FF8A65',
+    borderColor: Colors.ink,
     backgroundColor: '#FFF0ED',
     alignItems: 'center',
     justifyContent: 'center',

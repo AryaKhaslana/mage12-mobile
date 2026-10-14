@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState
 } from "react";
 import {
@@ -24,7 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import {
   createCommunityPost,
@@ -148,79 +147,10 @@ const INDONESIAN_LOCATIONS = [
   { name: "Balikpapan", lat: -1.2379, lng: 116.8529 }
 ];
 
-const DUMMY_POSTS: PostType[] = [
-  {
-    id: "1",
-    authorName: "Budi Santoso",
-    streak: 12,
-    timeText: "2 jam yang lalu",
-    avatarUrl: "",
-    postImageUrl:
-      "https://images.unsplash.com/photo-1592424001806-0361361c4627?auto=format&fit=crop&w=800&q=80",
-    tipe: "UPDATE",
-    judul: "Panen Tomat Pertama!",
-    isi: "Alhamdulillah setelah 3 bulan akhirnya tomat yang ditanam di halaman belakang bisa dipanen. Rasanya manis banget!",
-    lokasiNama: "Surabaya",
-    tags: "Tomat, Panen",
-  },
-  {
-    id: "2",
-    authorName: "Siti Rahma",
-    streak: 5,
-    timeText: "5 jam yang lalu",
-    avatarUrl: "",
-    tipe: "TANYA",
-    judul: "Daun Menguning, Kenapa Ya?",
-    isi: "Halo semua, ada yang tau kenapa daun tanaman cabai saya tiba-tiba menguning dan rontok? Padahal rutin disiram.",
-    lokasiNama: "Sidoarjo",
-    tags: "Cabai, Hama",
-  },
-  {
-    id: "3",
-    authorName: "Agus Pratama",
-    streak: 20,
-    timeText: "1 hari yang lalu",
-    avatarUrl: "",
-    postImageUrl:
-      "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=800&q=80",
-    tipe: "BARTER",
-    judul: "Barter Bibit Kangkung",
-    isi: "Saya punya kelebihan bibit kangkung nih, ada yang mau barter sama bibit bayam cabut?",
-    lokasiNama: "Jakarta",
-    tags: "Bibit, Barter",
-  },
-  {
-    id: "4",
-    authorName: "Dewi Lestari",
-    streak: 8,
-    timeText: "2 hari yang lalu",
-    avatarUrl: "",
-    tipe: "DONASI",
-    judul: "Berbagi Pupuk Kompos",
-    isi: "Saya bikin pupuk kompos sendiri dan lumayan banyak sisanya. Buat yang di sekitar Malang, boleh ambil gratis ke rumah ya.",
-    lokasiNama: "Malang",
-    tags: "Pupuk, Gratis",
-  },
-  {
-    id: "5",
-    authorName: "Rudi Heryanto",
-    streak: 15,
-    timeText: "3 hari yang lalu",
-    avatarUrl: "",
-    postImageUrl:
-      "https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?auto=format&fit=crop&w=800&q=80",
-    tipe: "UPDATE",
-    judul: "Sistem Hidroponik Sederhana",
-    isi: "Baru selesai setup hidroponik pakai pipa bekas. Semoga lancar tanam seladanya!",
-    lokasiNama: "Bandung",
-    tags: "Hidroponik, Selada",
-  },
-];
-
 const PostSkeleton = () => {
-  const fadeAnim = useRef(new Animated.Value(0.3)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0.3));
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, {
           toValue: 0.7,
@@ -233,8 +163,10 @@ const PostSkeleton = () => {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
-  }, []);
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [fadeAnim]);
   return (
     <Animated.View
       style={[styles.postCard, { opacity: fadeAnim, marginBottom: 16 }]}
@@ -334,7 +266,6 @@ export default function KomunitasScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isError, setIsError] = useState(false);
   const [activeTab, setActiveTab] = useState<"terbaru" | "terdekat">("terbaru");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [userFilter, setUserFilter] = useState<"semua" | "saya">("semua");
@@ -384,10 +315,14 @@ export default function KomunitasScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  const fetchPosts = async (pageNum = 1, shouldRefresh = false) => {
+  const fetchPosts = useCallback(async (pageNum = 1, shouldRefresh = false) => {
     try {
       setIsError(false);
-      if (shouldRefresh) setIsRefreshing(true);
+      if (shouldRefresh) {
+        setIsRefreshing(true);
+      } else if (pageNum === 1) {
+        setIsLoading(true);
+      }
       const userDataStr = await SecureStore.getItemAsync("userData");
       if (userDataStr) {
         setCurrentUser(JSON.parse(userDataStr));
@@ -448,12 +383,14 @@ export default function KomunitasScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [activeTab, debouncedSearch, userFilter, showNotification]);
 
   useEffect(() => {
-    setIsLoading(true);
-    fetchPosts(1, false);
-  }, [activeTab, debouncedSearch, userFilter]);
+    const timer = setTimeout(() => {
+      fetchPosts(1, false);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchPosts]);
 
   const handleDeletePost = (postId: number) => {
     Alert.alert(
@@ -469,7 +406,7 @@ export default function KomunitasScreen() {
               await deleteCommunityPost(postId);
               showNotification("Berhasil", "Postingan berhasil dihapus.", "success");
               fetchPosts(1, true);
-            } catch (e: any) {
+            } catch {
               showNotification("Gagal", "Gagal menghapus postingan.", "error");
             }
           }
@@ -607,9 +544,9 @@ export default function KomunitasScreen() {
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
             isLoading ? (
-              <View style={{ paddingVertical: 40, alignItems: "center" }}>
-                <ActivityIndicator size="large" color="#3FA86B" />
-                <Text style={{ marginTop: 12, fontFamily: "Nunito_500Medium", color: "#5C5A4F" }}>Memuat postingan...</Text>
+              <View style={{ paddingVertical: 12 }}>
+                <PostSkeleton />
+                <PostSkeleton />
               </View>
             ) : isError ? (
               <EmptyHint

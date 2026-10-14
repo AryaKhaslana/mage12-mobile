@@ -1,14 +1,10 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
-  useAnimatedProps,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  interpolate,
-  Extrapolation } from 'react-native-reanimated';
-import Svg, { Defs, Mask, Rect } from 'react-native-svg';
+  withTiming } from 'react-native-reanimated';
 
 export type CoachMarkStep = {
   rect: { x: number; y: number; width: number; height: number };
@@ -23,8 +19,6 @@ interface CoachMarkOverlayProps {
   onFinish: () => void;
   onSkip: () => void;
 }
-
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUBBLE_WIDTH = SCREEN_WIDTH - 48; // 24px padding on sides
@@ -43,7 +37,9 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
   // Initialize values when visible
   useEffect(() => {
     if (visible && steps.length > 0) {
-      setCurrentStepIndex(0);
+      const timer = setTimeout(() => {
+        setCurrentStepIndex(0);
+      }, 0);
       const step = steps[0];
       currentX.value = step.rect.x;
       currentY.value = step.rect.y;
@@ -51,10 +47,11 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
       currentH.value = step.rect.height;
       currentR.value = step.borderRadius || 12;
       opacity.value = withTiming(1, { duration: 300 });
+      return () => clearTimeout(timer);
     } else {
       opacity.value = withTiming(0, { duration: 300 });
     }
-  }, [visible, steps]);
+  }, [visible, steps, currentX, currentY, currentW, currentH, currentR, opacity]);
 
   // Update target coordinates when step changes
   useEffect(() => {

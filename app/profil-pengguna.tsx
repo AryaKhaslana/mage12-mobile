@@ -3,9 +3,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import * as Haptics from "expo-haptics";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Pressable,
   RefreshControl,
@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
 
 import { useNotification } from "../components/NotificationContext";
+import PlantIllustration from "../components/PlantIllustration";
 import {
   CommunityPost,
   getPublicUserProfile,
@@ -64,6 +65,7 @@ const shadowSubtle = {
   shadowRadius: 8,
   elevation: 1,
 };
+
 const shadowCard = {
   shadowColor: C.ink,
   shadowOffset: { width: 0, height: 8 },
@@ -71,6 +73,7 @@ const shadowCard = {
   shadowRadius: 24,
   elevation: 4,
 };
+
 const shadowFloat = {
   shadowColor: C.primary,
   shadowOffset: { width: 0, height: 12 },
@@ -78,6 +81,16 @@ const shadowFloat = {
   shadowRadius: 24,
   elevation: 6,
 };
+
+// In-memory module-level cache for public profiles (0ms reload)
+interface PublicProfileCacheEntry {
+  profile: PublicUserProfile | null;
+  posts: CommunityPost[];
+  plants: TanamanDetail[];
+  savedAt: number;
+}
+
+const publicProfileCache = new Map<string, PublicProfileCacheEntry>();
 
 // ===== Helpers =====
 const getRankTitle = (level: number) => {
@@ -111,7 +124,13 @@ const getPlantStatus = (t: TanamanDetail) => {
 // ===== Sub components =====
 const Avatar = ({ uri, name, size, radius }: { uri?: string | null; name: string; size: number; radius: number }) =>
   uri ? (
-    <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} contentFit="cover" transition={200} />
+    <Image
+      source={{ uri }}
+      style={{ width: size, height: size, borderRadius: radius }}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      transition={200}
+    />
   ) : (
     <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: C.primary, alignItems: "center", justifyContent: "center" }}>
       <Text style={{ color: "#FFFFFF", fontFamily: F.extra, fontSize: size * 0.4 }}>{(name || "?").charAt(0).toUpperCase()}</Text>
@@ -176,35 +195,54 @@ export default function ProfilPenggunaScreen() {
 
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
 
-  const fetchAll = useCallback(async () => {
-    if (!targetIdentifier) {
-      setIsLoading(false);
-      return;
-    }
-    try {
-      const [profRes, postRes, plantRes] = await Promise.all([
-        getPublicUserProfile(targetIdentifier).catch(() => null),
-        getUserCommunityPosts(targetIdentifier, 1, 20).catch(() => null),
-        getUserPublicTanaman(targetIdentifier).catch(() => null),
-      ]);
+  const followLockRef = useRef(false);
+  const likeLockRef = useRef<Set<number>>(new Set());
 
-      if (profRes) {
-        setProfile(profRes);
-        setIsFollowing(!!profRes.isFollowing);
-        setFollowerCount(profRes.jumlahPengikut ?? 0);
+  const fetchAll = useCallback(
+    async (isSilent = false) => {
+      if (!targetIdentifier) {
+        setIsLoading(false);
+        return;
       }
-      const postList = postRes?.data ?? [];
-      setPosts(postList);
-      setLikes(
-        Object.fromEntries(postList.map((p) => [p.id, { liked: !!p.isLiked, count: p.jumlahLike ?? 0 }])),
-      );
-      if (plantRes) setPlants(plantRes);
-    } catch (e) {
-      console.error("Error fetching user profile:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [targetIdentifier]);
+      if (!isSilent && !publicProfileCache.has(targetIdentifier)) {
+        setIsLoading(true);
+      }
+      try {
+        const [profRes, postRes, plantRes] = await Promise.all([
+          getPublicUserProfile(targetIdentifier).catch(() => null),
+          getUserCommunityPosts(targetIdentifier, 1, 20).catch(() => null),
+          getUserPublicTanaman(targetIdentifier).catch(() => null),
+        ]);
+
+        if (profRes) {
+          setProfile(profRes);
+          setIsFollowing(Boolean(profRes.isFollowing));
+          setFollowerCount(profRes.jumlahPengikut ?? 0);
+        }
+        const postList = postRes?.data ?? [];
+        setPosts(postList);
+        setLikes(
+          Object.fromEntries(
+            postList.map((p) => [p.id, { liked: Boolean(p.isLiked), count: p.jumlahLike ?? 0 }])
+          )
+        );
+        const plantList = plantRes || [];
+        if (plantRes) setPlants(plantList);
+
+        publicProfileCache.set(targetIdentifier, {
+          profile: profRes,
+          posts: postList,
+          plants: plantList,
+          savedAt: Date.now(),
+        });
+      } catch (e) {
+        console.error("Error fetching user profile:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [targetIdentifier]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -214,20 +252,41 @@ export default function ProfilPenggunaScreen() {
         const me = stored ? JSON.parse(stored) : null;
         if (
           (me?.username && targetIdentifier && me.username === targetIdentifier) ||
-          (me?.id && targetIdentifier && String(me.id) === targetIdentifier)
+          (me?.id && targetIdentifier && String(me.id) === String(targetIdentifier))
         ) {
           router.replace("/(tabs)/profil");
           return;
         }
       } catch {}
+
       if (!targetIdentifier) {
         if (isMounted) setIsLoading(false);
         return;
       }
-      if (isMounted) setIsLoading(true);
-      await fetchAll();
-      if (isMounted) setIsLoading(false);
+
+      if (publicProfileCache.has(targetIdentifier)) {
+        const cached = publicProfileCache.get(targetIdentifier)!;
+        if (isMounted) {
+          setProfile(cached.profile);
+          setPosts(cached.posts);
+          setPlants(cached.plants);
+          setIsFollowing(Boolean(cached.profile?.isFollowing));
+          setFollowerCount(cached.profile?.jumlahPengikut ?? 0);
+          setLikes(
+            Object.fromEntries(
+              cached.posts.map((p) => [p.id, { liked: Boolean(p.isLiked), count: p.jumlahLike ?? 0 }])
+            )
+          );
+          setIsLoading(false);
+        }
+        await fetchAll(true);
+      } else {
+        if (isMounted) setIsLoading(true);
+        await fetchAll(false);
+        if (isMounted) setIsLoading(false);
+      }
     })();
+
     return () => {
       isMounted = false;
     };
@@ -235,8 +294,15 @@ export default function ProfilPenggunaScreen() {
 
   const onRefresh = async () => {
     setIsRefreshing(true);
-    await fetchAll();
+    await fetchAll(true);
     setIsRefreshing(false);
+  };
+
+  const handleTabChange = (tab: "postingan" | "kebun") => {
+    if (tab !== activeTab) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setActiveTab(tab);
+    }
   };
 
   // Fallback ke data dari postingan yang di-tap bila endpoint profil belum tersedia
@@ -251,47 +317,109 @@ export default function ProfilPenggunaScreen() {
   const handle = username ? `@${username}` : nama;
 
   const handleToggleFollow = async () => {
-    if (isFollowBusy) return;
+    const targetUserId = profile?.id ?? (params.userId ? Number(params.userId) : null);
+    if (!targetUserId || followLockRef.current) return;
+    followLockRef.current = true;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     const prevFollowing = isFollowing;
     const prevCount = followerCount;
-    // Optimistic update
-    setIsFollowing(!prevFollowing);
-    setFollowerCount(prevCount + (prevFollowing ? -1 : 1));
+    const nextFollowing = !prevFollowing;
+
+    // Optimistic UI Update
+    setIsFollowing(nextFollowing);
+    setFollowerCount(Math.max(0, prevCount + (prevFollowing ? -1 : 1)));
     setIsFollowBusy(true);
+
     try {
-      if (!profile?.id) return;
-      const res = await toggleFollowUser(profile.id);
+      const res = await toggleFollowUser(targetUserId);
       setIsFollowing(res.following);
-      if (typeof res.jumlahPengikut === "number") setFollowerCount(res.jumlahPengikut);
+      if (typeof res.jumlahPengikut === "number") {
+        setFollowerCount(res.jumlahPengikut);
+      }
+
+      // Update in-memory profile cache
+      if (targetIdentifier && publicProfileCache.has(targetIdentifier)) {
+        const cached = publicProfileCache.get(targetIdentifier)!;
+        if (cached.profile) {
+          cached.profile.isFollowing = res.following;
+          cached.profile.jumlahPengikut = res.jumlahPengikut;
+        }
+      }
+
+      // Asynchronously synchronize current user's following count in SecureStore ("userData")
+      (async () => {
+        try {
+          const rawUserData = await SecureStore.getItemAsync("userData");
+          if (rawUserData) {
+            const userObj = JSON.parse(rawUserData);
+            const currentFollowing = Number(userObj.jumlahMengikuti) || 0;
+            const updatedFollowing = res.following
+              ? currentFollowing + 1
+              : Math.max(0, currentFollowing - 1);
+            userObj.jumlahMengikuti = updatedFollowing;
+            await SecureStore.setItemAsync("userData", JSON.stringify(userObj));
+          }
+        } catch (err) {
+          console.warn("Gagal sinkronisasi userData jumlahMengikuti:", err);
+        }
+      })();
     } catch {
       setIsFollowing(prevFollowing);
       setFollowerCount(prevCount);
       showNotification("Gagal", "Tidak dapat mengikuti pengguna saat ini, silakan coba beberapa saat lagi.", "error");
     } finally {
       setIsFollowBusy(false);
+      followLockRef.current = false;
     }
   };
 
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Lihat kebun ${nama} (${handle}) di TaniSync! 🌱`,
+        message: `Lihat kebun ${nama} (${handle}) di TaniSync!`,
       });
     } catch {}
   };
 
-
-
   const handleLike = async (postId: number) => {
+    if (likeLockRef.current.has(postId)) return;
+    likeLockRef.current.add(postId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     const prev = likes[postId] ?? { liked: false, count: 0 };
     const next = { liked: !prev.liked, count: Math.max(0, prev.count + (prev.liked ? -1 : 1)) };
     setLikes((s) => ({ ...s, [postId]: next }));
+
     try {
       const res = await toggleCommunityLike(postId);
       setLikes((s) => ({ ...s, [postId]: { liked: res.liked, count: res.jumlahLike } }));
     } catch {
       setLikes((s) => ({ ...s, [postId]: prev }));
+    } finally {
+      likeLockRef.current.delete(postId);
     }
+  };
+
+  const handleOpenPostDetail = (post: CommunityPost) => {
+    const like = likes[post.id] ?? { liked: Boolean(post.isLiked), count: post.jumlahLike ?? 0 };
+    const enrichedPost = {
+      ...post,
+      user_nama: nama,
+      userAvatar: avatarUrl,
+      isLiked: like.liked,
+      jumlahLike: like.count,
+    };
+
+    router.push({
+      pathname: "/detail-komunitas",
+      params: {
+        id: post.id,
+        initialPost: JSON.stringify(enrichedPost),
+        initialData: JSON.stringify(enrichedPost),
+      },
+    } as any);
   };
 
   const publicPlants = useMemo(() => plants, [plants]);
@@ -322,13 +450,23 @@ export default function ProfilPenggunaScreen() {
         {/* BANNER */}
         <View style={{ position: "relative" }}>
           {profile?.bannerUrl ? (
-            <Image source={{ uri: profile.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
+            <Image
+              source={{ uri: profile.bannerUrl }}
+              style={[styles.banner, shadowCard]}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+            />
           ) : params.bannerUrl ? (
-            <Image source={{ uri: params.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
+            <Image
+              source={{ uri: params.bannerUrl }}
+              style={[styles.banner, shadowCard]}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+            />
           ) : (
             <BotanicBanner />
           )}
-          
+
           {streak > 0 && (
             <View style={[styles.smallStreakBadge, shadowSubtle]}>
               <MaterialIcons name="local-fire-department" size={12} color={C.ink} />
@@ -364,7 +502,7 @@ export default function ProfilPenggunaScreen() {
             </View>
           ) : (
             <Text style={[styles.bio, !profile?.bio && { fontStyle: "italic" }]}>
-              {profile?.bio || "Belum ada bio ✍️"}
+              {profile?.bio || "Belum ada bio"}
               {memberSince ? ` | Anggota Komunitas sejak ${memberSince}.` : ""}
             </Text>
           )}
@@ -410,7 +548,7 @@ export default function ProfilPenggunaScreen() {
             <Text style={styles.statLabel}>Tanaman</Text>
           </View>
           <View style={styles.statDivider} />
-          <Pressable 
+          <Pressable
             style={styles.statItem}
             onPress={() => profile?.id && router.push({ pathname: "/koneksi", params: { userId: profile.id, username: handle, initialTab: "followers" } } as any)}
           >
@@ -418,7 +556,7 @@ export default function ProfilPenggunaScreen() {
             <Text style={styles.statLabel}>Pengikut</Text>
           </Pressable>
           <View style={styles.statDivider} />
-          <Pressable 
+          <Pressable
             style={styles.statItem}
             onPress={() => profile?.id && router.push({ pathname: "/koneksi", params: { userId: profile.id, username: handle, initialTab: "following" } } as any)}
           >
@@ -426,8 +564,6 @@ export default function ProfilPenggunaScreen() {
             <Text style={styles.statLabel}>Mengikuti</Text>
           </Pressable>
         </View>
-
-
 
         {/* SEGMENTED TABS */}
         <View style={styles.tabs}>
@@ -437,7 +573,7 @@ export default function ProfilPenggunaScreen() {
             return (
               <Pressable
                 key={tab}
-                onPress={() => setActiveTab(tab)}
+                onPress={() => handleTabChange(tab)}
                 style={[styles.tabBtn, active && [styles.tabBtnActive, shadowSubtle]]}
               >
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>{label}</Text>
@@ -447,7 +583,7 @@ export default function ProfilPenggunaScreen() {
         </View>
 
         {/* CONTENT */}
-        {isLoading ? (
+        {isLoading && posts.length === 0 && publicPlants.length === 0 ? (
           <View style={{ marginTop: 16, gap: 14 }}>
             {[1, 2].map((i) => (
               <SkeletonBlock key={i} style={{ height: 150, borderRadius: 20 }} />
@@ -481,13 +617,19 @@ export default function ProfilPenggunaScreen() {
                     </View>
 
                     <Pressable
-                      onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id, initialData: JSON.stringify(post) } } as any)}
+                      onPress={() => handleOpenPostDetail(post)}
                       style={({ pressed }) => pressed && { opacity: 0.85 }}
                     >
                       {post.judul ? <Text style={styles.postTitle}>{post.judul}</Text> : null}
                       <Text style={styles.postBody}>{post.deskripsi}</Text>
                       {post.fotoUrl ? (
-                        <Image source={{ uri: post.fotoUrl }} style={styles.postImage} contentFit="cover" transition={200} />
+                        <Image
+                          source={{ uri: post.fotoUrl }}
+                          style={styles.postImage}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
+                          transition={200}
+                        />
                       ) : null}
                     </Pressable>
 
@@ -497,7 +639,7 @@ export default function ProfilPenggunaScreen() {
                         <Text style={[styles.postActionText, like.liked && { color: C.coral }]}>{like.count} suka</Text>
                       </Pressable>
                       <Pressable
-                        onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id, initialData: JSON.stringify(post) } } as any)}
+                        onPress={() => handleOpenPostDetail(post)}
                         style={styles.postAction}
                         hitSlop={8}
                       >
@@ -519,10 +661,21 @@ export default function ProfilPenggunaScreen() {
             ) : (
               publicPlants.map((t) => {
                 const s = getPlantStatus(t);
+                const plantPhoto = t.logTerakhir?.fotoUrl;
                 return (
                   <View key={t.id} style={[styles.plantCard, shadowSubtle]}>
                     <View style={[styles.plantTile, { backgroundColor: s.tile }]}>
-                      <MaterialIcons name={s.icon as any} size={38} color={s.iconColor} />
+                      {plantPhoto ? (
+                        <Image
+                          source={{ uri: plantPhoto }}
+                          style={StyleSheet.absoluteFill}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
+                          transition={200}
+                        />
+                      ) : (
+                        <PlantIllustration jenisTanaman={t.jenisTanaman} size={64} />
+                      )}
                       <View style={[styles.plantStatus, { backgroundColor: s.bg }, s.bg === C.surface && { borderWidth: 1, borderColor: C.outline }]}>
                         <Text style={[styles.plantStatusText, { color: s.fg }]}>{s.label}</Text>
                       </View>
@@ -535,10 +688,7 @@ export default function ProfilPenggunaScreen() {
             )}
           </View>
         )}
-
-        {isLoading && !profile ? <ActivityIndicator color={C.primary} style={{ marginTop: 12 }} /> : null}
       </ScrollView>
-
     </SafeAreaView>
   );
 }
@@ -644,18 +794,6 @@ const styles = StyleSheet.create({
   },
   followBtnActive: { backgroundColor: C.surface, borderColor: C.outline },
   followText: { fontSize: 14, fontFamily: F.bold, color: "#FFFFFF" },
-  secondaryBtn: {
-    height: 46,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.outline,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  secondaryText: { fontSize: 14, fontFamily: F.bold, color: C.ink },
   shareBtn: {
     width: 46,
     height: 46,
@@ -681,49 +819,6 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, backgroundColor: C.outline },
   statValue: { fontSize: 18, fontFamily: F.extra, color: C.ink },
   statLabel: { fontSize: 11, fontFamily: F.medium, color: C.muted, marginTop: 2 },
-
-  // Streak
-  streakCard: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 20,
-    backgroundColor: C.primaryDark,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    overflow: "hidden",
-    gap: 10,
-  },
-  streakBlob: {
-    position: "absolute",
-    right: -30,
-    top: -30,
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: "rgba(255,255,255,0.08)",
-  },
-  streakIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  streakOverline: { fontSize: 11, fontFamily: F.extra, color: "#FFFFFF", letterSpacing: 1, opacity: 0.9 },
-  streakTitle: { fontSize: 14, fontFamily: F.bold, color: "#FFFFFF", marginTop: 1 },
-  streakPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  streakPillText: { fontSize: 11, fontFamily: F.bold, color: "#FFFFFF" },
 
   // Tabs
   tabs: {
@@ -809,56 +904,4 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 60, height: 60, borderRadius: 18, backgroundColor: C.primaryLight, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   emptyTitle: { fontSize: 16, fontFamily: F.extra, color: C.ink },
   emptySub: { fontSize: 13, fontFamily: F.medium, color: C.muted, textAlign: "center", marginTop: 4 },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  bottomSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 24,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-  sheetHandle: {
-    width: 48,
-    height: 6,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  sheetTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A202C',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  sheetOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    marginBottom: 8,
-  },
-  sheetIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  sheetOptionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2D3748',
-  },
 });

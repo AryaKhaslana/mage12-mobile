@@ -32,29 +32,35 @@ const DetailTanamanSkeleton = () => {
   const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [fadeAnim]);
 
   return (
-    <Animated.View style={{ flex: 1, opacity: fadeAnim, padding: 20, gap: 24 }}>
-      <View style={{ alignItems: 'center', gap: 12, marginTop: 20 }}>
-        <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
-        <View style={{ width: 150, height: 28, borderRadius: 14, backgroundColor: '#E8E5DA' }} />
-        <View style={{ width: 100, height: 18, borderRadius: 9, backgroundColor: '#E8E5DA' }} />
+    <Animated.View style={{ flex: 1, opacity: fadeAnim, paddingHorizontal: 20, gap: 16 }}>
+      {/* Hero Card Skeleton */}
+      <View style={{ width: '100%', height: 240, borderRadius: 28, backgroundColor: '#E8E5DA' }} />
+
+      {/* Title & Metadata Skeleton */}
+      <View style={{ gap: 10, marginTop: 4 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ width: 140, height: 26, borderRadius: 13, backgroundColor: '#E8E5DA' }} />
+          <View style={{ width: 90, height: 26, borderRadius: 13, backgroundColor: '#E8E5DA' }} />
+        </View>
+        <View style={{ width: 220, height: 16, borderRadius: 8, backgroundColor: '#E8E5DA' }} />
       </View>
-      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
-        <View style={{ flex: 1, height: 80, borderRadius: 20, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
-      </View>
-      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
-        <View style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#E8E5DA', borderWidth: 0 }} />
-      </View>
+
+      {/* Harvest Card Skeleton */}
+      <View style={{ width: '100%', height: 64, borderRadius: 18, backgroundColor: '#E8E5DA', marginTop: 4 }} />
+
+      {/* Care History Skeleton */}
+      <View style={{ width: '100%', height: 120, borderRadius: 20, backgroundColor: '#E8E5DA', marginTop: 4 }} />
     </Animated.View>
   );
 };
@@ -430,12 +436,16 @@ export default function DetailTanamanModal() {
 
   if (isLoading && !tanaman) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.topBar}>
+          <Pressable style={styles.iconButton} onPress={() => router.back()}>
             <MaterialIcons name="arrow-back" size={24} color="#123924" />
           </Pressable>
-          <Text style={styles.headerTitle}>Detail Tanaman</Text>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
+            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
+            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
+          </View>
         </View>
         <DetailTanamanSkeleton />
       </SafeAreaView>

@@ -152,6 +152,31 @@ export default function IndexScreen() {
     };
   }, []);
 
+  const triggerLightHaptic = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+  };
+
+  const triggerMediumHaptic = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+  };
+
+  const triggerSelectionHaptic = () => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+  };
+
+  const navigateToFinalRoute = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    const finalRoute = targetRouteRef.current || "/(tabs)";
+    router.replace(finalRoute as any);
+  };
+
   // 2. Koreografi Animasi Organik Terharmonisasi
   useEffect(() => {
     // AURA MATAHARI HANGAT (Fade-in lalu nafas halus berulang)
@@ -323,31 +348,6 @@ export default function IndexScreen() {
       if (progressInterval) clearInterval(progressInterval);
     };
   }, []);
-
-  const triggerLightHaptic = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-  };
-
-  const triggerMediumHaptic = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-  };
-
-  const triggerSelectionHaptic = () => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-  };
-
-  const navigateToFinalRoute = () => {
-    if (isNavigatingRef.current) return;
-    isNavigatingRef.current = true;
-    const finalRoute = targetRouteRef.current || "/(tabs)";
-    router.replace(finalRoute as any);
-  };
 
   // Animated Styles
   const screenStyle = useAnimatedStyle(() => ({

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator, Animated, FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Animated, FlatList, TextInput, KeyboardAvoidingView, Platform, Keyboard, Modal, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
@@ -34,15 +35,17 @@ const EmptyHint = ({ icon, title, subtitle, ctaText, onCtaPress }: any) => (
 
 
 const DetailKomunitasSkeleton = () => {
-  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [fadeAnim]);
 
   return (
@@ -114,7 +117,7 @@ export default function DetailKomunitasScreen() {
           const res = await api.get("/user/me").catch(() => null);
           if (res?.data?.data?.id) setCurrentUserId(res.data.data.id);
         }
-      } catch(e) {}
+      } catch {}
     };
     fetchMe();
   }, []);
@@ -140,10 +143,31 @@ export default function DetailKomunitasScreen() {
   }, [postId]);
 
   useEffect(() => {
-    if (postId) {
-      fetchDetail();
-    }
-  }, [postId, fetchDetail]);
+    let ignore = false;
+    const load = async () => {
+      if (!postId) return;
+      try {
+        const [data, comm] = await Promise.all([
+          getCommunityPostDetail(postId),
+          getCommunityComments(postId, 1, 20)
+        ]);
+        if (!ignore) {
+          setPost(data);
+          const commentList = Array.isArray(comm?.data) ? comm.data : [];
+          setComments(commentList);
+          setHasMore(commentList.length >= 20);
+          setPage(1);
+        }
+      } catch (e) {
+        console.error(e);
+        if (!ignore) setIsError(true);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, [postId]);
 
   const handleLoadMore = async () => {
     if (!hasMore || isLoadingMore) return;
@@ -393,6 +417,8 @@ export default function DetailKomunitasScreen() {
           keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={renderHeader}
+          refreshing={isLoading}
+          onRefresh={fetchDetail}
           renderItem={({ item }) => (
             <View style={styles.commentItem}>
               <View style={[styles.avatarContainer, { width: 32, height: 32, borderRadius: 16 }]}>

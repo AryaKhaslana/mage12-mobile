@@ -58,11 +58,19 @@ export default function RegisterScreen() {
       
       let lat = null;
       let lng = null;
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === "granted") {
-        let location = await Location.getCurrentPositionAsync({});
-        lat = location.coords.latitude;
-        lng = location.coords.longitude;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          const locPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+          const location = await Promise.race([locPromise, timeoutPromise]);
+          if (location?.coords) {
+            lat = location.coords.latitude;
+            lng = location.coords.longitude;
+          }
+        }
+      } catch (locErr) {
+        console.warn("GPS resolution error during registration:", locErr);
       }
 
       const payload = {

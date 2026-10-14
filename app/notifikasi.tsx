@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +12,31 @@ export default function NotifikasiScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  useEffect(() => {
+    let ignore = false;
+    const load = async () => {
+      try {
+        const res = await getMyNotifications(1, 50);
+        const data = res.data || [];
+        if (!ignore) {
+          setNotifications(data);
+          setUnreadCount(data.filter((n: any) => !n.isRead).length);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, []);
+
   const fetchNotifs = async () => {
+    setIsRefreshing(true);
     try {
       const res = await getMyNotifications(1, 50);
       const data = res.data || [];
@@ -25,10 +49,6 @@ export default function NotifikasiScreen() {
       setIsRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    fetchNotifs();
-  }, []);
 
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return;

@@ -1,8 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image , Image as ExpoImage } from 'expo-image';
+import { Image as ExpoImage } from 'expo-image';
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Dimensions,
     Pressable,
@@ -17,6 +17,7 @@ import Animated, {
     FadeInDown,
     interpolate,
     interpolateColor,
+    type SharedValue,
     useAnimatedScrollHandler,
     useAnimatedStyle,
     useSharedValue,
@@ -25,9 +26,38 @@ import Animated, {
     withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const AnimatedImage = Animated.createAnimatedComponent(Image);
 const { width } = Dimensions.get("window");
 const AnimatedExpoImage = Animated.createAnimatedComponent(ExpoImage);
+
+const VIEW_CONFIG = { viewAreaCoveragePercentThreshold: 50 };
+
+interface PaginationDotProps {
+  index: number;
+  scrollX: SharedValue<number>;
+  width: number;
+}
+
+const PaginationDot = ({ index, scrollX, width }: PaginationDotProps) => {
+  const animatedDotStyle = useAnimatedStyle(() => {
+    const widthVal = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [8, 24, 8],
+      Extrapolation.CLAMP,
+    );
+    const colorVal = interpolateColor(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      ["#D9D9D9", "#3FA86B", "#D9D9D9"],
+    );
+    return {
+      width: widthVal,
+      backgroundColor: colorVal,
+    };
+  });
+
+  return <Animated.View style={[styles.dot, animatedDotStyle]} />;
+};
 
 const slides = [
   {
@@ -105,14 +135,14 @@ export default function OnboardingScreen() {
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollX.value = event.contentOffset.x;
   });
-  const viewableItemsChanged = useRef(
+  const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems[0]) {
         setCurrentIndex(viewableItems[0].index || 0);
       }
     },
-  ).current;
-  const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+    []
+  );
   const handleComplete = async () => {
     await AsyncStorage.setItem("hasSeenOnboarding", "true");
     router.replace("/");
@@ -189,37 +219,21 @@ export default function OnboardingScreen() {
         keyExtractor={(item) => item.id}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        onViewableItemsChanged={viewableItemsChanged}
-        viewabilityConfig={viewConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={VIEW_CONFIG}
         renderItem={renderItem}
       />
       <View style={styles.footer}>
         {/* Pagination Dots */}
         <View style={styles.pagination}>
-          {slides.map((_, index) => {
-            const animatedDotStyle = useAnimatedStyle(() => {
-              const widthVal = interpolate(
-                scrollX.value,
-                [(index - 1) * width, index * width, (index + 1) * width],
-                [8, 24, 8],
-                Extrapolation.CLAMP,
-              );
-              const colorVal = interpolateColor(
-                scrollX.value,
-                [(index - 1) * width, index * width, (index + 1) * width],
-                ["#D9D9D9", "#3FA86B", "#D9D9D9"],
-              );
-              return {
-                width: widthVal,
-                backgroundColor: colorVal };
-            });
-            return (
-              <Animated.View
-                key={index.toString()}
-                style={[styles.dot, animatedDotStyle]}
-              />
-            );
-          })}
+          {slides.map((_, index) => (
+            <PaginationDot
+              key={index.toString()}
+              index={index}
+              scrollX={scrollX}
+              width={width}
+            />
+          ))}
         </View>
         {/* Buttons */}
         {currentIndex === slides.length - 1 ? (

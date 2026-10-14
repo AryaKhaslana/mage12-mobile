@@ -52,10 +52,15 @@ export default function LoginScreen() {
       const res = await api.post("/auth/login", { email, password });
       if (res.data.status === "success") {
         await SecureStore.setItemAsync("userToken", res.data.data.token);
-        await SecureStore.setItemAsync("userData", JSON.stringify(res.data.data.user));
-        
-        router.replace("/(tabs)");
-        showNotification("Berhasil!", `Selamat datang kembali, ${res.data.data.user.nama}!`, "success");
+        const loggedUser = res.data.data.user;
+        if (!loggedUser.username) {
+          router.replace("/(auth)/profile-setup");
+        } else if (!loggedUser.latitude) {
+          router.replace("/(auth)/location-setup");
+        } else {
+          router.replace("/(tabs)");
+        }
+        showNotification("Berhasil!", `Selamat datang kembali, ${loggedUser.nama}!`, "success");
       }
     } catch (error: any) {
       console.error(error.response?.data || error.message);

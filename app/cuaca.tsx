@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
@@ -25,6 +25,29 @@ export default function CuacaScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
+  useEffect(() => {
+    let ignore = false;
+    const load = async () => {
+      try {
+        const response = await api.get('/weather/today');
+        if (!ignore) {
+          if (response.data?.status === 'success') {
+            setWeatherData(response.data.data);
+          } else {
+            setIsError(true);
+          }
+        }
+      } catch (error) {
+        console.error("Gagal load cuaca:", error);
+        if (!ignore) setIsError(true);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, []);
+
   const fetchWeather = async () => {
     setIsLoading(true);
     setIsError(false);
@@ -42,10 +65,6 @@ export default function CuacaScreen() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchWeather();
-  }, []);
 
 
   if (isLoading) {

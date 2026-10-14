@@ -3,11 +3,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
-  Alert,
   Animated,
   Pressable,
   RefreshControl,
@@ -145,7 +143,7 @@ const BotanicBanner = () => (
 );
 
 const SkeletonBlock = ({ style }: { style: any }) => {
-  const fade = useRef(new Animated.Value(0.4)).current;
+  const [fade] = useState(() => new Animated.Value(0.4));
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -177,8 +175,6 @@ export default function ProfilPenggunaScreen() {
   const [isFollowBusy, setIsFollowBusy] = useState(false);
 
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
-  const [saved, setSaved] = useState<Record<number, boolean>>({});
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!targetIdentifier) {
@@ -465,7 +461,6 @@ export default function ProfilPenggunaScreen() {
               posts.map((post) => {
                 const badge = POST_BADGE[post.tipePost];
                 const like = likes[post.id] ?? { liked: false, count: 0 };
-                const isSaved = !!saved[post.id];
                 return (
                   <View key={post.id} style={[styles.postCard, shadowSubtle]}>
                     <View style={styles.postHeader}>

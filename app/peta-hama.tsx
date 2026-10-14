@@ -31,8 +31,6 @@ export default function PetaHamaScreen() {
   const [mapRevision, setMapRevision] = useState(0);
 
   const insets = useSafeAreaInsets();
-  const filterRef = useRef(filter);
-  filterRef.current = filter;
 
   const resolveUserCoordinates = async (): Promise<{ lat: number; lng: number }> => {
     let resolvedLat: number | null = null;
@@ -113,13 +111,13 @@ export default function PetaHamaScreen() {
         const coords = await resolveUserCoordinates();
         if (isMounted) {
           setUserCoords(coords);
-          fetchHeatmap(filterRef.current, coords);
+          fetchHeatmap(filter, coords);
         }
       })();
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, [filter])
   );
 
   const handleFilterChange = (newFilter: string) => {

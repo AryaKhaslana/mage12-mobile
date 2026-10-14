@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -23,16 +23,18 @@ const getRelativeTime = (isoString: string) => {
 
 
 const TypingIndicator = () => {
-  const fadeAnim = useRef(new Animated.Value(0.3)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0.3));
   
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 0.3, duration: 600, useNativeDriver: true })
       ])
-    ).start();
-  }, []);
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [fadeAnim]);
 
   return (
     <Animated.View style={[styles.bubbleWrapperLeft, { marginTop: 16, opacity: fadeAnim }]}>
@@ -91,15 +93,17 @@ const formatMarkdown = (text: string) => {
 
 
 const ChatSkeleton = () => {
-  const fadeAnim = useRef(new Animated.Value(0.4)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [fadeAnim]);
 
   return (

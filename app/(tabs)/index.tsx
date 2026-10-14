@@ -1,5 +1,6 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useCallback, useEffect, useRef, useState , forwardRef } from "react";
@@ -181,6 +182,22 @@ const HomeSkeleton = () => {
   );
 };
 
+const sortTanamanItems = (list: any[]) => {
+  return [...list].sort((a, b) => {
+    const aSudahValidasi = (a.logTerakhir && new Date(a.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || a.statusPenyiraman === "SUDAH_DISIRAM";
+    const bSudahValidasi = (b.logTerakhir && new Date(b.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || b.statusPenyiraman === "SUDAH_DISIRAM";
+    
+    // Order: needs watering -> watered today -> harvest soon
+    if (a.statusPenyiraman === "PERLU_SIRAM" && b.statusPenyiraman !== "PERLU_SIRAM") return -1;
+    if (a.statusPenyiraman !== "PERLU_SIRAM" && b.statusPenyiraman === "PERLU_SIRAM") return 1;
+    
+    if (aSudahValidasi && !bSudahValidasi) return -1;
+    if (!aSudahValidasi && bSudahValidasi) return 1;
+
+    return (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999);
+  });
+};
+
 export default function DashboardScreen() {
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -199,6 +216,10 @@ export default function DashboardScreen() {
   const step2Ref = useRef<View>(null);
   const step3Ref = useRef<View>(null);
   const step4Ref = useRef<View>(null);
+
+  // Anti-Spam & Mutex Lock untuk stress test penyiraman
+  const processingWateringRef = useRef<Set<number>>(new Set());
+  const recentlyWateredRef = useRef<Map<number, number>>(new Map());
   
   const insets = useSafeAreaInsets();
   
@@ -387,7 +408,7 @@ export default function DashboardScreen() {
         
         let hasCache = false;
         if (cachedUser) { setUserData(JSON.parse(cachedUser)); hasCache = true; }
-        if (cachedTanaman) { setTanamanList(JSON.parse(cachedTanaman)); hasCache = true; }
+        if (cachedTanaman) { setTanamanList(sortTanamanItems(JSON.parse(cachedTanaman))); hasCache = true; }
         if (cachedWeather) {
           const parsed = JSON.parse(cachedWeather);
           if (parsed.savedAt && Date.now() - parsed.savedAt < 3 * 60 * 60 * 1000) {
@@ -495,8 +516,9 @@ export default function DashboardScreen() {
         }
       }
       if (tanamanRes?.data?.data) {
-        setTanamanList(tanamanRes.data.data);
-        AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(tanamanRes.data.data)).catch(() => {});
+        const sorted = sortTanamanItems(tanamanRes.data.data);
+        setTanamanList(sorted);
+        AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(sorted)).catch(() => {});
       }
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
@@ -516,9 +538,23 @@ export default function DashboardScreen() {
   };
 
   const handleLogAktivitas = async (tanamanId: number, plantName?: string) => {
-    // Optimistic UI Update: Langsung centang hijau di frontend biar kerasa instan!
+    // 1. Guard Mutex: Jika sedang diproses, abaikan spam klik
+    if (processingWateringRef.current.has(tanamanId)) return;
+    processingWateringRef.current.add(tanamanId);
+    recentlyWateredRef.current.set(tanamanId, Date.now());
+
+    // 2. Haptic Feedback Instan di Detik ke-0 (0ms)
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+
+    // Simpan snapshot tanaman lama untuk rollback jika jaringan mati total
+    let previousPlantState: any = null;
+
+    // 3. Optimistic UI Update: Centang hijau seketika di frontend
     setTanamanList(prev => prev.map(t => {
       if (t.id === tanamanId) {
+        previousPlantState = { ...t };
         return {
           ...t,
           statusPenyiraman: 'SUDAH_DISIRAM',
@@ -528,44 +564,79 @@ export default function DashboardScreen() {
       return t;
     }));
 
+    // 4. Optimistic EXP & Streak Update: Langsung nambah di UI tanpa tunggu server
+    setUserData((prev: any) => {
+      if (!prev) return prev;
+      const updated = { 
+        ...prev, 
+        exp: (prev.exp || 0) + 1, 
+        streak: (prev.streak || 0) > 0 ? prev.streak : 1 
+      };
+      SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
+      return updated;
+    });
+
+    // 5. Notifikasi Sukses Instan (0ms)
+    showNotification(
+      "Berhasil Menyiram! 💧",
+      `Berhasil menyiram ${plantName || 'tanaman'}! +1 EXP & Streak terjaga!`,
+      "success"
+    );
+
+    // 6. Request API Berjalan di Background (Silent Sync tanpa overfetching)
     try {
       const response = await api.post("/logs", {
         tanamanId,
-        tipeValidasi: "button_only" });
+        tipeValidasi: "button_only"
+      });
       if (response.data?.status === "success") {
         const d = response.data.data;
+        // Rekonsiliasi data riil dari server jika ada perbedaan EXP/Level
         setUserData((prev: any) => {
           if (!prev) return prev;
           const updated = { 
             ...prev, 
-            exp: d.expSekarang !== undefined ? d.expSekarang : (prev.exp || 0) + (d.expDidapat || 0), 
+            exp: d.expSekarang !== undefined ? d.expSekarang : prev.exp, 
             level: d.level !== undefined ? d.level : prev.level, 
             streak: d.streak !== undefined ? d.streak : prev.streak 
           };
           SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
           return updated;
         });
+
         if (d.levelUp) {
           showNotification(
-            "Selamat!",
-            `Level Meningkat! Sekarang kamu berada di Level ${d.level} 🎉`,
-            "success",
+            "Level Up! 🎉",
+            `Level Meningkat! Sekarang kamu berada di Level ${d.level}!`,
+            "success"
           );
-        } else {
-          showNotification("Berhasil!", `Berhasil menyiram ${plantName || 'tanaman'}! +${d.expDidapat} EXP! Streak: ${d.streak} hari`, "success");
         }
-        // fetchDashboardData berjalan di background tanpa blocking UI
-        fetchDashboardData();
+
+        // Simpan cache lokal tanaman yang sudah disiram
+        setTanamanList(currentList => {
+          AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(currentList)).catch(() => {});
+          return currentList;
+        });
       }
     } catch (error: any) {
-      console.error("Error logging activity:", error);
+      console.error("Error logging activity in background:", error);
+      const errMsg = error.response?.data?.message || "";
+      // Jika error karena sudah disiram hari ini, abaikan karena di database memang sudah tercatat
+      if (errMsg.includes("sudah disiram hari ini")) {
+        return;
+      }
+
+      // Rollback jika error koneksi / server error
+      if (previousPlantState) {
+        setTanamanList(prev => prev.map(t => t.id === tanamanId ? previousPlantState : t));
+      }
       showNotification(
-        "Gagal Mencatat",
-        error.response?.data?.message || "Terjadi kesalahan.",
-        "error",
+        "Gagal Menyimpan",
+        errMsg || "Koneksi terputus saat mencatat penyiraman.",
+        "error"
       );
-      // Revert state if failed (trigger refresh)
-      fetchDashboardData();
+    } finally {
+      processingWateringRef.current.delete(tanamanId);
     }
   };
 
@@ -574,25 +645,12 @@ export default function DashboardScreen() {
   const reminders = [...tanamanList]
     .filter((t) => {
       // Keep watering task in the list if it needs watering or was watered today
-      const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
+      const sudahValidasiHariIni = (t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || t.statusPenyiraman === "SUDAH_DISIRAM";
       // Selalu tampilkan plant sebagai task nyiram tiap hari KECUALI kalau statusnya DITUNDA_HUJAN (dan belum disiram hari ini)
       if (t.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni) return true;
       
       if ((t.sisaHariPanen ?? 999) <= 7) return true;
       return false;
-    })
-    .sort((a, b) => {
-      const aSudahValidasi = a.logTerakhir && new Date(a.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-      const bSudahValidasi = b.logTerakhir && new Date(b.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-      
-      // Order: needs watering -> watered today -> harvest soon
-      if (a.statusPenyiraman === "PERLU_SIRAM" && b.statusPenyiraman !== "PERLU_SIRAM") return -1;
-      if (a.statusPenyiraman !== "PERLU_SIRAM" && b.statusPenyiraman === "PERLU_SIRAM") return 1;
-      
-      if (aSudahValidasi && !bSudahValidasi) return -1;
-      if (!aSudahValidasi && bSudahValidasi) return 1;
-
-      return (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999);
     });
 
   const { width } = Dimensions.get('window');
@@ -678,6 +736,13 @@ export default function DashboardScreen() {
                       isWateringTask={isWateringTask}
                       isWateredToday={sudahValidasiHariIni}
                       onTaskPress={() => {
+                        // Anti-Spam: Cek apakah tanaman ini baru saja disiram (dalam 1.5 detik terakhir)
+                        const lastWatered = recentlyWateredRef.current.get(tanaman.id) || 0;
+                        if (Date.now() - lastWatered < 1500) {
+                          // Abaikan double-tap agar juri tidak terlempar ke detail tanaman!
+                          return;
+                        }
+
                         if (isWateringTask && !sudahValidasiHariIni) {
                           handleLogAktivitas(tanaman.id, tanaman.nickname || tanaman.jenisTanaman);
                         } else {

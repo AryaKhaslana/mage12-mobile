@@ -8,18 +8,16 @@ export default function TaskCard({ task, onTaskPress, isWateringTask, isWateredT
   const opacity = useSharedValue(1);
 
   const handlePress = () => {
-    // If it's a watering task and not watered today, do a little check animation before firing the prop
+    // Jalankan animasi tekan mikro secara simultan tanpa delay
     if (isWateringTask && !isWateredToday) {
       scale.value = withSequence(
-        withTiming(0.9, { duration: 150 }),
-        withTiming(1, { duration: 150 })
+        withTiming(0.92, { duration: 90 }),
+        withTiming(1, { duration: 110 })
       );
     }
     
-    // Slight delay to let animation play
-    setTimeout(() => {
-      onTaskPress();
-    }, (isWateringTask && !isWateredToday) ? 200 : 0);
+    // Respon instan 0ms: Panggil fungsi handler saat itu juga
+    onTaskPress();
   };
 
   const animatedStyle = useAnimatedStyle(() => ({

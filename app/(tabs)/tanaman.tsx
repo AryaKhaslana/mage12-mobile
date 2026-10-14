@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import PlantIllustration from "../../components/PlantIllustration";
@@ -72,27 +73,6 @@ const PlantGridSkeleton = () => {
   );
 };
 
-const BouncingFAB = ({ onPress, style, children }: any) => {
-  const [bounceAnim] = useState(() => new Animated.Value(0));
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: -8, duration: 1500, useNativeDriver: true }),
-        Animated.timing(bounceAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
-      ])
-    ).start();
-  }, [bounceAnim]);
-  return (
-    <Animated.View style={[style, { transform: [{ translateY: bounceAnim }] }]}>
-      <Pressable onPress={onPress} style={({ pressed }) => [
-        { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 100 },
-        pressed && { opacity: 0.8 }
-      ]}>
-        {children}
-      </Pressable>
-    </Animated.View>
-  );
-};
 
 export default function TanamanScreen() {
   const { showNotification } = useNotification();
@@ -394,12 +374,19 @@ export default function TanamanScreen() {
               </View>
         
       {/* FAB */}
-      <BouncingFAB
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
+      <Pressable
+        style={({ pressed }) => [
+          styles.fab,
+          pressed && styles.fabPressed,
+        ]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setModalVisible(true);
+        }}
+        accessibilityLabel="Tanam Baru"
       >
         <MaterialIcons name="add" size={32} color="#FFFFFF" />
-      </BouncingFAB>
+      </Pressable>
 
       <Modal
           animationType="slide"
@@ -585,6 +572,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     zIndex: 50 },
+  fabPressed: {
+    transform: [{ scale: 0.94 }],
+    opacity: 0.9,
+  },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",

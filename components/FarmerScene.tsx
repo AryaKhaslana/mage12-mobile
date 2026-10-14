@@ -1,4 +1,4 @@
-import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -105,7 +105,12 @@ export default function FarmerScene({
   else if (hour >= 15 && hour < 18) greeting = 'Selamat sore';
   else if (hour >= 18 || hour < 4) greeting = 'Selamat malam';
 
-  const firstName = userName ? userName.split(' ')[0] : 'Sobat';
+  // Tampilkan hingga 2 kata pertama nama pengguna agar lebih proporsional & personal
+  const displayName = useMemo(() => {
+    if (!userName) return 'Sobat Tani';
+    const words = userName.trim().split(/\s+/);
+    return words.length > 1 ? `${words[0]} ${words[1]}` : words[0];
+  }, [userName]);
 
   const [demoRain, setDemoRain] = useState<boolean | null>(null);
 
@@ -269,34 +274,6 @@ export default function FarmerScene({
   const isSoilMoist = isRaining || farmerState === 'allClear';
   const soilColor = isSoilMoist ? '#4E342E' : '#8D6E63'; // Gelap subur vs Cokelat kering
   const soilHighlight = isSoilMoist ? '#3E2723' : '#795548';
-
-  const statusConfig = useMemo(() => {
-    if (isRaining) {
-      return {
-        icon: 'cloud-queue' as const,
-        text: 'Hujan turun • Penyiraman otomatis ditunda',
-        bg: 'rgba(255, 255, 255, 0.92)',
-        textColor: '#1E3A8A',
-        dotColor: '#3B82F6',
-      };
-    }
-    if (farmerState === 'needsWatering') {
-      return {
-        icon: 'water-drop' as const,
-        text: 'Ada tanaman yang butuh disiram hari ini',
-        bg: 'rgba(255, 248, 230, 0.94)',
-        textColor: '#92400E',
-        dotColor: '#F59E0B',
-      };
-    }
-    return {
-      icon: 'check-circle' as const,
-      text: 'Semua tanaman segar & terawat hari ini',
-      bg: 'rgba(232, 245, 233, 0.94)',
-      textColor: '#14532D',
-      dotColor: '#22C55E',
-    };
-  }, [isRaining, farmerState]);
 
   const toggleDemoRain = () => {
     try {
@@ -766,7 +743,7 @@ export default function FarmerScene({
         </View>
       )}
 
-      {/* 6. TOP BAR (SAFE-AREA AWARE + SMART GARDEN STATUS BADGE) */}
+      {/* 6. TOP BAR (SAFE-AREA AWARE) */}
       <View style={[styles.topBar, { top: Math.max(40, insets.top + 10) }]}>
         <View style={styles.topBarMainRow}>
           <Pressable
@@ -800,20 +777,12 @@ export default function FarmerScene({
                 style={[styles.greetingText, useLightText && { color: '#FFFFFF' }]}
                 numberOfLines={1}
               >
-                {firstName}!
+                {displayName}!
               </Text>
             </View>
           </Pressable>
 
           {renderWeatherPill()}
-        </View>
-
-        {/* Smart Garden Status Pill (Reaktif terhadap Cuaca & Tugas Siram) */}
-        <View style={[styles.statusChip, { backgroundColor: statusConfig.bg }]}>
-          <MaterialIcons name={statusConfig.icon} size={14} color={statusConfig.dotColor} />
-          <Text style={[styles.statusChipText, { color: statusConfig.textColor }]} numberOfLines={1}>
-            {statusConfig.text}
-          </Text>
         </View>
       </View>
     </View>
@@ -841,7 +810,6 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     zIndex: 10,
-    gap: 10,
   },
   topBarMainRow: {
     flexDirection: 'row',
@@ -934,24 +902,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#5C5A4F',
     lineHeight: 12,
-  },
-  statusChip: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 100,
-    gap: 6,
-    shadowColor: '#123924',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  statusChipText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 11,
   },
   cloudLayer: {
     position: 'absolute',

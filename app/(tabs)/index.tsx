@@ -559,8 +559,11 @@ export default function DashboardScreen() {
           return;
         }
 
-        // Sync local cache first (in case detail screen updated EXP/Level)
-        const cachedUser = await SecureStore.getItemAsync("userData");
+        // Sync local cache first (in case detail screen or plant screen updated EXP/Level or plant list)
+        const [cachedUser, cachedTanaman] = await Promise.all([
+          SecureStore.getItemAsync("userData"),
+          AsyncStorage.getItem("dashboard_tanaman")
+        ]);
         if (cachedUser) {
           const parsed = JSON.parse(cachedUser);
           setUserData((prev: any) =>
@@ -568,6 +571,12 @@ export default function DashboardScreen() {
               ? { ...prev, exp: parsed.exp, level: parsed.level, streak: parsed.streak }
               : parsed
           );
+        }
+        if (cachedTanaman) {
+          try {
+            const parsedTanaman = JSON.parse(cachedTanaman);
+            setTanamanList(sortTanamanItems(parsedTanaman));
+          } catch {}
         }
 
         fetchDashboardData(false);
@@ -590,18 +599,22 @@ export default function DashboardScreen() {
     // Simpan snapshot tanaman lama untuk rollback jika jaringan mati total
     let previousPlantState: any = null;
 
-    // 3. Optimistic UI Update: Centang hijau seketika di frontend
-    setTanamanList(prev => prev.map(t => {
-      if (t.id === tanamanId) {
-        previousPlantState = { ...t };
-        return {
-          ...t,
-          statusPenyiraman: 'SUDAH_DISIRAM',
-          logTerakhir: { createdAt: new Date().toISOString() }
-        };
-      }
-      return t;
-    }));
+    // 3. Optimistic UI Update: Centang hijau seketika di frontend & simpan ke cache 0ms
+    setTanamanList(prev => {
+      const updated = prev.map(t => {
+        if (t.id === tanamanId) {
+          previousPlantState = { ...t };
+          return {
+            ...t,
+            statusPenyiraman: 'SUDAH_DISIRAM',
+            logTerakhir: { createdAt: new Date().toISOString() }
+          };
+        }
+        return t;
+      });
+      AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
 
     // 4. Optimistic EXP & Streak Update: Langsung nambah di UI tanpa tunggu server
     setUserData((prev: any) => {
@@ -651,7 +664,7 @@ export default function DashboardScreen() {
           );
         }
 
-        // Simpan cache lokal tanaman yang sudah disiram
+        // Rekonsiliasi cache lokal tanaman yang sudah disiram
         setTanamanList(currentList => {
           AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(currentList)).catch(() => {});
           return currentList;
@@ -667,7 +680,11 @@ export default function DashboardScreen() {
 
       // Rollback jika error koneksi / server error
       if (previousPlantState) {
-        setTanamanList(prev => prev.map(t => t.id === tanamanId ? previousPlantState : t));
+        setTanamanList(prev => {
+          const rolledBack = prev.map(t => t.id === tanamanId ? previousPlantState : t);
+          AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(rolledBack)).catch(() => {});
+          return rolledBack;
+        });
       }
       showNotification(
         "Gagal Menyimpan",

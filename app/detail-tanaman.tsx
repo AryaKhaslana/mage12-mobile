@@ -125,10 +125,26 @@ export default function DetailTanamanModal() {
 
   const handleEditSave = async () => {
     setIsSavingEdit(true);
+    const trimmedNick = editNickname.trim() || undefined;
     try {
-      await updateTanaman(Number(id), {
-        nickname: editNickname || undefined,
-        jenisTanaman: editJenis });
+      await updateTanaman(tanamanId, {
+        nickname: trimmedNick,
+        jenisTanaman: editJenis,
+      });
+
+      // Langsung update state & cache lokal 0ms
+      setTanaman((prev) =>
+        prev ? { ...prev, nickname: trimmedNick || null, jenisTanaman: editJenis } : prev
+      );
+      const cached = await AsyncStorage.getItem("dashboard_tanaman");
+      if (cached) {
+        const list: TanamanDetail[] = JSON.parse(cached);
+        const updated = list.map((t) =>
+          t.id === tanamanId ? { ...t, nickname: trimmedNick || null, jenisTanaman: editJenis } : t
+        );
+        await AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated));
+      }
+
       showNotification("Sukses", "Tanaman berhasil diupdate!");
       setIsEditModalVisible(false);
       fetchData(); // refetch to update UI
@@ -279,12 +295,22 @@ export default function DetailTanamanModal() {
   };
 
   const confirmDelete = async () => {
+    if (isDeleting) return;
     setIsDeleting(true);
     try {
       await deleteTanaman(tanamanId);
+
+      // Langsung bersihkan tanaman dari cache lokal sebelum router.back()!
+      const cached = await AsyncStorage.getItem("dashboard_tanaman");
+      if (cached) {
+        const list: TanamanDetail[] = JSON.parse(cached);
+        const filtered = list.filter((t) => t.id !== tanamanId);
+        await AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(filtered));
+      }
+
       setShowDeleteConfirm(false);
       showNotification("Terhapus", "Tanaman berhasil dihapus permanen!", "success");
-      setTimeout(() => router.back(), 300);
+      router.back();
     } catch (e: any) {
       setIsDeleting(false);
       setShowDeleteConfirm(false);

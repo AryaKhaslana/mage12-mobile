@@ -166,11 +166,23 @@ export default function TanamanScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [tanamanList.length]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      fetchTanaman();
+      // Baca cache instan 0ms kalau habis nyiram/edit/hapus dari DetailTanamanModal
+      AsyncStorage.getItem("dashboard_tanaman")
+        .then((cached) => {
+          if (cached) {
+            const parsed: TanamanDetail[] = JSON.parse(cached);
+            setTanamanList(parsed);
+            tanamanListRef.current = parsed;
+            setIsLoading(false);
+          }
+        })
+        .catch(() => {});
+
+      fetchTanaman(false);
     }, [fetchTanaman])
   );
 

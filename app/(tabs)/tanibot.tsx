@@ -39,7 +39,7 @@ const TypingIndicator = () => {
     <Animated.View style={[styles.bubbleWrapperLeft, { marginTop: 8, opacity: fadeAnim }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Image
-          source={require('../../assets/images/tanibot.png')}
+          source={require('../../assets/images/navbar/chatbot.svg')}
           style={[styles.messageBotAvatar, { marginBottom: 0 }]}
           contentFit="contain"
         />
@@ -98,7 +98,7 @@ const ChatMessageItem = memo(({ item }: { item: ChatMessage }) => {
       {!isUser ? (
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
           <Image
-            source={require('../../assets/images/tanibot.png')}
+            source={require('../../assets/images/navbar/chatbot.svg')}
             style={styles.messageBotAvatar}
             contentFit="contain"
           />
@@ -321,7 +321,7 @@ export default function TanibotScreen() {
           <View style={styles.headerLeft}>
             <View style={styles.headerAvatarContainer}>
               <Image
-                source={require('../../assets/images/tanibot.png')}
+                source={require('../../assets/images/navbar/chatbot.svg')}
                 style={styles.headerAvatar}
                 contentFit="contain"
               />
@@ -358,7 +358,7 @@ export default function TanibotScreen() {
                   <View style={styles.welcomeContainer}>
                     <View style={styles.welcomeIconWrapper}>
                       <Image
-                        source={require('../../assets/images/tanibot.png')}
+                        source={require('../../assets/images/icontampilanawal/seedling-halo.svg')}
                         style={styles.welcomeMascotImage}
                         contentFit="contain"
                       />
@@ -536,9 +536,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   welcomeIconWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     backgroundColor: '#E8F5E9',
     alignItems: 'center',
     justifyContent: 'center',
@@ -547,8 +547,8 @@ const styles = StyleSheet.create({
     borderColor: '#C8E6C9',
   },
   welcomeMascotImage: {
-    width: 80,
-    height: 80,
+    width: 76,
+    height: 86,
   },
   welcomeTitle: {
     fontSize: 20,

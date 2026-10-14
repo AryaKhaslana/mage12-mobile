@@ -25,8 +25,14 @@ export const logoutUser = async () => {
   try {
     await SecureStore.deleteItemAsync("userToken");
     await SecureStore.deleteItemAsync("userData");
-    await AsyncStorage.removeItem("dashboard_weather");
-    await AsyncStorage.removeItem("dashboard_tanaman");
+    await AsyncStorage.multiRemove([
+      "dashboard_weather",
+      "dashboard_tanaman",
+      "profile_posts_cache",
+      "profile_achievements_cache",
+      "profile_riwayat_cache",
+      "tanibot_history",
+    ]);
     await GoogleSignin.signOut().catch(() => null);
     router.replace("/(auth)/login");
   } catch (error) {
@@ -383,7 +389,7 @@ export const updateTanaman = async (id: number, data: { jenisTanaman?: string; n
 };
 
 // ===== PROFIL PUBLIK PENGGUNA LAIN =====
-// ⚠️ Endpoint di bawah BELUM ada di CONTRACT.md — diasumsikan, sesuaikan kalau backend beda.
+// Catatan: Endpoint di bawah diasumsikan sesuai CONTRACT.md, sesuaikan kalau backend beda.
 
 export interface PublicUserProfile {
   id: number;

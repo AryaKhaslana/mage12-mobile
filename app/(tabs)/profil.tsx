@@ -1,7 +1,8 @@
 import * as SecureStore from "expo-secure-store";
-import React, { useCallback, useState, useEffect } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, RefreshControl, FlatList, StyleSheet, Text, View, Animated } from 'react-native';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, RefreshControl, FlatList, StyleSheet, Text, View, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from 'expo-haptics';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +11,8 @@ import { router, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
 import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser } from '../../services/api';
 import { getRelativeTime } from "../../utils/format";
+import { useNotification } from '../../components/NotificationContext';
+import PlantIllustration from '../../components/PlantIllustration';
 
 // ===== Design tokens (sesuai design.md + mockup profil) =====
 const C = {
@@ -60,6 +63,15 @@ const getRankTitle = (level: number) => {
   if (level >= 4) return "Juragan Panen";
   if (level >= 2) return "Tangan Dingin";
   return "Petani Balkon";
+};
+
+const getAchievementIcon = (kode: string) => {
+  if (kode === "panen_pertama" || kode === "panen_lima") return "agriculture";
+  if (kode === "panen_sepuluh") return "emoji-events";
+  if (kode === "kolektor") return "eco";
+  if (kode === "streak_tujuh") return "local-fire-department";
+  if (kode === "streak_tigapuluh") return "whatshot";
+  return "military-tech";
 };
 
 const BotanicBanner = () => (
@@ -119,6 +131,8 @@ const EmptyState = ({ icon, title, subtitle }: { icon: any; title: string; subti
 
 export default function ProfilScreen() {
   const insets = useSafeAreaInsets();
+  const { showNotification } = useNotification();
+
   const [userData, setUserData] = useState<any>(null);
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [achievementsData, setAchievementsData] = useState<AchievementResponse | null>(null);
@@ -137,40 +151,84 @@ export default function ProfilScreen() {
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
 
-  // Fast Cache-First Loader: Langsung tampilkan avatar & profil dari storage lokal (< 50ms)
+  // Modal Pencapaian Neoclay
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+
+  // Stale Closure Prevention & Anti-Spam Refs
+  const userDataRef = useRef<any>(null);
+  const hasPostsRef = useRef<boolean>(false);
+  const isFetchingRef = useRef<boolean>(false);
+  const likeLockRef = useRef<Record<number, boolean>>({});
+
+  useEffect(() => {
+    userDataRef.current = userData;
+  }, [userData]);
+
+  useEffect(() => {
+    hasPostsRef.current = posts.length > 0;
+  }, [posts.length]);
+
+  // Fast Cache-First Loader: 0ms render dari local storage
   useEffect(() => {
     const loadCache = async () => {
       try {
-        const cachedUser = await SecureStore.getItemAsync("userData");
-        const cachedTanaman = await AsyncStorage.getItem("dashboard_tanaman");
+        const [cachedUser, cachedTanaman, cachedPosts, cachedAch, cachedRiwayat] = await Promise.all([
+          SecureStore.getItemAsync("userData"),
+          AsyncStorage.getItem("dashboard_tanaman"),
+          AsyncStorage.getItem("profile_posts_cache"),
+          AsyncStorage.getItem("profile_achievements_cache"),
+          AsyncStorage.getItem("profile_riwayat_cache"),
+        ]);
+
         if (cachedUser) {
           const parsed = JSON.parse(cachedUser);
           setUserData(parsed);
+          userDataRef.current = parsed;
           setIsLoading(false);
         }
         if (cachedTanaman) {
           setTanamanList(JSON.parse(cachedTanaman));
         }
+        if (cachedPosts) {
+          const parsedPosts: CommunityPost[] = JSON.parse(cachedPosts);
+          setPosts(parsedPosts);
+          hasPostsRef.current = parsedPosts.length > 0;
+          const initialLikes: Record<number, { liked: boolean; count: number }> = {};
+          parsedPosts.forEach((p) => {
+            initialLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
+          });
+          setLikes(initialLikes);
+          setIsLoadingPosts(false);
+        }
+        if (cachedAch) {
+          setAchievementsData(JSON.parse(cachedAch));
+        }
+        if (cachedRiwayat) {
+          setRiwayatPanen(JSON.parse(cachedRiwayat));
+        }
       } catch (e) {
-        console.warn("Failed reading cache in profile:", e);
+        console.warn("Failed reading profile cache:", e);
       }
     };
     loadCache();
   }, []);
 
   const fetchAllData = useCallback(async (isRefresh = false) => {
+    if (isFetchingRef.current && !isRefresh) return;
+    isFetchingRef.current = true;
+
     if (isRefresh) {
       setIsRefreshing(true);
-    } else if (!userData) {
+    } else if (!userDataRef.current) {
       setIsLoading(true);
     }
-    if (posts.length === 0) {
+    if (!hasPostsRef.current) {
       setIsLoadingPosts(true);
     }
 
     try {
-      // 1. Tentukan target username seawal mungkin dari state atau cache
-      let targetUsername = userData?.username;
+      // 1. Tentukan target username seawal mungkin dari ref atau SecureStore
+      let targetUsername = userDataRef.current?.username;
       if (!targetUsername) {
         try {
           const cached = await SecureStore.getItemAsync("userData");
@@ -180,12 +238,14 @@ export default function ProfilScreen() {
         } catch {}
       }
 
-      // 2. Fetch postingan user secara PARALEL (Hancurkan Waterfall!)
+      // 2. Fetch postingan user secara PARALEL
       const fetchPostsAsync = async (uName: string) => {
         try {
           const postsRes = await getUserCommunityPosts(uName, 1, 20);
           if (postsRes?.data) {
             setPosts(postsRes.data);
+            hasPostsRef.current = postsRes.data.length > 0;
+            AsyncStorage.setItem("profile_posts_cache", JSON.stringify(postsRes.data)).catch(() => {});
             const initialLikes: Record<number, { liked: boolean; count: number }> = {};
             postsRes.data.forEach((p: CommunityPost) => {
               initialLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
@@ -211,40 +271,69 @@ export default function ProfilScreen() {
       if (userRes?.data?.data) {
         const freshUser = userRes.data.data;
         setUserData(freshUser);
+        userDataRef.current = freshUser;
         SecureStore.setItemAsync("userData", JSON.stringify(freshUser)).catch(console.error);
-        setIsLoading(false); // Lepas skeleton profil atas seketika!
+        setIsLoading(false);
 
         // Jika tadi belum punya target username atau username berubah, fetch sekarang
         if (!postsPromise || freshUser.username !== targetUsername) {
           postsPromise = fetchPostsAsync(freshUser.username);
         }
       } else {
-        if (!isRefresh && !userData) Alert.alert("Gagal Memuat Profil", "Gagal memuat data profil kamu.");
+        if (!isRefresh && !userDataRef.current) {
+          showNotification("Gagal Memuat Profil", "Gagal memuat data profil kamu.", "error");
+        }
       }
 
       if (tanamanRes?.data?.data) {
         setTanamanList(tanamanRes.data.data);
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(tanamanRes.data.data)).catch(() => {});
       }
-      if (achRes) setAchievementsData(achRes);
+      if (achRes) {
+        setAchievementsData(achRes);
+        AsyncStorage.setItem("profile_achievements_cache", JSON.stringify(achRes)).catch(() => {});
+      }
 
       // Tunggu posts selesai jika masih diproses
       if (postsPromise) await postsPromise;
     } catch (error) {
       console.error("Gagal mengambil data profil:", error);
-      Alert.alert("Error", "Terjadi kesalahan saat memuat profil.");
+      showNotification("Error", "Terjadi kesalahan saat memuat profil.", "error");
     } finally {
       setIsLoading(false);
       setIsLoadingPosts(false);
       setIsRefreshing(false);
+      isFetchingRef.current = false;
     }
-  }, [userData, posts.length]);
+  }, [showNotification]);
 
   useFocusEffect(
     useCallback(() => {
+      // 0ms instant sync dari local cache saat kembali dari edit profil / screen lain
+      const syncFocusCache = async () => {
+        try {
+          const [cachedUser, cachedTanaman] = await Promise.all([
+            SecureStore.getItemAsync("userData"),
+            AsyncStorage.getItem("dashboard_tanaman"),
+          ]);
+          if (cachedUser) {
+            const parsed = JSON.parse(cachedUser);
+            setUserData(parsed);
+            userDataRef.current = parsed;
+            setIsLoading(false);
+          }
+          if (cachedTanaman) {
+            setTanamanList(JSON.parse(cachedTanaman));
+          }
+        } catch (e) {
+          console.warn("Failed syncing focus cache in profile:", e);
+        }
+      };
+
+      syncFocusCache();
       fetchAllData();
       return () => {};
-    }, [])
+    }, [fetchAllData])
   );
 
   const onRefresh = () => {
@@ -252,36 +341,52 @@ export default function ProfilScreen() {
   };
 
   const handleLike = async (postId: number) => {
+    if (likeLockRef.current[postId]) return;
+    likeLockRef.current[postId] = true;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
+    const currentLike = likes[postId] || { liked: false, count: 0 };
+    const nextLiked = !currentLike.liked;
+    const nextCount = currentLike.liked ? Math.max(0, currentLike.count - 1) : currentLike.count + 1;
+
+    setLikes((prev) => ({
+      ...prev,
+      [postId]: {
+        liked: nextLiked,
+        count: nextCount,
+      },
+    }));
+
     try {
-      setLikes((prev) => {
-        const curr = prev[postId] || { liked: false, count: 0 };
-        return {
-          ...prev,
-          [postId]: {
-            liked: !curr.liked,
-            count: curr.liked ? Math.max(0, curr.count - 1) : curr.count + 1,
-          },
-        };
-      });
       const result = await toggleCommunityLike(postId);
       setLikes((prev) => ({
         ...prev,
         [postId]: { liked: result.liked, count: result.jumlahLike },
       }));
     } catch (e) {
-      console.error(e);
+      console.error("Error toggle like:", e);
+      setLikes((prev) => ({
+        ...prev,
+        [postId]: currentLike,
+      }));
+      showNotification("Gagal", "Gagal menyukai postingan.", "error");
+    } finally {
+      setTimeout(() => {
+        likeLockRef.current[postId] = false;
+      }, 300);
     }
   };
 
   const fetchRiwayatPanen = async () => {
-    setIsLoadingRiwayat(true);
+    if (riwayatPanen.length === 0) {
+      setIsLoadingRiwayat(true);
+    }
     try {
       const res = await api.get("/tanaman/riwayat");
-      if (res.data?.data) {
-        setRiwayatPanen(res.data.data);
-      } else if (res.data) {
-        setRiwayatPanen(res.data);
-      }
+      const data = res.data?.data || res.data || [];
+      setRiwayatPanen(data);
+      AsyncStorage.setItem("profile_riwayat_cache", JSON.stringify(data)).catch(() => {});
     } catch (err) {
       console.error("Gagal ambil riwayat panen", err);
     } finally {
@@ -299,6 +404,27 @@ export default function ProfilScreen() {
   const followerCount = userData?.jumlahPengikut ?? 0;
   const mengikutiCount = userData?.jumlahMengikuti ?? 0;
   const memberSince = userData?.createdAt ? new Date(userData.createdAt).getFullYear() : null;
+
+  const navigateToDetail = (post: CommunityPost) => {
+    const enrichedPost = {
+      ...post,
+      user_nama: post.user_nama || post.author?.nama || nameFallback,
+      userAvatar: post.userAvatar || post.author?.avatarUrl || avatarUrl,
+      username: post.username || post.author?.username || username,
+      isOwner: true,
+      isLiked: likes[post.id]?.liked ?? !!post.isLiked,
+      jumlahLike: likes[post.id]?.count ?? post.jumlahLike ?? 0,
+    };
+
+    router.push({
+      pathname: "/detail-komunitas",
+      params: {
+        id: post.id,
+        initialData: JSON.stringify(enrichedPost),
+        initialPost: JSON.stringify(enrichedPost),
+      },
+    } as any);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -369,7 +495,7 @@ export default function ProfilScreen() {
             </View>
           ) : (
             <Text style={[styles.bio, !userData?.bio && { fontStyle: "italic" }]}>
-              {userData?.bio || "Belum ada bio ✍️"}
+              {userData?.bio || "Belum ada bio"}
               {memberSince ? ` | Anggota sejak ${memberSince}.` : ""}
             </Text>
           )}
@@ -409,7 +535,7 @@ export default function ProfilScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.streakOverline}>RAWAT KONSISTEN</Text>
               <Text style={styles.streakTitle} numberOfLines={1}>
-                {streak > 0 ? `Streak ${streak} Hari Tanpa Henti 🔥` : "Belum ada streak aktif"}
+                {streak > 0 ? `Streak ${streak} Hari Tanpa Henti` : "Belum ada streak aktif"}
               </Text>
             </View>
           </View>
@@ -467,7 +593,7 @@ export default function ProfilScreen() {
                     </View>
 
                     <Pressable
-                      onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id, initialData: JSON.stringify(post) } } as any)}
+                      onPress={() => navigateToDetail(post)}
                       style={({ pressed }) => pressed && { opacity: 0.85 }}
                     >
                       {post.judul ? <Text style={styles.postTitle}>{post.judul}</Text> : null}
@@ -483,7 +609,7 @@ export default function ProfilScreen() {
                         <Text style={[styles.postActionText, like.liked && { color: C.coral }]}>{like.count} suka</Text>
                       </Pressable>
                       <Pressable
-                        onPress={() => router.push({ pathname: "/detail-komunitas", params: { id: post.id, initialData: JSON.stringify(post) } } as any)}
+                        onPress={() => navigateToDetail(post)}
                         style={styles.postAction}
                         hitSlop={8}
                       >
@@ -533,8 +659,20 @@ export default function ProfilScreen() {
                   style={({ pressed }) => [styles.plantCard, shadowSubtle, pressed && { transform: [{ scale: 0.96 }] }]}
                   onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: t.id } } as any)}
                 >
-                  <View style={styles.plantBlock}>
-                    <MaterialIcons name="eco" size={28} color={C.primary} />
+                  <View style={[styles.plantBlock, { overflow: 'hidden' }]}>
+                    {t.logTerakhir?.fotoUrl ? (
+                      <Image 
+                        source={{ uri: t.logTerakhir.fotoUrl }} 
+                        style={{ width: '100%', height: '100%' }} 
+                        contentFit="cover"
+                        transition={200}
+                      />
+                    ) : (
+                      <PlantIllustration 
+                        jenisTanaman={t.jenisTanaman} 
+                        size={56} 
+                      />
+                    )}
                   </View>
                   <View style={styles.plantNameContainer}>
                     <Text style={styles.plantName} numberOfLines={1}>
@@ -546,7 +684,7 @@ export default function ProfilScreen() {
 
               <Pressable 
                 style={({ pressed }) => [styles.plantAddCard, shadowSubtle, pressed && { transform: [{ scale: 0.96 }] }]}
-                onPress={() => router.push("/(tabs)/tanaman")}
+                onPress={() => router.push({ pathname: "/(tabs)/tanaman", params: { openModal: "true" } } as any)}
               >
                 <View style={styles.plantAddIcon}>
                   <MaterialIcons name="add" size={24} color={C.ink} />
@@ -561,22 +699,14 @@ export default function ProfilScreen() {
               {achievementsData?.achievements ? achievementsData.achievements.map((ach: Achievement, index: number) => {
                 const bgColors = [C.amber, C.primary, C.coral];
                 const bgColor = bgColors[index % bgColors.length];
-                
-                let iconName = "star";
-                if (ach.kode === "panen_pertama" || ach.kode === "panen_lima") iconName = "agriculture";
-                else if (ach.kode === "panen_sepuluh") iconName = "emoji-events";
-                else if (ach.kode === "kolektor") iconName = "eco";
-                else if (ach.kode === "streak_tujuh") iconName = "local-fire-department";
-                else if (ach.kode === "streak_tigapuluh") iconName = "whatshot";
+                const iconName = getAchievementIcon(ach.kode);
 
                 return (
                   <Pressable 
                     key={ach.kode}
                     onPress={() => {
-                      Alert.alert(
-                        ach.judul,
-                        `${ach.deskripsi}\n\nProgress: ${ach.tercapai ? "Tercapai! " : `${ach.progress}/${ach.target}`}`
-                      );
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                      setSelectedAchievement(ach);
                     }}
                     style={({ pressed }) => [
                       ach.tercapai ? [styles.achievementIcon, { backgroundColor: bgColor }, shadowSubtle] : styles.achievementIconLocked,
@@ -678,6 +808,18 @@ export default function ProfilScreen() {
               <Pressable 
                 onPress={async () => {
                   setShowLogoutConfirm(false);
+                  try {
+                    await AsyncStorage.multiRemove([
+                      "dashboard_weather",
+                      "dashboard_tanaman",
+                      "profile_posts_cache",
+                      "profile_achievements_cache",
+                      "profile_riwayat_cache",
+                      "tanibot_history",
+                    ]);
+                  } catch (e) {
+                    console.warn("Failed clearing cache on logout:", e);
+                  }
                   await logoutUser();
                 }}
                 style={({ pressed }) => [{ flex: 1, backgroundColor: C.coral, paddingVertical: 14, borderRadius: 100, alignItems: 'center', ...shadowSubtle }, pressed && { transform: [{ scale: 0.98 }] }]}
@@ -717,7 +859,7 @@ export default function ProfilScreen() {
           {/* HEADER */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top, backgroundColor: C.coral }}>
             <View>
-              <Text style={{ fontFamily: F.extra, fontSize: 24, color: "#FFFFFF" }}>Piala Panen 🏆</Text>
+              <Text style={{ fontFamily: F.extra, fontSize: 24, color: "#FFFFFF" }}>Piala Panen</Text>
               <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.coralLight }}>Tanaman yang sukses kamu rawat!</Text>
             </View>
             <Pressable onPress={() => setShowRiwayatPanen(false)} style={{ backgroundColor: C.coralLight, padding: 8, borderRadius: 100, ...shadowSubtle }}>
@@ -744,7 +886,7 @@ export default function ProfilScreen() {
               renderItem={({ item }) => (
                 <View style={{ flexDirection: 'row', backgroundColor: C.surface, borderRadius: 20, padding: 16, marginBottom: 16, ...shadowSubtle, alignItems: 'center' }}>
                   <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                    <Text style={{ fontSize: 32 }}>✨</Text>
+                    <MaterialIcons name="workspace-premium" size={32} color={C.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontFamily: F.extra, fontSize: 18, color: C.ink }}>{item.nickname || item.jenisTanaman}</Text>
@@ -755,6 +897,77 @@ export default function ProfilScreen() {
               )}
             />
           )}
+        </View>
+      </Modal>
+
+      {/* MODAL PENCAPAIAN NEOCLAY */}
+      <Modal visible={!!selectedAchievement} transparent animationType="fade" onRequestClose={() => setSelectedAchievement(null)}>
+        <View style={styles.modalBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedAchievement(null)} />
+          <View style={[styles.neoclayModalCard, shadowCard]}>
+            {selectedAchievement && (() => {
+              const iconName = getAchievementIcon(selectedAchievement.kode);
+              const pct = Math.min(100, Math.round((selectedAchievement.progress / selectedAchievement.target) * 100));
+              const isDone = selectedAchievement.tercapai;
+
+              return (
+                <>
+                  <View style={[styles.achModalIconWrapper, isDone ? { backgroundColor: C.amberLight, borderColor: C.amber } : { backgroundColor: C.container, borderColor: C.outline }]}>
+                    <MaterialIcons
+                      name={iconName as any}
+                      size={44}
+                      color={isDone ? C.amberText : C.muted}
+                    />
+                  </View>
+
+                  <Text style={styles.achModalTitle}>{selectedAchievement.judul}</Text>
+                  <Text style={styles.achModalDesc}>{selectedAchievement.deskripsi}</Text>
+
+                  {/* PROGRESS BAR CONTAINER */}
+                  <View style={styles.achProgressCard}>
+                    <View style={styles.achProgressHeader}>
+                      <Text style={styles.achProgressLabel}>Kemajuan Target</Text>
+                      <Text style={[styles.achProgressPct, isDone && { color: C.primary }]}>
+                        {isDone ? "Tercapai" : `${pct}%`}
+                      </Text>
+                    </View>
+
+                    <View style={styles.achProgressBarTrack}>
+                      <View style={[styles.achProgressBarFill, { width: `${pct}%`, backgroundColor: isDone ? C.amber : C.primary }]} />
+                    </View>
+
+                    <View style={styles.achProgressFooter}>
+                      <Text style={styles.achProgressCount}>
+                        {selectedAchievement.progress} dari {selectedAchievement.target}
+                      </Text>
+                      <View style={[styles.achStatusBadge, isDone ? { backgroundColor: C.primaryLight } : { backgroundColor: C.container }]}>
+                        <MaterialIcons
+                          name={isDone ? "check-circle" : "hourglass-empty"}
+                          size={14}
+                          color={isDone ? C.primary : C.muted}
+                        />
+                        <Text style={[styles.achStatusText, isDone ? { color: C.primaryDark } : { color: C.muted }]}>
+                          {isDone ? "Selesai" : `${Math.max(0, selectedAchievement.target - selectedAchievement.progress)} lagi`}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* ACTION BUTTON */}
+                  <Pressable
+                    onPress={() => setSelectedAchievement(null)}
+                    style={({ pressed }) => [
+                      styles.achModalCloseBtn,
+                      shadowSubtle,
+                      pressed && { transform: [{ scale: 0.98 }] },
+                    ]}
+                  >
+                    <Text style={styles.achModalCloseText}>Tutup</Text>
+                  </Pressable>
+                </>
+              );
+            })()}
+          </View>
         </View>
       </Modal>
 
@@ -1117,5 +1330,118 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: F.extra,
     color: C.coral,
-  }
+  },
+
+  // Modal Pencapaian Neoclay
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(18, 57, 36, 0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  neoclayModalCard: {
+    width: "100%",
+    backgroundColor: C.surface,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: C.outline,
+    padding: 24,
+    alignItems: "center",
+  },
+  achModalIconWrapper: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  achModalTitle: {
+    fontSize: 20,
+    fontFamily: F.extra,
+    color: C.ink,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  achModalDesc: {
+    fontSize: 14,
+    fontFamily: F.medium,
+    color: C.muted,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  achProgressCard: {
+    width: "100%",
+    backgroundColor: C.bg,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: C.outline,
+    padding: 16,
+    marginBottom: 20,
+  },
+  achProgressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  achProgressLabel: {
+    fontSize: 12,
+    fontFamily: F.bold,
+    color: C.ink,
+  },
+  achProgressPct: {
+    fontSize: 13,
+    fontFamily: F.extra,
+    color: C.amberText,
+  },
+  achProgressBarTrack: {
+    height: 10,
+    backgroundColor: "#E8E5DA",
+    borderRadius: 5,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  achProgressBarFill: {
+    height: "100%",
+    borderRadius: 5,
+  },
+  achProgressFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  achProgressCount: {
+    fontSize: 12,
+    fontFamily: F.medium,
+    color: C.muted,
+  },
+  achStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  achStatusText: {
+    fontSize: 11,
+    fontFamily: F.bold,
+  },
+  achModalCloseBtn: {
+    width: "100%",
+    backgroundColor: C.primary,
+    paddingVertical: 14,
+    borderRadius: 100,
+    alignItems: "center",
+  },
+  achModalCloseText: {
+    fontSize: 16,
+    fontFamily: F.extra,
+    color: "#FFFFFF",
+  },
 });

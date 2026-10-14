@@ -86,21 +86,22 @@ export default function DetailKomunitasScreen() {
   const { showNotification } = useNotification();
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
-  const { id, initialData } = useLocalSearchParams();
+  const { id, initialData, initialPost } = useLocalSearchParams();
+  const rawInitial = (initialData || initialPost) as string | undefined;
   const postId = Number(id);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [post, setPost] = useState<CommunityPostDetail | null>(() => {
-    if (initialData && typeof initialData === 'string') {
+    if (rawInitial && typeof rawInitial === 'string') {
       try {
-        const parsed = JSON.parse(initialData);
+        const parsed = JSON.parse(rawInitial);
         return {
           ...parsed,
           jumlahKomentar: parsed.jumlahKomentar ?? 0,
           jumlahLike: parsed.jumlahLike ?? 0,
           isLiked: !!parsed.isLiked,
-          isOwner: false,
+          isOwner: parsed.isOwner ?? false,
         };
       } catch {
         return null;
@@ -110,7 +111,7 @@ export default function DetailKomunitasScreen() {
   });
   const [comments, setComments] = useState<CommunityComment[]>([]);
   
-  const [isLoading, setIsLoading] = useState(() => !initialData);
+  const [isLoading, setIsLoading] = useState(() => !rawInitial);
   const [isError, setIsError] = useState(false);
 
   const [page, setPage] = useState(1);

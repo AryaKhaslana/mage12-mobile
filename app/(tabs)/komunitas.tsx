@@ -726,7 +726,6 @@ export default function KomunitasScreen() {
   };
 
   const handleLike = useCallback(async (postId: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLikes((prev) => {
       const curr = prev[postId] || { liked: false, count: 0 };
       return {
@@ -866,7 +865,6 @@ export default function KomunitasScreen() {
             <Pressable
               onPress={() => {
                 if (activeTab !== "terbaru") {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setActiveTab("terbaru");
                 }
               }}
@@ -894,7 +892,6 @@ export default function KomunitasScreen() {
             <Pressable
               onPress={() => {
                 if (activeTab !== "terdekat") {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setActiveTab("terdekat");
                 }
               }}

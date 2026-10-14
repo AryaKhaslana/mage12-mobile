@@ -123,7 +123,6 @@ export default function CuacaScreen() {
   }, [fetchWeather]);
 
   const handleBack = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 

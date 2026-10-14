@@ -777,7 +777,6 @@ export default function DetailTanamanModal() {
                 <TouchableOpacity 
                   style={styles.toggleLogsButton}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setShowAllLogs(prev => !prev);
                   }}
                   activeOpacity={0.7}

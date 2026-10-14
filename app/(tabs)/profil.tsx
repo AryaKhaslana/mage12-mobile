@@ -2,7 +2,6 @@ import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, RefreshControl, FlatList, StyleSheet, Text, View, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from 'expo-haptics';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -343,8 +342,6 @@ export default function ProfilScreen() {
   const handleLike = async (postId: number) => {
     if (likeLockRef.current[postId]) return;
     likeLockRef.current[postId] = true;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
     const currentLike = likes[postId] || { liked: false, count: 0 };
     const nextLiked = !currentLike.liked;
@@ -705,7 +702,6 @@ export default function ProfilScreen() {
                   <Pressable 
                     key={ach.kode}
                     onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                       setSelectedAchievement(ach);
                     }}
                     style={({ pressed }) => [

@@ -3,7 +3,6 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import * as Haptics from "expo-haptics";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -300,7 +299,6 @@ export default function ProfilPenggunaScreen() {
 
   const handleTabChange = (tab: "postingan" | "kebun") => {
     if (tab !== activeTab) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setActiveTab(tab);
     }
   };
@@ -320,8 +318,6 @@ export default function ProfilPenggunaScreen() {
     const targetUserId = profile?.id ?? (params.userId ? Number(params.userId) : null);
     if (!targetUserId || followLockRef.current) return;
     followLockRef.current = true;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const prevFollowing = isFollowing;
     const prevCount = followerCount;
@@ -386,7 +382,6 @@ export default function ProfilPenggunaScreen() {
   const handleLike = async (postId: number) => {
     if (likeLockRef.current.has(postId)) return;
     likeLockRef.current.add(postId);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const prev = likes[postId] ?? { liked: false, count: 0 };
     const next = { liked: !prev.liked, count: Math.max(0, prev.count + (prev.liked ? -1 : 1)) };

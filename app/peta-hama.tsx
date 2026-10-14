@@ -5,7 +5,6 @@ import { router, useFocusEffect, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
-import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -428,7 +427,6 @@ export default function PetaHamaScreen() {
 
   const handleFilterChange = (newFilter: string) => {
     if (newFilter === filter) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setFilter(newFilter);
     filterRef.current = newFilter;
 
@@ -444,7 +442,6 @@ export default function PetaHamaScreen() {
   };
 
   const handleRecenter = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const { lat, lng } = userCoordsRef.current;
     const js = `if (window.recenterMap) { window.recenterMap(${lat}, ${lng}); } true;`;
     webViewRef.current?.injectJavaScript(js);

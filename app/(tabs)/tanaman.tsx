@@ -16,7 +16,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import * as Haptics from "expo-haptics";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import PlantIllustration from "../../components/PlantIllustration";
@@ -380,7 +379,6 @@ export default function TanamanScreen() {
           pressed && styles.fabPressed,
         ]}
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setModalVisible(true);
         }}
         accessibilityLabel="Tanam Baru"

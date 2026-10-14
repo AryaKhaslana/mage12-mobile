@@ -175,17 +175,6 @@ export default function IndexScreen() {
     };
   }, []);
 
-  const triggerLightHaptic = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-  };
-
-  const triggerMediumHaptic = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-  };
 
   const navigateToFinalRoute = () => {
     if (isNavigatingRef.current) return;
@@ -306,11 +295,7 @@ export default function IndexScreen() {
     seedOpacity.value = withTiming(1, { duration: 150 });
     seedRotation.value = withSpring(0, { damping: 9, stiffness: 100 });
     seedScale.value = withSpring(1, { damping: 9, stiffness: 120 });
-    seedY.value = withSpring(0, { damping: 8, stiffness: 110 }, (done) => {
-      if (done) {
-        runOnJS(triggerLightHaptic)();
-      }
-    });
+    seedY.value = withSpring(0, { damping: 8, stiffness: 110 });
 
     // Micro-squash pada tanah saat benih mendarat
     soilScaleY.value = withDelay(
@@ -330,7 +315,6 @@ export default function IndexScreen() {
       withTiming(0, { duration: 320, easing: Easing.in(Easing.cubic) }, (done) => {
         if (done) {
           dropOpacity.value = withTiming(0, { duration: 40 });
-          runOnJS(triggerLightHaptic)();
 
           // Benih menyerap air embun: membesar sedikit lalu meresap ke dalam tanah
           seedScale.value = withSequence(
@@ -378,11 +362,7 @@ export default function IndexScreen() {
     pollenScale.value = withDelay(980, withSpring(1.25, { damping: 8, stiffness: 130 }));
     pollenY.value = withDelay(
       980,
-      withTiming(-42, { duration: 640, easing: Easing.out(Easing.cubic) }, (done) => {
-        if (done) {
-          runOnJS(triggerMediumHaptic)();
-        }
-      })
+      withTiming(-42, { duration: 640, easing: Easing.out(Easing.cubic) })
     );
 
     // FASE 4: ANGIN SEJUK PAGI MENGAYUN TUNAS (1250ms onwards)

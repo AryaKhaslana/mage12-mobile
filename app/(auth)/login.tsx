@@ -1,7 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useState } from "react";
+import * as Haptics from "expo-haptics";
+import React, { useState, useRef } from "react";
 import {
     ActivityIndicator,
     StyleSheet,
@@ -12,11 +13,12 @@ import {
     View,
     KeyboardAvoidingView,
     Platform,
-    ScrollView
+    ScrollView,
+    Keyboard
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNotification } from "../../components/NotificationContext";
-import api, { googleSignIn } from "../../services/api";
+import api, { googleSignIn, setAuthToken, clearAppCache } from "../../services/api";
 import { Image } from 'expo-image';
 import AuthHeader from "../../components/AuthHeader";
 
@@ -26,10 +28,13 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const authLockRef = useRef(false);
+  const emailInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
   
-  // Interaction states for mascot
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  // Interaction state for active input and mascot
   const [activeInput, setActiveInput] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -43,39 +48,81 @@ export default function LoginScreen() {
   }, [sessionExpired]);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    Keyboard.dismiss();
+    if (authLockRef.current || isSubmitting || isGoogleLoading) return;
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
       showNotification("Perhatian", "Email dan kata sandi wajib diisi ya.", "info");
       return;
     }
+
+    authLockRef.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
     try {
-      setIsLoading(true);
-      const res = await api.post("/auth/login", { email, password });
-      if (res.data.status === "success") {
-        await SecureStore.setItemAsync("userToken", res.data.data.token);
-        const loggedUser = res.data.data.user;
-        if (!loggedUser.username) {
+      setIsSubmitting(true);
+      const res = await api.post("/auth/login", { email: cleanEmail, password });
+      if (res.data?.status === "success") {
+        const token = res.data?.data?.token;
+        const loggedUser = res.data?.data?.user;
+
+        if (token) {
+          setAuthToken(token);
+          await SecureStore.setItemAsync("userToken", token);
+        }
+        if (loggedUser) {
+          await SecureStore.setItemAsync("userData", JSON.stringify(loggedUser));
+        }
+        await clearAppCache();
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+        if (!loggedUser?.username) {
           router.replace("/(auth)/profile-setup");
-        } else if (!loggedUser.latitude) {
+        } else if (!loggedUser?.latitude) {
           router.replace("/(auth)/location-setup");
         } else {
           router.replace("/(tabs)");
         }
-        showNotification("Berhasil!", `Selamat datang kembali, ${loggedUser.nama}!`, "success");
+        showNotification("Berhasil!", `Selamat datang kembali, ${loggedUser?.nama || "Petani"}!`, "success");
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        showNotification("Gagal Masuk", res.data?.message || "Gagal masuk, periksa data akun kamu.", "error");
       }
     } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       console.error(error.response?.data || error.message);
       showNotification("Gagal Masuk", error.response?.data?.message || "Terjadi gangguan koneksi, silakan coba lagi.", "error");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
+      authLockRef.current = false;
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    Keyboard.dismiss();
+    if (authLockRef.current || isSubmitting || isGoogleLoading) return;
+    authLockRef.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
+    try {
+      setIsGoogleLoading(true);
+      await clearAppCache();
+      await googleSignIn();
+    } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      showNotification("Gagal", "Google Sign In bermasalah.", "error");
+    } finally {
+      setIsGoogleLoading(false);
+      authLockRef.current = false;
     }
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#DFF3E6" }}>
       <AuthHeader 
-        isPasswordFocused={isPasswordFocused && !showPassword}
-        
-        
+        isPasswordFocused={activeInput === 'password' && !showPassword}
       />
 
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }} edges={['bottom', 'left', 'right']}>
@@ -101,6 +148,7 @@ export default function LoginScreen() {
             <View style={styles.wallCard}>
               <View style={styles.inputContainer}>
                 <TextInput
+                  ref={emailInputRef}
                   style={[styles.input, activeInput === 'email' && styles.inputFocused]}
                   placeholder="Email"
                   placeholderTextColor="#8F9B94"
@@ -108,31 +156,38 @@ export default function LoginScreen() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   onFocus={() => setActiveInput('email')}
                   onBlur={() => setActiveInput(null)}
-                  blurOnSubmit={false}
                 />
               </View>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[styles.input, activeInput === 'password' && styles.inputFocused]}
+                  ref={passwordInputRef}
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    activeInput === 'password' && styles.inputFocused
+                  ]}
                   placeholder="Kata sandi"
                   placeholderTextColor="#8F9B94"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
-                  blurOnSubmit={false}
-                  onFocus={() => {
-                    setActiveInput('password');
-                    setIsPasswordFocused(true);
-                  }}
-                  onBlur={() => {
-                    setActiveInput(null);
-                    setIsPasswordFocused(false);
-                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                  blurOnSubmit={true}
+                  onFocus={() => setActiveInput('password')}
+                  onBlur={() => setActiveInput(null)}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
+                  hitSlop={10}
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   <MaterialIcons
@@ -146,12 +201,13 @@ export default function LoginScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.primaryButton,
-                  pressed && { transform: [{ scale: 0.97 }], shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 }
+                  (isSubmitting || isGoogleLoading) && { opacity: 0.7 },
+                  pressed && !isSubmitting && !isGoogleLoading && { transform: [{ scale: 0.97 }], shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 }
                 ]}
                 onPress={handleLogin}
-                disabled={isLoading}
+                disabled={isSubmitting || isGoogleLoading}
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.primaryButtonText}>Masuk</Text>
@@ -167,21 +223,13 @@ export default function LoginScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.googleButton,
-                  pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }
+                  (isSubmitting || isGoogleLoading) && { opacity: 0.7 },
+                  pressed && !isSubmitting && !isGoogleLoading && { opacity: 0.8, transform: [{ scale: 0.97 }] }
                 ]}
-                onPress={async () => {
-                  try {
-                    setIsLoading(true);
-                    await googleSignIn();
-                  } catch (error) {
-                    showNotification("Gagal", "Google Sign In bermasalah.", "error");
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                disabled={isLoading}
+                onPress={handleGoogleSignIn}
+                disabled={isSubmitting || isGoogleLoading}
               >
-                {isLoading ? (
+                {isGoogleLoading ? (
                   <ActivityIndicator color="#123924" />
                 ) : (
                   <>
@@ -217,7 +265,7 @@ const styles = StyleSheet.create({
     flexGrow: 1, 
     justifyContent: "flex-start", 
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 48,
     paddingTop: 12,
     backgroundColor: '#FBF8F1', // Smooth transition from cloud
   },
@@ -247,6 +295,9 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: "#3FA96B",
     backgroundColor: "#FBF8F1",
+  },
+  passwordInput: {
+    paddingRight: 52,
   },
   eyeIcon: { position: "absolute", right: 16, top: 16 },
   primaryButton: {

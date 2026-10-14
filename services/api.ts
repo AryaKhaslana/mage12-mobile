@@ -25,7 +25,7 @@ export const setAuthToken = (token: string | null) => {
 
 let isLoggingOut = false;
 
-const ALL_CACHE_KEYS = [
+export const ALL_CACHE_KEYS = [
   "dashboard_weather",
   "dashboard_tanaman",
   "last_rain_notified",
@@ -44,6 +44,14 @@ const ALL_CACHE_KEYS = [
   "heatmap_cache_v1_ulat",
   "peta_hama_cache_store",
 ];
+
+export const clearAppCache = async () => {
+  try {
+    await AsyncStorage.multiRemove(ALL_CACHE_KEYS);
+  } catch (error) {
+    console.warn("Failed to clear app cache:", error);
+  }
+};
 
 const inFlightRequests = new Map<string, Promise<any>>();
 
@@ -100,7 +108,7 @@ export const logoutUser = async () => {
   try {
     await SecureStore.deleteItemAsync("userToken");
     await SecureStore.deleteItemAsync("userData");
-    await AsyncStorage.multiRemove(ALL_CACHE_KEYS);
+    await clearAppCache();
     await GoogleSignin.signOut().catch(() => null);
     router.replace("/(auth)/login");
   } catch (error) {

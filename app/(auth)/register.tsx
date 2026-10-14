@@ -1,7 +1,9 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import * as SecureStore from "expo-secure-store";
+import * as Haptics from "expo-haptics";
+import React, { useState, useRef, useEffect } from "react";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -13,14 +15,14 @@ import {
     TextInput,
     TouchableOpacity,
     Pressable,
-    View 
+    View,
+    Keyboard
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api, { googleSignIn } from "../../services/api";
+import api, { googleSignIn, setAuthToken, clearAppCache } from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
 import { Image } from 'expo-image';
 import AuthHeader from "../../components/AuthHeader";
-import * as SecureStore from "expo-secure-store";
 
 export default function RegisterScreen() {
   const { showNotification } = useNotification();
@@ -32,15 +34,83 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTnc, setAgreeTnc] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const authLockRef = useRef(false);
 
-  // Interaction states for mascot
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  // GPS preload coords
+  const coordsRef = useRef<{ latitude: number | null; longitude: number | null }>({
+    latitude: null,
+    longitude: null,
+  });
+
+  // TextInput refs for chained navigation
+  const namaInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const usernameInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
+  const confirmPasswordInputRef = useRef<TextInput>(null);
+
+  // Interaction state for active input and mascot
   const [activeInput, setActiveInput] = useState<string | null>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const preloadLocation = async () => {
+      try {
+        const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
+        let status = existingStatus;
+        if (status !== "granted") {
+          const permRes = await Location.requestForegroundPermissionsAsync();
+          status = permRes.status;
+        }
+        if (status !== "granted" || !isMounted) return;
+
+        // Ambil posisi terakhir yang tersimpan terlebih dahulu (instan 0ms)
+        const lastKnown = await Location.getLastKnownPositionAsync();
+        if (lastKnown?.coords && isMounted) {
+          coordsRef.current = {
+            latitude: lastKnown.coords.latitude,
+            longitude: lastKnown.coords.longitude,
+          };
+        }
+
+        // Ambil posisi presisi di background tanpa memblokir form
+        Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        })
+          .then((loc) => {
+            if (loc?.coords && isMounted) {
+              coordsRef.current = {
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              };
+            }
+          })
+          .catch(() => {});
+      } catch (locErr) {
+        console.warn("GPS preload silent error:", locErr);
+      }
+    };
+
+    preloadLocation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleRegister = async () => {
-    if (!nama || !email || !username || !password || !confirmPassword) {
+    Keyboard.dismiss();
+    if (authLockRef.current || isSubmitting || isGoogleLoading) return;
+
+    const cleanNama = nama.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanUsername = username.replace(/\s+/g, "").toLowerCase();
+
+    if (!cleanNama || !cleanEmail || !cleanUsername || !password || !confirmPassword) {
       showNotification("Perhatian", "Silakan lengkapi semua data formulir terlebih dahulu.", "info");
       return;
     }
@@ -53,69 +123,104 @@ export default function RegisterScreen() {
       return;
     }
 
+    authLockRef.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
     try {
-      setIsLoading(true);
-      
-      let lat = null;
-      let lng = null;
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === "granted") {
-          const locPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
-          const location = await Promise.race([locPromise, timeoutPromise]);
-          if (location?.coords) {
-            lat = location.coords.latitude;
-            lng = location.coords.longitude;
-          }
-        }
-      } catch (locErr) {
-        console.warn("GPS resolution error during registration:", locErr);
-      }
+      setIsSubmitting(true);
 
       const payload = {
-        nama,
-        email,
-        username,
+        nama: cleanNama,
+        email: cleanEmail,
+        username: cleanUsername,
         password,
-        latitude: lat,
-        longitude: lng,
+        latitude: coordsRef.current.latitude,
+        longitude: coordsRef.current.longitude,
       };
 
       const res = await api.post("/auth/register", payload);
-      if (res.data.status === "success") {
+      if (res.data?.status === "success") {
+        const directToken = res.data?.data?.token;
+        const directUser = res.data?.data?.user;
+
+        if (directToken) {
+          setAuthToken(directToken);
+          await SecureStore.setItemAsync("userToken", directToken);
+          if (directUser) {
+            await SecureStore.setItemAsync("userData", JSON.stringify(directUser));
+          }
+          await clearAppCache();
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          showNotification("Akun Berhasil Dibuat!", "Silakan atur foto profil dan banner kebun kamu.", "success");
+          router.replace("/(auth)/avatar-setup");
+          return;
+        }
+
         try {
           // Otomatis login agar user langsung punya sesi aktif untuk upload avatar & banner
-          const loginRes = await api.post("/auth/login", { email, password });
+          const loginRes = await api.post("/auth/login", { email: cleanEmail, password });
           if (loginRes.data?.status === "success" && loginRes.data?.data?.token) {
-            await SecureStore.setItemAsync("userToken", loginRes.data.data.token);
-            await SecureStore.setItemAsync("userData", JSON.stringify(loginRes.data.data.user));
+            const loginToken = loginRes.data.data.token;
+            const loginUser = loginRes.data.data.user;
+            setAuthToken(loginToken);
+            await SecureStore.setItemAsync("userToken", loginToken);
+            if (loginUser) {
+              await SecureStore.setItemAsync("userData", JSON.stringify(loginUser));
+            }
+            await clearAppCache();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             showNotification("Akun Berhasil Dibuat!", "Silakan atur foto profil dan banner kebun kamu.", "success");
             router.replace("/(auth)/avatar-setup");
             return;
           }
         } catch (loginErr) {
-          console.log("Auto-login error:", loginErr);
+          console.warn("Auto-login error:", loginErr);
         }
 
         // Fallback jika auto-login gagal: arahkan ke login
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         router.replace("/(auth)/login");
         showNotification("Pendaftaran Berhasil!", "Akun kamu sudah siap digunakan, silakan masuk.", "success");
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        showNotification("Gagal Mendaftar", res.data?.message || "Terjadi kesalahan saat pendaftaran, silakan coba lagi.", "error");
       }
     } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       console.error(error.response?.data || error.message);
       showNotification("Gagal Mendaftar", error.response?.data?.message || "Terjadi kesalahan saat pendaftaran, silakan coba lagi.", "error");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
+      authLockRef.current = false;
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    Keyboard.dismiss();
+    if (authLockRef.current || isSubmitting || isGoogleLoading) return;
+    authLockRef.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
+    try {
+      setIsGoogleLoading(true);
+      await clearAppCache();
+      await googleSignIn();
+    } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      showNotification("Gagal", "Google Sign In bermasalah.", "error");
+    } finally {
+      setIsGoogleLoading(false);
+      authLockRef.current = false;
     }
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#DFF3E6" }}>
       <AuthHeader 
-        isPasswordFocused={isPasswordFocused && !showPassword}
-        
-        
+        isPasswordFocused={
+          (activeInput === 'password' && !showPassword) ||
+          (activeInput === 'confirmPassword' && !showConfirmPassword)
+        }
       />
 
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }} edges={['bottom', 'left', 'right']}>
@@ -155,19 +260,24 @@ export default function RegisterScreen() {
             <View style={styles.wallCard}>
               <View style={styles.inputContainer}>
                 <TextInput
+                  ref={namaInputRef}
                   style={[styles.input, activeInput === 'nama' && styles.inputFocused]}
                   placeholder="Nama Lengkap"
                   placeholderTextColor="#8F9B94"
                   value={nama}
                   onChangeText={setNama}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                  onSubmitEditing={() => emailInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   onFocus={() => setActiveInput('nama')}
                   onBlur={() => setActiveInput(null)}
-                  blurOnSubmit={false}
                 />
               </View>
 
               <View style={styles.inputContainer}>
                 <TextInput
+                  ref={emailInputRef}
                   style={[styles.input, activeInput === 'email' && styles.inputFocused]}
                   placeholder="Email"
                   placeholderTextColor="#8F9B94"
@@ -175,47 +285,58 @@ export default function RegisterScreen() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => usernameInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   onFocus={() => setActiveInput('email')}
                   onBlur={() => setActiveInput(null)}
-                  blurOnSubmit={false}
                 />
               </View>
 
               {/* Username */}
               <View style={styles.inputContainer}>
                 <TextInput
+                  ref={usernameInputRef}
                   style={[styles.input, activeInput === 'username' && styles.inputFocused]}
                   placeholder="Username (tanpa spasi)"
                   placeholderTextColor="#8F9B94"
                   value={username}
-                  onChangeText={setUsername}
+                  onChangeText={(text) => setUsername(text.replace(/\s+/g, "").toLowerCase())}
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   onFocus={() => setActiveInput('username')}
                   onBlur={() => setActiveInput(null)}
-                  blurOnSubmit={false}
                 />
               </View>
 
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[styles.input, activeInput === 'password' && styles.inputFocused]}
+                  ref={passwordInputRef}
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    activeInput === 'password' && styles.inputFocused
+                  ]}
                   placeholder="Kata Sandi"
                   placeholderTextColor="#8F9B94"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
                   blurOnSubmit={false}
-                  onFocus={() => {
-                    setActiveInput('password');
-                    setIsPasswordFocused(true);
-                  }}
-                  onBlur={() => {
-                    setActiveInput(null);
-                    setIsPasswordFocused(false);
-                  }}
+                  onFocus={() => setActiveInput('password')}
+                  onBlur={() => setActiveInput(null)}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
+                  hitSlop={10}
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   <MaterialIcons
@@ -228,24 +349,28 @@ export default function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[styles.input, activeInput === 'confirmPassword' && styles.inputFocused]}
+                  ref={confirmPasswordInputRef}
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    activeInput === 'confirmPassword' && styles.inputFocused
+                  ]}
                   placeholder="Konfirmasi Kata Sandi"
                   placeholderTextColor="#8F9B94"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
-                  blurOnSubmit={false}
-                  onFocus={() => {
-                    setActiveInput('confirmPassword');
-                    setIsPasswordFocused(true);
-                  }}
-                  onBlur={() => {
-                    setActiveInput(null);
-                    setIsPasswordFocused(false);
-                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={handleRegister}
+                  blurOnSubmit={true}
+                  onFocus={() => setActiveInput('confirmPassword')}
+                  onBlur={() => setActiveInput(null)}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
+                  hitSlop={10}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   <MaterialIcons
@@ -278,12 +403,13 @@ export default function RegisterScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.primaryButton,
-                  pressed && { transform: [{ scale: 0.97 }], shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 }
+                  (isSubmitting || isGoogleLoading) && { opacity: 0.7 },
+                  pressed && !isSubmitting && !isGoogleLoading && { transform: [{ scale: 0.97 }], shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 }
                 ]}
                 onPress={handleRegister}
-                disabled={isLoading}
+                disabled={isSubmitting || isGoogleLoading}
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.primaryButtonText}>Daftar & Lanjutkan</Text>
@@ -299,21 +425,13 @@ export default function RegisterScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.googleButton,
-                  pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }
+                  (isSubmitting || isGoogleLoading) && { opacity: 0.7 },
+                  pressed && !isSubmitting && !isGoogleLoading && { opacity: 0.8, transform: [{ scale: 0.97 }] }
                 ]}
-                onPress={async () => {
-                  try {
-                    setIsLoading(true);
-                    await googleSignIn();
-                  } catch (error) {
-                    showNotification("Gagal", "Google Sign In bermasalah.", "error");
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                disabled={isLoading}
+                onPress={handleGoogleSignIn}
+                disabled={isSubmitting || isGoogleLoading}
               >
-                {isLoading ? (
+                {isGoogleLoading ? (
                   <ActivityIndicator color="#123924" />
                 ) : (
                   <>
@@ -378,7 +496,7 @@ const styles = StyleSheet.create({
     flexGrow: 1, 
     justifyContent: "flex-start", 
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 48,
     paddingTop: 12,
     backgroundColor: '#FBF8F1', // Smooth transition from cloud
   },
@@ -408,6 +526,9 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: "#3FA96B",
     backgroundColor: "#FBF8F1",
+  },
+  passwordInput: {
+    paddingRight: 52,
   },
   eyeIcon: { position: "absolute", right: 16, top: 16 },
   checkboxContainer: {

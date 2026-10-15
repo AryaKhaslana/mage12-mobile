@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
 
 import { useNotification } from "../components/NotificationContext";
-import PlantIllustration from "../components/PlantIllustration";
+import { getPlantImage } from "../constants/plantImages";
 import {
   CommunityPost,
   getPublicUserProfile,
@@ -669,7 +669,13 @@ export default function ProfilPenggunaScreen() {
                           transition={200}
                         />
                       ) : (
-                        <PlantIllustration jenisTanaman={t.jenisTanaman} size={64} />
+                        <Image
+                          source={getPlantImage(t.jenisTanaman)}
+                          style={StyleSheet.absoluteFill}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
+                          transition={200}
+                        />
                       )}
                       <View style={[styles.plantStatus, { backgroundColor: s.bg }, s.bg === C.surface && { borderWidth: 1, borderColor: C.outline }]}>
                         <Text style={[styles.plantStatusText, { color: s.fg }]}>{s.label}</Text>

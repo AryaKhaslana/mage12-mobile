@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
-import PlantIllustration from "../../components/PlantIllustration";
+import { getPlantImage } from "../../constants/plantImages";
 import api, { TanamanDetail } from "../../services/api";
 
 const JENIS_TANAMAN_ENUM = [
@@ -306,14 +306,17 @@ export default function TanamanScreen() {
           {tanaman.logTerakhir?.fotoUrl ? (
             <Image 
               source={{ uri: tanaman.logTerakhir.fotoUrl }} 
+              placeholder={getPlantImage(tanaman.jenisTanaman)}
               style={{ width: '100%', height: '100%' }} 
               contentFit="cover"
               transition={200}
             />
           ) : (
-            <PlantIllustration 
-              jenisTanaman={tanaman.jenisTanaman} 
-              size={86} 
+            <Image 
+              source={getPlantImage(tanaman.jenisTanaman)} 
+              style={{ width: '100%', height: '100%' }} 
+              contentFit="cover"
+              transition={200}
             />
           )}
         </View>
@@ -420,15 +423,22 @@ export default function TanamanScreen() {
                     ]}
                     onPress={() => setSelectedTanaman(jenis)}
                   >
-                    <Text
-                      style={[
-                        styles.pickerItemText,
-                        selectedTanaman === jenis &&
-                          styles.pickerItemTextActive,
-                      ]}
-                    >
-                      {jenis}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <Image
+                        source={getPlantImage(jenis)}
+                        style={{ width: 28, height: 28, borderRadius: 14 }}
+                        contentFit="cover"
+                      />
+                      <Text
+                        style={[
+                          styles.pickerItemText,
+                          selectedTanaman === jenis &&
+                            styles.pickerItemTextActive,
+                        ]}
+                      >
+                        {jenis}
+                      </Text>
+                    </View>
                     {selectedTanaman === jenis && (
                       <MaterialIcons
                         name="check-circle"
@@ -529,7 +539,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: "100%",
     aspectRatio: 1,
-    backgroundColor: "#b1f1c8" },
+    backgroundColor: "#F1F8F5" },
   cardBody: {
     padding: 12,
     flex: 1 },

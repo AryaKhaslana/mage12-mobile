@@ -11,7 +11,7 @@ import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "r
 import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser } from '../../services/api';
 import { getRelativeTime } from "../../utils/format";
 import { useNotification } from '../../components/NotificationContext';
-import PlantIllustration from '../../components/PlantIllustration';
+import { getPlantImage } from '../../constants/plantImages';
 
 // ===== Design tokens (sesuai design.md + mockup profil) =====
 const C = {
@@ -660,14 +660,17 @@ export default function ProfilScreen() {
                     {t.logTerakhir?.fotoUrl ? (
                       <Image 
                         source={{ uri: t.logTerakhir.fotoUrl }} 
+                        placeholder={getPlantImage(t.jenisTanaman)}
                         style={{ width: '100%', height: '100%' }} 
                         contentFit="cover"
                         transition={200}
                       />
                     ) : (
-                      <PlantIllustration 
-                        jenisTanaman={t.jenisTanaman} 
-                        size={56} 
+                      <Image 
+                        source={getPlantImage(t.jenisTanaman)} 
+                        style={{ width: '100%', height: '100%' }} 
+                        contentFit="cover"
+                        transition={200}
                       />
                     )}
                   </View>

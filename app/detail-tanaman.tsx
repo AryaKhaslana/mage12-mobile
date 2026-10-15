@@ -9,7 +9,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
-import PlantIllustration from '../components/PlantIllustration';
+import { getPlantImage } from '../constants/plantImages';
 import { LogAktivitas, TanamanDetail, createCommunityPost, createLog, deleteTanaman, getLogsByTanaman, getTanamanById, harvestTanaman, updateTanaman } from '../services/api';
 
 const JENIS_TANAMAN_ENUM = [
@@ -584,10 +584,11 @@ export default function DetailTanamanModal() {
             ) : latestPhotoUrl ? (
               <Image source={{ uri: latestPhotoUrl }} style={styles.heroImage} />
             ) : (
-              <PlantIllustration 
-                jenisTanaman={tanaman?.jenisTanaman} 
-                size={110} 
+              <Image 
+                source={getPlantImage(tanaman?.jenisTanaman)} 
                 style={styles.heroImage} 
+                contentFit="cover"
+                transition={200}
               />
             )}
             

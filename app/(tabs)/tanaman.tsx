@@ -22,26 +22,26 @@ import PlantIllustration from "../../components/PlantIllustration";
 import api, { TanamanDetail } from "../../services/api";
 
 const JENIS_TANAMAN_ENUM = [
-  "Padi",
-  "Jagung",
-  "Singkong",
-  "Ubi Jalar",
-  "Kedelai",
-  "Kacang Tanah",
   "Tomat",
-  "Cabai Merah",
   "Cabai Rawit",
+  "Cabai Merah",
   "Bawang Merah",
   "Bawang Putih",
-  "Kubis",
-  "Kangkung",
-  "Bayam",
   "Terong",
   "Timun",
-  "Labu Siam",
-  "Wortel",
-  "Kentang",
-  "Pisang",
+  "Bayam",
+  "Kangkung",
+  "Pakcoy",
+  "Selada",
+  "Sawi Hijau",
+  "Kale",
+  "Daun Bawang",
+  "Seledri",
+  "Kemangi",
+  "Jahe",
+  "Kunyit",
+  "Melon", 
+  "Stroberi"
 ];
 
 const PlantGridSkeleton = () => {

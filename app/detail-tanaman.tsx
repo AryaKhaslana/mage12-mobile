@@ -13,10 +13,26 @@ import PlantIllustration from '../components/PlantIllustration';
 import { LogAktivitas, TanamanDetail, createCommunityPost, createLog, deleteTanaman, getLogsByTanaman, getTanamanById, harvestTanaman, updateTanaman } from '../services/api';
 
 const JENIS_TANAMAN_ENUM = [
-  "Padi", "Jagung", "Singkong", "Ubi Jalar", "Kedelai", "Kacang Tanah", 
-  "Tomat", "Cabai Merah", "Cabai Rawit", "Bawang Merah", "Bawang Putih", 
-  "Kubis", "Kangkung", "Bayam", "Terong", "Timun", "Labu Siam", "Wortel", 
-  "Kentang", "Pisang",
+  "Tomat",
+  "Cabai Rawit",
+  "Cabai Merah",
+  "Bawang Merah",
+  "Bawang Putih",
+  "Terong",
+  "Timun",
+  "Bayam",
+  "Kangkung",
+  "Pakcoy",
+  "Selada",
+  "Sawi Hijau",
+  "Kale",
+  "Daun Bawang",
+  "Seledri",
+  "Kemangi",
+  "Jahe",
+  "Kunyit",
+  "Melon",
+  "Stroberi",
 ];
 
 const FALLBACK_THUMB = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA';
@@ -826,7 +842,10 @@ export default function DetailTanamanModal() {
 
             <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
             <ScrollView style={styles.pickerContainer}>
-              {JENIS_TANAMAN_ENUM.map((jenis) => (
+              {(editJenis && !JENIS_TANAMAN_ENUM.includes(editJenis)
+                ? [editJenis, ...JENIS_TANAMAN_ENUM]
+                : JENIS_TANAMAN_ENUM
+              ).map((jenis) => (
                 <Pressable
                   key={jenis}
                   style={({ pressed }) => [

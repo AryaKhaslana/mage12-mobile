@@ -409,6 +409,236 @@ const PLANT_THEMES: Record<string, PlantTheme> = {
       </Svg>
     ),
   },
+
+  // 21. PAKCOY (Bok Choy)
+  pakcoy: {
+    name: 'Pakcoy',
+    category: 'Sayuran Daun',
+    bgColor: '#DCFCE7',
+    accentColor: '#15803D',
+    textColor: '#14532D',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#BBF7D0" opacity={0.4} />
+        <Path d="M36 48 C20 38 22 22 34 20 C44 24 44 38 38 48 Z" fill="#15803D" stroke="#14532D" strokeWidth="1.2" />
+        <Path d="M64 48 C80 38 78 22 66 20 C56 24 56 38 62 48 Z" fill="#15803D" stroke="#14532D" strokeWidth="1.2" />
+        <Path d="M50 42 C38 30 40 14 50 12 C60 14 62 30 50 42 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1.5" />
+        <Path d="M50 15 V38" stroke="#BBF7D0" strokeWidth="2" strokeLinecap="round" fill="none" />
+        <Path d="M42 85 C36 72 32 60 36 50 C40 50 44 64 46 85 Z" fill="#F0FDF4" stroke="#86EFAC" strokeWidth="1.5" />
+        <Path d="M58 85 C64 72 68 60 64 50 C60 50 56 64 54 85 Z" fill="#F0FDF4" stroke="#86EFAC" strokeWidth="1.5" />
+        <Path d="M45 86 C42 68 44 52 50 46 C56 52 58 68 55 86 Z" fill="#FFFFFF" stroke="#86EFAC" strokeWidth="1.5" />
+      </Svg>
+    ),
+  },
+
+  // 22. SELADA (Lettuce)
+  selada: {
+    name: 'Selada',
+    category: 'Sayuran Daun',
+    bgColor: '#ECFDF5',
+    accentColor: '#059669',
+    textColor: '#064E3B',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#A7F3D0" opacity={0.4} />
+        <Path d="M22 55 C16 40 28 26 42 30 C50 20 62 22 68 30 C82 28 90 44 82 58 C86 70 74 82 60 82 C50 86 38 84 30 78 C18 72 16 62 22 55 Z" fill="#4ADE80" stroke="#15803D" strokeWidth="1.8" />
+        <Path d="M30 52 C26 42 36 34 46 36 C52 32 60 34 62 40 C72 40 74 52 68 62 C64 70 54 74 46 72 C36 72 28 62 30 52 Z" fill="#86EFAC" stroke="#16A34A" strokeWidth="1.5" />
+        <Path d="M40 54 C38 46 44 42 50 42 C56 42 60 46 58 54 C58 60 52 64 50 64 C46 64 40 60 40 54 Z" fill="#BBF7D0" stroke="#22C55E" strokeWidth="1.2" />
+        <Path d="M50 46 V60 M45 52 Q50 56 54 54" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.8} />
+      </Svg>
+    ),
+  },
+
+  // 23. SAWI HIJAU (Choy Sum / Mustard Greens)
+  'sawi hijau': {
+    name: 'Sawi Hijau',
+    category: 'Sayuran Hijau',
+    bgColor: '#DCFCE7',
+    accentColor: '#16A34A',
+    textColor: '#14532D',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#BBF7D0" opacity={0.4} />
+        <Path d="M50 86 V48" stroke="#86EFAC" strokeWidth="4" strokeLinecap="round" />
+        <Path d="M48 70 Q38 56 32 46" stroke="#86EFAC" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <Path d="M52 68 Q62 54 68 44" stroke="#86EFAC" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <Path d="M32 46 C22 38 24 22 36 22 C44 26 42 40 32 46 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1.5" />
+        <Path d="M68 44 C78 36 76 20 64 20 C56 24 58 38 68 44 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1.5" />
+        <Path d="M50 48 C38 36 40 18 50 16 C60 18 62 36 50 48 Z" fill="#16A34A" stroke="#14532D" strokeWidth="1.5" />
+        <Circle cx="48" cy="14" r="2.5" fill="#FACC15" />
+        <Circle cx="53" cy="13" r="2.2" fill="#FDE047" />
+        <Circle cx="50" cy="10" r="2" fill="#FACC15" />
+      </Svg>
+    ),
+  },
+
+  // 24. KALE (Curly Kale)
+  kale: {
+    name: 'Kale',
+    category: 'Superfood',
+    bgColor: '#ECFCCB',
+    accentColor: '#4D7C0F',
+    textColor: '#365314',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#D9F99D" opacity={0.4} />
+        <Path d="M50 86 Q50 56 50 24" stroke="#A3E635" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <Path d="M50 24 C42 16 34 22 36 30 C28 28 24 38 30 46 C22 46 22 58 32 64 C26 68 30 76 46 76 C48 76 50 68 50 58 C50 68 52 76 54 76 C70 76 74 68 68 64 C78 58 78 46 70 46 C76 38 72 28 64 30 C66 22 58 16 50 24 Z" fill="#15803D" stroke="#166534" strokeWidth="2" />
+        <Path d="M38 36 Q45 42 48 40 M36 52 Q44 54 48 50 M62 36 Q55 42 52 40 M64 52 Q56 54 52 50" stroke="#86EFAC" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity={0.7} />
+      </Svg>
+    ),
+  },
+
+  // 25. DAUN BAWANG (Scallion / Spring Onion)
+  'daun bawang': {
+    name: 'Daun Bawang',
+    category: 'Bumbu Dapur',
+    bgColor: '#F0FDF4',
+    accentColor: '#15803D',
+    textColor: '#14532D',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#DCFCE7" opacity={0.4} />
+        <Path d="M46 85 Q44 91 40 93 M50 86 V94 M54 85 Q56 91 60 93" stroke="#D97706" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        <Path d="M44 85 H56 V62 H44 Z" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.5" />
+        <Path d="M44 62 H56 V50 H44 Z" fill="#86EFAC" />
+        <Path d="M44 50 L38 18 L43 16 L48 50 Z" fill="#16A34A" stroke="#15803D" strokeWidth="1.2" />
+        <Path d="M47 50 L52 14 L56 15 L52 50 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1.2" />
+        <Path d="M51 50 L64 22 L60 20 L49 50 Z" fill="#15803D" stroke="#14532D" strokeWidth="1.2" />
+      </Svg>
+    ),
+  },
+
+  // 26. SELEDRI (Celery)
+  seledri: {
+    name: 'Seledri',
+    category: 'Bumbu Dapur',
+    bgColor: '#F0FDF4',
+    accentColor: '#16A34A',
+    textColor: '#14532D',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#DCFCE7" opacity={0.4} />
+        <Path d="M48 85 Q44 60 34 40" stroke="#86EFAC" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <Path d="M50 85 V30" stroke="#86EFAC" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+        <Path d="M52 85 Q56 60 66 40" stroke="#86EFAC" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <Path d="M34 40 C24 38 22 28 30 26 C30 32 38 32 34 40 Z" fill="#16A34A" stroke="#15803D" strokeWidth="1.2" />
+        <Path d="M32 32 C26 24 32 18 38 22 C36 28 34 30 32 32 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1.2" />
+        <Path d="M50 30 C40 26 42 14 50 16 C58 14 60 26 50 30 Z" fill="#16A34A" stroke="#15803D" strokeWidth="1.2" />
+        <Path d="M66 40 C76 38 78 28 70 26 C70 32 62 32 66 40 Z" fill="#16A34A" stroke="#15803D" strokeWidth="1.2" />
+        <Path d="M68 32 C74 24 68 18 62 22 C64 28 66 30 68 32 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1.2" />
+      </Svg>
+    ),
+  },
+
+  // 27. KEMANGI (Lemon Basil)
+  kemangi: {
+    name: 'Kemangi',
+    category: 'Herbal Aromatik',
+    bgColor: '#FEF3C7',
+    accentColor: '#D97706',
+    textColor: '#92400E',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#FDE68A" opacity={0.35} />
+        <Path d="M50 86 V32" stroke="#65A30D" strokeWidth="3.2" strokeLinecap="round" />
+        <Path d="M50 72 C32 72 26 58 38 52 C46 54 48 64 50 72 Z" fill="#22C55E" stroke="#16A34A" strokeWidth="1.5" />
+        <Path d="M50 72 C68 72 74 58 62 52 C54 54 52 64 50 72 Z" fill="#22C55E" stroke="#16A34A" strokeWidth="1.5" />
+        <Path d="M50 50 C36 50 32 38 42 32 C48 34 49 42 50 50 Z" fill="#4ADE80" stroke="#15803D" strokeWidth="1.5" />
+        <Path d="M50 50 C64 50 68 38 58 32 C52 34 51 42 50 50 Z" fill="#4ADE80" stroke="#15803D" strokeWidth="1.5" />
+        <Path d="M50 32 V18" stroke="#9333EA" strokeWidth="2.5" strokeLinecap="round" />
+        <Circle cx="47" cy="26" r="2.2" fill="#C084FC" />
+        <Circle cx="53" cy="24" r="2.2" fill="#C084FC" />
+        <Circle cx="48" cy="20" r="2" fill="#A855F7" />
+        <Circle cx="52" cy="18" r="1.8" fill="#C084FC" />
+        <Circle cx="50" cy="14" r="1.5" fill="#E9D5FF" />
+      </Svg>
+    ),
+  },
+
+  // 28. JAHE (Ginger)
+  jahe: {
+    name: 'Jahe',
+    category: 'Tanaman Obat',
+    bgColor: '#FEF3C7',
+    accentColor: '#D97706',
+    textColor: '#78350F',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#FDE68A" opacity={0.35} />
+        <Path d="M42 52 Q40 32 34 18" stroke="#16A34A" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <Path d="M34 18 C30 24 34 32 38 36 Z" fill="#22C55E" />
+        <Path d="M54 48 Q56 30 62 16" stroke="#15803D" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+        <Path d="M62 16 C66 22 62 30 58 34 Z" fill="#22C55E" />
+        <Path d="M30 68 C24 60 28 50 38 52 C44 48 52 46 60 50 C68 46 76 52 74 62 C78 68 76 78 66 80 C56 84 44 84 36 78 C28 78 26 72 30 68 Z" fill="#D97706" stroke="#92400E" strokeWidth="2" />
+        <Path d="M38 56 Q42 66 38 74" stroke="#FDE68A" strokeWidth="2" strokeLinecap="round" fill="none" opacity={0.8} />
+        <Path d="M52 52 Q54 64 50 78" stroke="#FDE68A" strokeWidth="2" strokeLinecap="round" fill="none" opacity={0.8} />
+        <Path d="M64 56 Q66 66 62 76" stroke="#FDE68A" strokeWidth="2" strokeLinecap="round" fill="none" opacity={0.8} />
+      </Svg>
+    ),
+  },
+
+  // 29. KUNYIT (Turmeric)
+  kunyit: {
+    name: 'Kunyit',
+    category: 'Tanaman Obat',
+    bgColor: '#FFFBEB',
+    accentColor: '#EA580C',
+    textColor: '#9A3412',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#FED7AA" opacity={0.4} />
+        <Path d="M50 54 Q50 32 50 14" stroke="#16A34A" strokeWidth="3" strokeLinecap="round" />
+        <Path d="M50 48 C36 38 34 22 50 14 C66 22 64 38 50 48 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1.8" />
+        <Path d="M50 18 V46" stroke="#DC2626" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity={0.7} />
+        <Path d="M32 74 C26 68 30 58 40 60 C46 56 56 56 62 60 C72 58 76 68 70 76 C64 84 54 84 44 82 C36 84 30 80 32 74 Z" fill="#EA580C" stroke="#9A3412" strokeWidth="2" />
+        <Path d="M42 62 Q45 70 42 78 M54 62 Q56 72 52 80 M64 64 Q66 72 62 76" stroke="#FDE047" strokeWidth="2" strokeLinecap="round" fill="none" />
+      </Svg>
+    ),
+  },
+
+  // 30. MELON (Melon)
+  melon: {
+    name: 'Melon',
+    category: 'Buah Buahan',
+    bgColor: '#FEF9C3',
+    accentColor: '#65A30D',
+    textColor: '#3F6212',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#ECFCCB" opacity={0.4} />
+        <Circle cx="50" cy="56" r="28" fill="#84CC16" stroke="#4D7C0F" strokeWidth="2" />
+        <Path d="M32 44 Q50 56 68 44 M26 56 Q50 68 74 56 M32 68 Q50 78 68 68" stroke="#D9F99D" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.85} />
+        <Path d="M50 28 V84 M38 34 Q40 56 38 78 M62 34 Q60 56 62 78" stroke="#D9F99D" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.85} />
+        <Path d="M50 28 V18 M42 18 H58" stroke="#65A30D" strokeWidth="3.5" strokeLinecap="round" />
+        <Path d="M56 20 Q64 16 62 24 Q60 30 68 28" stroke="#84CC16" strokeWidth="2" strokeLinecap="round" fill="none" />
+      </Svg>
+    ),
+  },
+
+  // 31. STROBERI (Strawberry)
+  stroberi: {
+    name: 'Stroberi',
+    category: 'Buah Buahan',
+    bgColor: '#FFE4E6',
+    accentColor: '#E11D48',
+    textColor: '#9F1239',
+    renderSvg: (s) => (
+      <Svg width={s} height={s} viewBox="0 0 100 100">
+        <Circle cx="50" cy="50" r="38" fill="#FECDD3" opacity={0.4} />
+        <Path d="M34 42 C26 52 34 74 50 86 C66 74 74 52 66 42 C60 36 40 36 34 42 Z" fill="#E11D48" stroke="#9F1239" strokeWidth="2" />
+        <Path d="M38 46 C34 52 36 60 40 64" stroke="#FDA4AF" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <Circle cx="44" cy="50" r="1.5" fill="#FDE047" />
+        <Circle cx="56" cy="50" r="1.5" fill="#FDE047" />
+        <Circle cx="50" cy="58" r="1.5" fill="#FDE047" />
+        <Circle cx="42" cy="64" r="1.5" fill="#FDE047" />
+        <Circle cx="58" cy="64" r="1.5" fill="#FDE047" />
+        <Circle cx="50" cy="72" r="1.4" fill="#FDE047" />
+        <Path d="M50 36 V24" stroke="#15803D" strokeWidth="3" strokeLinecap="round" />
+        <Path d="M50 36 L40 32 L44 38 L34 40 L46 42 L50 36 L54 42 L66 40 L56 38 L60 32 Z" fill="#22C55E" stroke="#15803D" strokeWidth="1" />
+      </Svg>
+    ),
+  },
 };
 
 // Default fallback untuk jenis tanaman tak dikenal
@@ -450,8 +680,41 @@ export function getPlantTheme(jenisTanaman?: string): PlantTheme {
   if (raw.includes('putih') && raw.includes('bawang')) {
     return PLANT_THEMES['bawang putih'];
   }
+  if (raw.includes('daun bawang') || raw.includes('scallion') || raw.includes('loncang') || raw.includes('spring onion')) {
+    return PLANT_THEMES['daun bawang'];
+  }
   if (raw.includes('bawang') || raw.includes('shallot') || raw.includes('onion')) {
     return PLANT_THEMES['bawang merah'];
+  }
+  if (raw.includes('pakcoy') || raw.includes('pokcoy') || raw.includes('bok choy') || raw.includes('pak choi')) {
+    return PLANT_THEMES['pakcoy'];
+  }
+  if (raw.includes('selada') || raw.includes('lettuce') || raw.includes('romaine')) {
+    return PLANT_THEMES['selada'];
+  }
+  if (raw.includes('sawi') || raw.includes('caisim') || raw.includes('choy sum')) {
+    return PLANT_THEMES['sawi hijau'];
+  }
+  if (raw.includes('kale')) {
+    return PLANT_THEMES['kale'];
+  }
+  if (raw.includes('seledri') || raw.includes('celery')) {
+    return PLANT_THEMES['seledri'];
+  }
+  if (raw.includes('kemangi') || raw.includes('basil')) {
+    return PLANT_THEMES['kemangi'];
+  }
+  if (raw.includes('jahe') || raw.includes('ginger')) {
+    return PLANT_THEMES['jahe'];
+  }
+  if (raw.includes('kunyit') || raw.includes('turmeric')) {
+    return PLANT_THEMES['kunyit'];
+  }
+  if (raw.includes('melon') || raw.includes('cantaloupe') || raw.includes('honeydew')) {
+    return PLANT_THEMES['melon'];
+  }
+  if (raw.includes('stroberi') || raw.includes('strawberry')) {
+    return PLANT_THEMES['stroberi'];
   }
   if (raw.includes('ubi') || raw.includes('sweet potato')) {
     return PLANT_THEMES['ubi jalar'];

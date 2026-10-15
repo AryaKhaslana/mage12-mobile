@@ -51,6 +51,7 @@ export default function KebijakanPrivasiScreen() {
           <PolicySection 
             title="Kontak" 
             body="Sampaikan pertanyaan tentang kebijakan ini kepada tim pengembang TaniSync." 
+            isLast
           />
         </View>
       </ScrollView>

@@ -43,6 +43,7 @@ export default function KetentuanLayananScreen() {
           <PolicySection 
             title="Pembaruan Ketentuan" 
             body="Ketentuan ini dapat diperbarui; perubahan diumumkan melalui pembaruan aplikasi." 
+            isLast
           />
         </View>
       </ScrollView>

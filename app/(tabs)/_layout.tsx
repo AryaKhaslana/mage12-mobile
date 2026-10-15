@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/colors';
 
 const CustomTabBar = React.memo(function CustomTabBar({
@@ -42,7 +41,6 @@ const CustomTabBar = React.memo(function CustomTabBar({
         const isFocused = state.index === index;
 
         const onPress = () => {
-          Haptics.selectionAsync().catch(() => {});
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,

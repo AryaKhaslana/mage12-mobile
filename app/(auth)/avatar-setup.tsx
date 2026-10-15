@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
+import * as Haptics from 'expo-haptics';
 import { updateProfile } from '../../services/api';
 import { useNotification } from '../../components/NotificationContext';
 
@@ -45,6 +45,7 @@ export default function AvatarSetupScreen() {
   const [avatar, setAvatar] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [banner, setBanner] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const savingLockRef = useRef(false);
   const [userData, setUserData] = useState<{
     nama?: string;
     username?: string;
@@ -70,11 +71,13 @@ export default function AvatarSetupScreen() {
 
   const pickAvatar = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
+        showNotification(
           'Izin Galeri Ditolak',
-          'TaniSync membutuhkan izin akses galeri untuk memilih foto profil kamu.'
+          'TaniSync membutuhkan izin akses galeri untuk memilih foto profil kamu.',
+          'info'
         );
         return;
       }
@@ -97,11 +100,13 @@ export default function AvatarSetupScreen() {
 
   const pickBanner = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
+        showNotification(
           'Izin Galeri Ditolak',
-          'TaniSync membutuhkan izin akses galeri untuk memilih foto banner kamu.'
+          'TaniSync membutuhkan izin akses galeri untuk memilih foto banner kamu.',
+          'info'
         );
         return;
       }
@@ -133,13 +138,19 @@ export default function AvatarSetupScreen() {
   };
 
   const handleSaveAndContinue = async () => {
+    if (savingLockRef.current || isLoading) return;
+
     // Jika tidak ada foto maupun banner yang dipilih, langsung lanjut
     if (!avatar && !banner) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       navigateNext();
       return;
     }
 
+    savingLockRef.current = true;
     setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     try {
       const formData = new FormData();
 
@@ -161,29 +172,31 @@ export default function AvatarSetupScreen() {
 
       const updatedUser = await updateProfile(formData);
 
-      // Simpan pembaruan ke SecureStore
+      // Simpan pembaruan ke SecureStore - selalu simpan walaupun cachedStr sebelumnya kosong
       const cachedStr = await SecureStore.getItemAsync('userData');
-      let merged = updatedUser;
-      if (cachedStr) {
-        const cached = JSON.parse(cachedStr);
-        merged = { ...cached, ...updatedUser };
-        await SecureStore.setItemAsync('userData', JSON.stringify(merged));
-      }
+      const cached = cachedStr ? JSON.parse(cachedStr) : {};
+      const merged = { ...cached, ...updatedUser };
+      await SecureStore.setItemAsync('userData', JSON.stringify(merged));
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showNotification('Berhasil!', 'Foto profil dan banner kamu berhasil disimpan.', 'success');
       navigateNext(merged);
     } catch (error: any) {
       console.error('Error simpan media onboarding:', error);
-      Alert.alert(
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      showNotification(
         'Gagal Menyimpan',
-        error.response?.data?.message || 'Gagal mengunggah foto. Kamu dapat melewatinya dan mencobanya nanti di menu profil.'
+        error.response?.data?.message || 'Gagal mengunggah foto. Kamu dapat melewatinya dan mencobanya nanti di menu profil.',
+        'error'
       );
     } finally {
       setIsLoading(false);
+      savingLockRef.current = false;
     }
   };
 
   const handleSkip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigateNext();
   };
 
@@ -285,7 +298,7 @@ export default function AvatarSetupScreen() {
               <Text style={styles.userHandleText}>@{userData.username}</Text>
             ) : null}
             <View style={styles.memberTag}>
-              <Text style={styles.memberTagText}>🌱 Petani Pemula</Text>
+              <Text style={styles.memberTagText}>Petani Pemula</Text>
             </View>
           </View>
         </View>

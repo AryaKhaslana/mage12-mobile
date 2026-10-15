@@ -2,24 +2,46 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useState, useEffect } from "react";
+import * as Haptics from "expo-haptics";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
-  Alert,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from "react-native-reanimated";
+  View,
+} from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  cancelAnimation,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
-import { Image } from 'expo-image';
+import { Image } from "expo-image";
+import { useNotification } from "../../components/NotificationContext";
 
 const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 
+const DEFAULT_COORDS = {
+  lat: "-7.4478",
+  lon: "112.7183",
+  label: "Sidoarjo, Jawa Timur",
+};
+
 export default function LocationSetupScreen() {
+  const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [locationStr, setLocationStr] = useState<string | null>(null);
+  const [locationData, setLocationData] = useState<{ lat: string; lon: string } | null>(null);
+
+  const isSavingRef = useRef(false);
+  const isRequestingRef = useRef(false);
+
   // Animation values
   const breathingScale = useSharedValue(1);
   const floatingTranslateY = useSharedValue(0);
@@ -41,45 +63,99 @@ export default function LocationSetupScreen() {
       -1,
       true
     );
-  }, []);
+
+    return () => {
+      cancelAnimation(breathingScale);
+      cancelAnimation(floatingTranslateY);
+    };
+  }, [breathingScale, floatingTranslateY]);
 
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
       transform: [
         { scale: breathingScale.value },
-        { translateY: floatingTranslateY.value }
-      ] };
+        { translateY: floatingTranslateY.value },
+      ],
+    };
   });
-  const [locationStr, setLocationStr] = useState<string | null>(null);
-  const [locationData, setLocationData] = useState<{lat: string, lon: string} | null>(null);
 
   const requestLocation = async () => {
+    if (isRequestingRef.current || isLoading) return;
+    isRequestingRef.current = true;
     setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Izin Lokasi Ditolak", "Untuk menggunakan fitur cuaca dan komunitas, silakan izinkan akses lokasi melalui menu pengaturan perangkat kamu.");
+        showNotification(
+          "Izin Lokasi Ditolak",
+          "Untuk menggunakan fitur cuaca dan komunitas, silakan izinkan akses lokasi melalui menu pengaturan perangkat kamu.",
+          "info"
+        );
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         setIsLoading(false);
+        isRequestingRef.current = false;
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      const lat = String(location.coords.latitude);
-      const lon = String(location.coords.longitude);
-      
-      setLocationStr(`${lat}, ${lon}`);
-      setLocationData({ lat, lon });
+      // Cek dulu last known position (0ms instan)
+      let location: Location.LocationObject | null = await Location.getLastKnownPositionAsync().catch(() => null);
+
+      // Jika kosong, panggil getCurrentPositionAsync dengan timeout 3.5 detik (Promise.race)
+      if (!location?.coords) {
+        const fetchPromise = Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("Timeout mencari lokasi")), 3500);
+        });
+        location = await Promise.race([fetchPromise, timeoutPromise]);
+      }
+
+      if (location?.coords) {
+        const lat = String(location.coords.latitude);
+        const lon = String(location.coords.longitude);
+        setLocationStr(`${lat}, ${lon}`);
+        setLocationData({ lat, lon });
+        showNotification("Lokasi Terdeteksi", "Lokasi kamu berhasil ditemukan.", "success");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        throw new Error("Data koordinat kosong");
+      }
     } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Gagal mengambil lokasi. Coba lagi.");
+      console.error("Gagal mendeteksi lokasi:", error);
+      showNotification(
+        "Gagal Mendeteksi Lokasi",
+        "Koneksi GPS lemah atau tidak merespons. Kamu dapat menggunakan lokasi default.",
+        "error"
+      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsLoading(false);
+      isRequestingRef.current = false;
     }
+  };
+
+  const handleUseDefaultLocation = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLocationStr(`${DEFAULT_COORDS.lat}, ${DEFAULT_COORDS.lon}`);
+    setLocationData({ lat: DEFAULT_COORDS.lat, lon: DEFAULT_COORDS.lon });
+    showNotification("Lokasi Default Dipilih", "Menggunakan koordinat default Sidoarjo.", "info");
+  };
+
+  const handleSkip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.replace("/(tabs)");
   };
 
   const handleSaveLocation = async () => {
     if (!locationData) return;
+    if (isSavingRef.current || isLoading) return;
+    isSavingRef.current = true;
     setIsLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     try {
       // Contract: FormData dengan KEDUA latitude & longitude sebagai STRING
       const formData = new FormData();
@@ -88,139 +164,252 @@ export default function LocationSetupScreen() {
 
       // Using PUT /api/user/me
       const response = await api.put("/user/me", formData);
+      const serverUser = response.data?.data || response.data || {};
 
-      // Update local user data
+      // Update local user data - selalu simpan walaupun storedUserData sebelumnya kosong
       const storedUserData = await SecureStore.getItemAsync("userData");
-      if (storedUserData) {
-        const parsed = JSON.parse(storedUserData);
-        parsed.latitude = locationData.lat;
-        parsed.longitude = locationData.lon;
-        await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
-      }
+      const parsed = storedUserData ? JSON.parse(storedUserData) : {};
+      const merged = {
+        ...parsed,
+        ...serverUser,
+        latitude: locationData.lat,
+        longitude: locationData.lon,
+      };
+      await SecureStore.setItemAsync("userData", JSON.stringify(merged));
 
-      router.replace("/");
+      showNotification("Berhasil", "Lokasi kamu berhasil disimpan.", "success");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace("/(tabs)");
     } catch (error: any) {
+      console.error("Gagal simpan lokasi:", error);
       const msg = error.response?.data?.message || "Gagal menyimpan lokasi ke server.";
-      Alert.alert("Error", msg);
+      showNotification("Error", msg, "error");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsLoading(false);
+      isSavingRef.current = false;
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.iconContainer}>
-          <AnimatedExpoImage 
-            source={require("../../assets/images/icontampilanawal/seedling-meneropong.svg")} 
-            style={[{ width: 340, height: 340 }, animatedImageStyle]} 
-            contentFit="contain" 
-          />
-        </View>
-        
-        <Text style={styles.title}>Lokasi Kamu</Text>
-        <Text style={styles.subtitle}>
-          TaniSync memerlukan data lokasi kamu agar dapat memberikan informasi cuaca serta rekomendasi komunitas yang akurat.
-        </Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          <View style={styles.iconContainer}>
+            <AnimatedExpoImage
+              source={require("../../assets/images/icontampilanawal/seedling-meneropong.svg")}
+              style={[{ width: 260, height: 260 }, animatedImageStyle]}
+              contentFit="contain"
+            />
+          </View>
 
-        <View style={styles.statusBox}>
-          {locationStr ? (
+          <Text style={styles.title}>Lokasi Kamu</Text>
+          <Text style={styles.subtitle}>
+            TaniSync memerlukan data lokasi kamu agar dapat memberikan informasi cuaca serta rekomendasi komunitas yang akurat.
+          </Text>
+
+          <View style={styles.statusBox}>
+            {locationStr ? (
+              <>
+                <MaterialIcons name="check-circle" size={24} color="#3FA86B" style={{ marginRight: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.statusLabel}>Lokasi Terdeteksi:</Text>
+                  <Text style={styles.statusText}>{locationStr}</Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <MaterialIcons name="location-pin" size={24} color="#5C5A4F" style={{ marginRight: 12 }} />
+                <Text style={[styles.statusText, { color: "#5C5A4F", flex: 1 }]}>Belum ada lokasi.</Text>
+              </>
+            )}
+          </View>
+
+          {!locationStr ? (
             <>
-              <MaterialIcons name="check-circle" size={24} color="#3FA86B" style={{ marginRight: 12 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.statusLabel}>Lokasi Terdeteksi:</Text>
-                <Text style={styles.statusText}>{locationStr}</Text>
-              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={requestLocation}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <View style={styles.buttonInner}>
+                    <MaterialIcons name="my-location" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+                    <Text style={styles.primaryButtonText}>Deteksi Lokasi</Text>
+                  </View>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={handleUseDefaultLocation}
+                disabled={isLoading}
+              >
+                <Text style={styles.secondaryButtonText}>Gunakan Lokasi Default (Sidoarjo)</Text>
+              </Pressable>
             </>
           ) : (
             <>
-              <MaterialIcons name="location-pin" size={24} color="#5C5A4F" style={{ marginRight: 12 }} />
-              <Text style={[styles.statusText, { color: "#5C5A4F", flex: 1 }]}>Belum ada lokasi.</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={handleSaveLocation}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <View style={styles.buttonInner}>
+                    <MaterialIcons name="check" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+                    <Text style={styles.primaryButtonText}>Simpan Lokasi</Text>
+                  </View>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={requestLocation}
+                disabled={isLoading}
+              >
+                <Text style={styles.secondaryButtonText}>Deteksi Ulang Lokasi</Text>
+              </Pressable>
             </>
           )}
-        </View>
 
-        {!locationStr ? (
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={requestLocation}
+          <Pressable
+            style={({ pressed }) => [
+              styles.skipButton,
+              pressed && { opacity: 0.7 },
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={handleSkip}
             disabled={isLoading}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Deteksi Lokasi</Text>
-            )}
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={handleSaveLocation}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Simpan Lokasi</Text>
-            )}
-          </TouchableOpacity>
-        )}
-      </View>
+            <Text style={styles.skipButtonText}>Lewati untuk Sekarang</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FBF8F0" },
-  container: { flex: 1, padding: 24, paddingTop: 48, alignItems: "center" },
+  scrollContent: { flexGrow: 1 },
+  container: { flex: 1, padding: 24, paddingTop: 32, paddingBottom: 36, alignItems: "center" },
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24 },
+    marginBottom: 16,
+  },
   title: {
     fontSize: 28,
     fontFamily: "Nunito_800ExtraBold",
     color: "#123924",
     marginBottom: 12,
-    textAlign: "center" },
+    textAlign: "center",
+  },
   subtitle: {
     fontSize: 14,
     fontFamily: "Nunito_500Medium",
     color: "#5C5A4F",
-    marginBottom: 32,
+    marginBottom: 24,
     textAlign: "center",
-    lineHeight: 22 },
+    lineHeight: 22,
+  },
   statusBox: {
     width: "100%",
     backgroundColor: "#F1EEE6",
     padding: 16,
     borderRadius: 12,
-    borderWidth: 0,
-    
-    marginBottom: 32,
+    marginBottom: 24,
     alignItems: "center",
-    flexDirection: "row" },
+    flexDirection: "row",
+  },
   statusLabel: {
     fontSize: 11,
     fontFamily: "Nunito_700Bold",
     color: "#3FA86B",
     textTransform: "uppercase",
-    marginBottom: 2 },
+    marginBottom: 2,
+  },
   statusText: {
     fontSize: 14,
     fontFamily: "Nunito_700Bold",
-    color: "#123924" },
+    color: "#123924",
+  },
+  buttonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   primaryButton: {
     backgroundColor: "#3FA86B",
     width: "100%",
     height: 56,
     borderRadius: 30,
-    borderWidth: 0,
-    
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4 },
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
+  },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Nunito_700Bold" } });
+    fontFamily: "Nunito_700Bold",
+  },
+  secondaryButton: {
+    backgroundColor: "#F1EEE6",
+    width: "100%",
+    height: 52,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "rgba(18, 57, 36, 0.12)",
+  },
+  secondaryButtonText: {
+    color: "#123924",
+    fontSize: 14,
+    fontFamily: "Nunito_700Bold",
+  },
+  skipButton: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  skipButtonText: {
+    color: "#5C5A4F",
+    fontSize: 14,
+    fontFamily: "Nunito_700Bold",
+  },
+});

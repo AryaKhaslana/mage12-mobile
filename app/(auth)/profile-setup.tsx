@@ -18,6 +18,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as SecureStore from 'expo-secure-store';
+import * as Haptics from 'expo-haptics';
 import { updateProfile, logoutUser } from '../../services/api';
 import { useNotification } from '../../components/NotificationContext';
 
@@ -54,6 +55,8 @@ export default function ProfileSetupScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const submitLockRef = useRef(false);
+  const initialUserRef = useRef<{ nama: string; username: string }>({ nama: '', username: '' });
   const namaInputRef = useRef<TextInput>(null);
   const usernameInputRef = useRef<TextInput>(null);
 
@@ -64,12 +67,21 @@ export default function ProfileSetupScreen() {
         const storedStr = await SecureStore.getItemAsync('userData');
         if (storedStr) {
           const parsed = JSON.parse(storedStr);
-          if (parsed.nama) {
-            setNama(parsed.nama);
+          const initialNama = parsed.nama ? String(parsed.nama).trim() : '';
+          const initialUsername = parsed.username
+            ? String(parsed.username).trim().toLowerCase().replace(/^@/, '')
+            : '';
+
+          if (initialNama) {
+            setNama(initialNama);
           }
-          if (parsed.username) {
-            setUsername(parsed.username);
+          if (initialUsername) {
+            setUsername(initialUsername);
           }
+          initialUserRef.current = {
+            nama: initialNama,
+            username: initialUsername,
+          };
         }
       } catch (err) {
         console.error('Gagal memuat data akun:', err);
@@ -95,32 +107,50 @@ export default function ProfileSetupScreen() {
   };
 
   const handleSubmit = async () => {
+    if (submitLockRef.current || isLoading) return;
+
     const cleanNama = nama.trim();
     const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
 
     if (!cleanNama) {
       setErrorMsg('Nama lengkap wajib diisi.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
     if (cleanNama.length < 2) {
       setErrorMsg('Nama lengkap minimal terdiri dari 2 karakter.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
     if (!cleanUsername) {
       setErrorMsg('Username wajib diisi.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
     if (cleanUsername.length < 3) {
       setErrorMsg('Username minimal terdiri dari 3 karakter.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
     if (!/^[a-z0-9_.]+$/.test(cleanUsername)) {
       setErrorMsg('Username hanya boleh memuat huruf, angka, garis bawah (_), dan titik (.).');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
 
+    // Skip request jika data tidak berubah dari preload SecureStore
+    const initNama = initialUserRef.current.nama;
+    const initUsername = initialUserRef.current.username;
+    if (initNama && initUsername && cleanNama === initNama && cleanUsername === initUsername) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.replace('/(auth)/avatar-setup');
+      return;
+    }
+
+    submitLockRef.current = true;
     setIsLoading(true);
     setErrorMsg('');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
       const formData = new FormData();
@@ -140,11 +170,13 @@ export default function ProfileSetupScreen() {
       };
       await SecureStore.setItemAsync('userData', JSON.stringify(merged));
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showNotification('Langkah 1 Selesai!', 'Nama dan username kamu berhasil disimpan.', 'success');
       // Lanjut ke Sesi 2: Avatar & Banner
       router.replace('/(auth)/avatar-setup');
     } catch (error: any) {
       console.error('Error simpan identitas profil:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       if (error.response?.status === 409) {
         setErrorMsg(`Username @${cleanUsername} sudah digunakan. Silakan pilih username lain.`);
       } else {
@@ -154,10 +186,12 @@ export default function ProfileSetupScreen() {
       }
     } finally {
       setIsLoading(false);
+      submitLockRef.current = false;
     }
   };
 
   const handleSwitchAccount = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Alert.alert(
       'Ganti Akun',
       'Apakah kamu ingin keluar dan masuk menggunakan akun Google atau email yang lain?',
@@ -168,7 +202,6 @@ export default function ProfileSetupScreen() {
           style: 'destructive',
           onPress: async () => {
             await logoutUser();
-            router.replace('/(auth)/login');
           },
         },
       ]

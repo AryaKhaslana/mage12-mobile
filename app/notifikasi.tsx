@@ -1,123 +1,296 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  RefreshControl,
+  Animated as RNAnimated,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getMyNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import {
+  getMyNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from '../services/api';
 import { getRelativeTime } from '../utils/format';
 
-export default function NotifikasiScreen() {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+const NOTIF_CACHE_KEY = 'notifications_cache_v1';
+
+interface CachedNotifs {
+  notifications: any[];
+  unreadCount: number;
+  savedAt: number;
+}
+
+let memoryNotificationsCache: CachedNotifs | null = null;
+
+const NotificationSkeleton = () => {
+  const [pulseAnim] = useState(() => new RNAnimated.Value(0.4));
 
   useEffect(() => {
-    let ignore = false;
-    const load = async () => {
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(pulseAnim, {
+          toValue: 0.4,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim]);
+
+  return (
+    <RNAnimated.View style={[styles.skeletonContainer, { opacity: pulseAnim }]}>
+      {[1, 2, 3, 4].map((item) => (
+        <View key={item} style={styles.skeletonCard}>
+          <View style={styles.skeletonIcon} />
+          <View style={styles.skeletonContent}>
+            <View style={styles.skeletonHeader}>
+              <View style={styles.skeletonTitle} />
+              <View style={styles.skeletonTime} />
+            </View>
+            <View style={styles.skeletonDescLine1} />
+            <View style={styles.skeletonDescLine2} />
+          </View>
+        </View>
+      ))}
+    </RNAnimated.View>
+  );
+};
+
+export default function NotifikasiScreen() {
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    return memoryNotificationsCache ? memoryNotificationsCache.notifications : [];
+  });
+  const [unreadCount, setUnreadCount] = useState<number>(() => {
+    return memoryNotificationsCache ? memoryNotificationsCache.unreadCount : 0;
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    return memoryNotificationsCache ? false : true;
+  });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const isFetchingRef = useRef(false);
+
+  const saveToCache = useCallback(async (data: any[], unread: number) => {
+    memoryNotificationsCache = {
+      notifications: data,
+      unreadCount: unread,
+      savedAt: Date.now(),
+    };
+    try {
+      await AsyncStorage.setItem(
+        NOTIF_CACHE_KEY,
+        JSON.stringify(memoryNotificationsCache)
+      );
+    } catch (e) {
+      console.warn('Gagal menyimpan cache notifikasi:', e);
+    }
+  }, []);
+
+  const syncNotifications = useCallback(
+    async (isSilent = false, isRefresh = false) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else if (!isSilent) {
+        setIsLoading(true);
+      }
+
       try {
         const res = await getMyNotifications(1, 50);
         const data = res.data || [];
-        if (!ignore) {
-          setNotifications(data);
-          setUnreadCount(data.filter((n: any) => !n.isRead).length);
-        }
+        const unread = data.filter((n: any) => !n.isRead).length;
+
+        setNotifications(data);
+        setUnreadCount(unread);
+        saveToCache(data, unread);
       } catch (error) {
-        console.error(error);
+        console.error('Gagal mengambil notifikasi:', error);
       } finally {
-        if (!ignore) {
-          setIsLoading(false);
-          setIsRefreshing(false);
+        setIsLoading(false);
+        setIsRefreshing(false);
+        isFetchingRef.current = false;
+      }
+    },
+    [saveToCache]
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const init = async () => {
+      let hasCache = false;
+
+      if (memoryNotificationsCache) {
+        hasCache = true;
+      } else {
+        try {
+          const cachedStr = await AsyncStorage.getItem(NOTIF_CACHE_KEY);
+          if (cachedStr && isMounted) {
+            const parsed: CachedNotifs = JSON.parse(cachedStr);
+            if (Array.isArray(parsed.notifications)) {
+              memoryNotificationsCache = parsed;
+              setNotifications(parsed.notifications);
+              setUnreadCount(parsed.unreadCount || 0);
+              setIsLoading(false);
+              hasCache = true;
+            }
+          }
+        } catch (e) {
+          console.warn('Gagal membaca cache notifikasi:', e);
         }
       }
-    };
-    load();
-    return () => { ignore = true; };
-  }, []);
 
-  const fetchNotifs = async () => {
-    setIsRefreshing(true);
-    try {
-      const res = await getMyNotifications(1, 50);
-      const data = res.data || [];
-      setNotifications(data);
-      setUnreadCount(data.filter((n: any) => !n.isRead).length);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+      if (isMounted) {
+        syncNotifications(hasCache, false);
+      }
+    };
+
+    init();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [syncNotifications]);
 
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const prevNotifications = notifications;
+    const prevUnreadCount = unreadCount;
+
+    const updated = notifications.map((n) => ({ ...n, isRead: true }));
+    setNotifications(updated);
+    setUnreadCount(0);
+    saveToCache(updated, 0);
+
     try {
-      setUnreadCount(0);
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       await markAllNotificationsAsRead();
     } catch (e) {
-      console.error(e);
+      console.error('Rollback markAllNotificationsAsRead:', e);
+      setNotifications(prevNotifications);
+      setUnreadCount(prevUnreadCount);
+      saveToCache(prevNotifications, prevUnreadCount);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
   const handlePressCard = async (notif: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     if (!notif.isRead) {
-      try {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
-        await markNotificationAsRead(notif.id);
-      } catch (e) {
-        console.error(e);
-      }
+      const prevNotifications = notifications;
+      const prevUnreadCount = unreadCount;
+
+      const updated = notifications.map((n) =>
+        n.id === notif.id ? { ...n, isRead: true } : n
+      );
+      const newUnread = Math.max(0, prevUnreadCount - 1);
+
+      setNotifications(updated);
+      setUnreadCount(newUnread);
+      saveToCache(updated, newUnread);
+
+      markNotificationAsRead(notif.id).catch((e) => {
+        console.error('Rollback markNotificationAsRead:', e);
+        setNotifications(prevNotifications);
+        setUnreadCount(prevUnreadCount);
+        saveToCache(prevNotifications, prevUnreadCount);
+      });
     }
-    // Optionally route to a screen based on notif.type
+
+    if (notif.type === 'WATERING') {
+      router.push('/(tabs)/tanaman');
+    } else if (notif.type === 'ACHIEVEMENT') {
+      router.push('/(tabs)/profil');
+    } else if (notif.type === 'SOCIAL') {
+      router.push('/(tabs)/komunitas');
+    }
   };
 
   const renderIcon = (type: string) => {
     switch (type) {
-      case 'WATERING': return { name: 'water-drop', color: '#FF6B5C', bg: 'rgba(255, 107, 92, 0.15)' };
-      case 'ACHIEVEMENT': return { name: 'emoji-events', color: '#3FA86B', bg: 'rgba(63, 168, 107, 0.15)' };
-      case 'SOCIAL': return { name: 'person', color: '#FFB627', bg: 'rgba(255, 182, 39, 0.15)' };
-      default: return { name: 'notifications', color: '#3FA86B', bg: 'rgba(63, 168, 107, 0.15)' };
+      case 'WATERING':
+        return { name: 'water-drop', color: '#FF6B5C', bg: 'rgba(255, 107, 92, 0.15)' };
+      case 'ACHIEVEMENT':
+        return { name: 'emoji-events', color: '#3FA86B', bg: 'rgba(63, 168, 107, 0.15)' };
+      case 'SOCIAL':
+        return { name: 'person', color: '#FFB627', bg: 'rgba(255, 182, 39, 0.15)' };
+      default:
+        return { name: 'notifications', color: '#3FA86B', bg: 'rgba(63, 168, 107, 0.15)' };
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      
-      <Stack.Screen 
-        options={{ 
-          headerShown: true,
-          title: 'Inbox',
-          headerTitleAlign: 'center',
-          headerTitleStyle: { fontFamily: 'Nunito_700Bold', fontSize: 17, color: '#123924' },
-          headerStyle: { backgroundColor: '#FBF8F0' },
-          headerShadowVisible: false,
-          headerLeft: () => (
-            <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backButton, pressed && styles.pressed, { marginLeft: 16 }]}>
-              <MaterialIcons name="arrow-back" size={24} color="#123924" />
-            </Pressable>
-          ),
-          headerRight: () => (
-            <Pressable onPress={handleMarkAllRead} style={({ pressed }) => [pressed && styles.pressed, { marginRight: 16 }]}>
-              <Text style={styles.headerAction}>Tandai Dibaca</Text>
-            </Pressable>
-          )
-        }} 
-      />
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <ScrollView 
-        contentContainerStyle={[styles.scrollContent, isLoading && { flex: 1, justifyContent: 'center' }]} 
+      {/* Custom App Bar */}
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.back();
+          }}
+          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+          hitSlop={8}
+          accessibilityLabel="Kembali"
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#123924" />
+        </Pressable>
+
+        <Text style={styles.headerTitle}>Notifikasi</Text>
+
+        <Pressable
+          onPress={handleMarkAllRead}
+          disabled={unreadCount === 0}
+          style={({ pressed }) => [
+            styles.headerActionBtn,
+            pressed && unreadCount > 0 && styles.pressed,
+            unreadCount === 0 && { opacity: 0.35 },
+          ]}
+          hitSlop={8}
+          accessibilityLabel="Tandai semua dibaca"
+        >
+          <Text style={styles.headerAction}>Tandai Dibaca</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); fetchNotifs(); }} colors={['#3FA86B']} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => syncNotifications(false, true)}
+            colors={['#3FA86B']}
+            tintColor="#3FA86B"
+          />
+        }
       >
         {isLoading ? (
-          <ActivityIndicator size="large" color="#3FA86B" />
+          <NotificationSkeleton />
         ) : notifications.length === 0 ? (
-          <View style={{ alignItems: 'center', marginTop: 40, opacity: 0.5 }}>
+          <View style={styles.emptyContainer}>
             <MaterialIcons name="notifications-off" size={48} color="#123924" />
-            <Text style={{ marginTop: 12, fontFamily: 'Nunito_700Bold', color: '#123924' }}>Belum ada notifikasi.</Text>
+            <Text style={styles.emptyText}>Belum ada notifikasi.</Text>
           </View>
         ) : (
           <View style={styles.section}>
@@ -133,18 +306,42 @@ export default function NotifikasiScreen() {
             {notifications.map((notif) => {
               const iconDef = renderIcon(notif.type);
               return (
-                <Pressable key={notif.id} onPress={() => handlePressCard(notif)} style={({ pressed }) => [styles.card, notif.isRead ? styles.cardRead : styles.cardUnread, pressed && styles.cardPressed]}>
-                  <View style={[styles.iconContainer, { backgroundColor: notif.isRead ? iconDef.bg : iconDef.color }]}>
-                    <MaterialIcons name={iconDef.name as any} size={22} color={notif.isRead ? iconDef.color : "#FFFFFF"} />
+                <Pressable
+                  key={notif.id}
+                  onPress={() => handlePressCard(notif)}
+                  style={({ pressed }) => [
+                    styles.card,
+                    notif.isRead ? styles.cardRead : styles.cardUnread,
+                    pressed && styles.cardPressed,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      { backgroundColor: notif.isRead ? iconDef.bg : iconDef.color },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name={iconDef.name as any}
+                      size={22}
+                      color={notif.isRead ? iconDef.color : '#FFFFFF'}
+                    />
                   </View>
                   <View style={styles.cardContent}>
                     <View style={styles.cardHeader}>
-                      <Text style={notif.isRead ? styles.cardTitleRead : styles.cardTitle} numberOfLines={1}>{notif.title}</Text>
+                      <Text
+                        style={notif.isRead ? styles.cardTitleRead : styles.cardTitle}
+                        numberOfLines={1}
+                      >
+                        {notif.title}
+                      </Text>
                       <Text style={styles.cardTime}>{getRelativeTime(notif.createdAt)}</Text>
                     </View>
                     <Text style={styles.cardDesc}>{notif.message}</Text>
                   </View>
-                  {!notif.isRead && <View style={[styles.unreadDot, { backgroundColor: iconDef.color }]} />}
+                  {!notif.isRead && (
+                    <View style={[styles.unreadDot, { backgroundColor: iconDef.color }]} />
+                  )}
                 </Pressable>
               );
             })}
@@ -165,8 +362,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(251, 248, 240, 0.85)',
+    paddingVertical: 14,
+    backgroundColor: '#FBF8F0',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(18, 57, 36, 0.08)',
     zIndex: 10,
@@ -191,12 +388,19 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.95 }],
   },
   headerTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 17,
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 18,
     color: '#123924',
   },
+  headerActionBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    minWidth: 44,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
   headerAction: {
-    fontFamily: 'Nunito_700Bold', // approximating font-semibold
+    fontFamily: 'Nunito_700Bold',
     fontSize: 12,
     color: '#3FA86B',
     textTransform: 'uppercase',
@@ -206,6 +410,70 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
     gap: 24,
+  },
+  skeletonContainer: {
+    gap: 12,
+  },
+  skeletonCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(18, 57, 36, 0.08)',
+  },
+  skeletonIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#EAE7DD',
+  },
+  skeletonContent: {
+    flex: 1,
+    gap: 8,
+  },
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  skeletonTitle: {
+    width: '55%',
+    height: 14,
+    borderRadius: 6,
+    backgroundColor: '#DFDBD0',
+  },
+  skeletonTime: {
+    width: 48,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#EAE7DD',
+  },
+  skeletonDescLine1: {
+    width: '90%',
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#EAE7DD',
+  },
+  skeletonDescLine2: {
+    width: '65%',
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#EAE7DD',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 60,
+    opacity: 0.5,
+  },
+  emptyText: {
+    marginTop: 12,
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: '#123924',
   },
   section: {
     gap: 12,
@@ -266,31 +534,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarContainer: {
-    width: 44,
-    height: 44,
-    position: 'relative',
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(18, 57, 36, 0.1)',
-  },
-  avatarBadge: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFB627',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },

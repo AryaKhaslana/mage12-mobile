@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import PolicySection from '../components/PolicySection';
 
 export default function KetentuanLayananScreen() {
@@ -14,13 +15,20 @@ export default function KetentuanLayananScreen() {
       
       {/* HEADER */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={{ marginRight: 16 }} hitSlop={10}>
+        <Pressable 
+          onPress={() => {
+            Haptics.selectionAsync().catch(() => {});
+            router.back();
+          }} 
+          style={{ marginRight: 16 }} 
+          hitSlop={10}
+        >
           <MaterialIcons name="arrow-back" size={24} color="#123924" />
         </Pressable>
         <Text style={styles.headerTitle}>Ketentuan Layanan</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <Text style={styles.subtitle}>Terakhir diperbarui: {today}</Text>
 
@@ -55,7 +63,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    
+    borderBottomWidth: 1,
     borderBottomColor: '#E8E5DA',
     backgroundColor: '#FFFFFF' },
   headerTitle: {

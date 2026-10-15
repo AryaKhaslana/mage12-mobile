@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // @ts-ignore
 import * as Notifications from "expo-notifications";
 import { SchedulableTriggerInputTypes } from "expo-notifications";
@@ -20,10 +21,10 @@ export async function registerForPushNotificationsAsync() {
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
+      name: "Pengingat Kebun TaniSync",
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
+      lightColor: "#3FA86B",
     });
   }
 
@@ -47,12 +48,35 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
   // Clear any existing notifications to avoid duplicates
   await cancelAllPlantReminders();
 
-  let body = "Saatnya memeriksa kebun kamu hari ini 🌱";
+  let body = "Saatnya memeriksa kebun kamu hari ini.";
 
   try {
-    // Fetch user plants
-    const response = await api.get("/tanaman");
-    const tanamanList: any[] = response.data?.data || []; // Use any[] to access sisaHariPenyiraman
+    let tanamanList: any[] = [];
+
+    // 0ms cache-first from AsyncStorage
+    const cached = await AsyncStorage.getItem("dashboard_tanaman");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          tanamanList = parsed;
+        }
+      } catch (e) {
+        // non-fatal
+      }
+    }
+
+    // Fallback to quick network call if cache empty with 1500ms max timeout
+    if (tanamanList.length === 0) {
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 1500)
+      );
+      const response: any = await Promise.race([
+        api.get("/tanaman"),
+        timeoutPromise,
+      ]);
+      tanamanList = response.data?.data || [];
+    }
 
     if (tanamanList.length > 0) {
       // Find priority plant: 'PERLU_SIRAM' first
@@ -70,17 +94,15 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
       }
 
       const plantName = priorityPlant.nickname || priorityPlant.jenisTanaman;
-      body = `${plantName} membutuhkan perhatian kamu hari ini — periksa jadwal perawatannya!`;
+      body = `${plantName} membutuhkan perhatian kamu hari ini - periksa jadwal perawatannya!`;
     }
   } catch (error) {
-    console.warn(
-      "Failed to fetch plants for notification body, using generic body.",
-    );
+    // Non-fatal, use default body
   }
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Waktunya Merawat Tanaman! 🌱",
+      title: "Waktunya Merawat Tanaman!",
       body: body,
       sound: true,
     },

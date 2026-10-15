@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as Haptics from 'expo-haptics';
 import api from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 import { registerForPushNotificationsAsync, scheduleDailyPlantReminder, cancelAllPlantReminders } from '../services/notificationService';
@@ -43,8 +44,10 @@ export default function PengaturanNotifikasiScreen() {
         if (jamNotifBackend) {
           matchedTime = TIME_OPTIONS.find(t => t.label === jamNotifBackend);
         } else if (savedTimeStr) {
-          const parsedTime = JSON.parse(savedTimeStr);
-          matchedTime = TIME_OPTIONS.find(t => t.hour === parsedTime.hour && t.minute === parsedTime.minute);
+          try {
+            const parsedTime = JSON.parse(savedTimeStr);
+            matchedTime = TIME_OPTIONS.find(t => t.hour === parsedTime.hour && t.minute === parsedTime.minute);
+          } catch {}
         }
 
         if (matchedTime) {
@@ -52,35 +55,34 @@ export default function PengaturanNotifikasiScreen() {
         }
 
         const shouldEnable = jamNotifBackend !== null || savedEnabled === 'true';
+        setIsEnabled(shouldEnable);
 
+        // 0ms instant display - reveal UI immediately after reading SecureStore
+        setIsLoading(false);
+
+        // Run permission verification and schedule refresh in the background non-blocking
         if (shouldEnable) {
-          const granted = await registerForPushNotificationsAsync();
           const targetTime = matchedTime || selectedTime;
-          if (granted) {
-            setIsEnabled(true);
-            await scheduleDailyPlantReminder(targetTime.hour, targetTime.minute);
-            await SecureStore.setItemAsync('notifEnabled', 'true');
-            await SecureStore.setItemAsync('notifTime', JSON.stringify({ hour: targetTime.hour, minute: targetTime.minute }));
-          } else {
-            setIsEnabled(false);
-            await SecureStore.setItemAsync('notifEnabled', 'false');
-          }
+          registerForPushNotificationsAsync().then((granted) => {
+            if (granted) {
+              scheduleDailyPlantReminder(targetTime.hour, targetTime.minute).catch(() => {});
+            } else {
+              setIsEnabled(false);
+              SecureStore.setItemAsync('notifEnabled', 'false').catch(() => {});
+            }
+          }).catch(() => {});
         }
       } catch (error) {
         console.error("Failed to load notification settings", error);
-      } finally {
         setIsLoading(false);
       }
     };
     
-    try {
-      loadSettings();
-    } catch (e) {
-      console.error("Critical failure during loadSettings", e);
-    }
+    loadSettings();
   }, []);
 
   const handleToggle = async (value: boolean) => {
+    Haptics.selectionAsync().catch(() => {});
     try {
       setIsEnabled(value);
       await SecureStore.setItemAsync('notifEnabled', value ? 'true' : 'false');
@@ -98,9 +100,9 @@ export default function PengaturanNotifikasiScreen() {
               await SecureStore.setItemAsync('userData', JSON.stringify(u));
             } catch {}
           }
-          showNotification("Berhasil", "Pengingat harian berhasil diaktifkan! 🔔");
+          showNotification("Berhasil", "Pengingat harian berhasil diaktifkan!", "success");
         } else {
-          Alert.alert("Izin Notifikasi Ditolak", "Silakan aktifkan izin notifikasi melalui pengaturan perangkat kamu untuk menerima pengingat harian.");
+          showNotification("Izin Notifikasi Ditolak", "Silakan aktifkan izin notifikasi melalui pengaturan perangkat kamu untuk menerima pengingat harian.", "error");
           setIsEnabled(false);
           await SecureStore.setItemAsync('notifEnabled', 'false');
         }
@@ -115,16 +117,17 @@ export default function PengaturanNotifikasiScreen() {
           } catch {}
         }
         await cancelAllPlantReminders();
-        showNotification("Dinonaktifkan", "Pengingat harian telah dinonaktifkan.");
+        showNotification("Dinonaktifkan", "Pengingat harian telah dinonaktifkan.", "success");
       }
     } catch (e) {
       console.error(e);
       setIsEnabled(!value);
-      Alert.alert("Gagal", "Tidak dapat memperbarui pengaturan pengingat. Silakan coba lagi.");
+      showNotification("Gagal", "Tidak dapat memperbarui pengaturan pengingat. Silakan coba lagi.", "error");
     }
   };
 
   const handleTimeSelect = async (timeOption: typeof TIME_OPTIONS[0]) => {
+    Haptics.selectionAsync().catch(() => {});
     const previousTime = selectedTime;
     try {
       setSelectedTime(timeOption);
@@ -142,12 +145,12 @@ export default function PengaturanNotifikasiScreen() {
       
       if (isEnabled) {
         await scheduleDailyPlantReminder(timeOption.hour, timeOption.minute);
-        showNotification("Berhasil Diperbarui", `Pengingat diatur untuk pukul ${timeOption.label}`);
+        showNotification("Berhasil Diperbarui", `Pengingat diatur untuk pukul ${timeOption.label}`, "success");
       }
     } catch (e) {
       console.error(e);
       setSelectedTime(previousTime);
-      Alert.alert("Gagal", "Tidak dapat mengubah waktu pengingat. Silakan coba lagi.");
+      showNotification("Gagal", "Tidak dapat mengubah waktu pengingat. Silakan coba lagi.", "error");
     }
   };
 
@@ -166,7 +169,14 @@ export default function PengaturanNotifikasiScreen() {
       
       {/* HEADER */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={{ marginRight: 16 }} hitSlop={10}>
+        <Pressable 
+          onPress={() => {
+            Haptics.selectionAsync().catch(() => {});
+            router.back();
+          }} 
+          style={{ marginRight: 16 }} 
+          hitSlop={10}
+        >
           <MaterialIcons name="arrow-back" size={24} color="#123924" />
         </Pressable>
         <Text style={styles.headerTitle}>Pengaturan Notifikasi</Text>
@@ -229,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    
+    borderBottomWidth: 1,
     borderBottomColor: '#E8E5DA',
     backgroundColor: '#FFFFFF' },
   headerTitle: {
@@ -269,12 +279,13 @@ const styles = StyleSheet.create({
   chip: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0,
-    
+    backgroundColor: '#FBF8F0',
+    borderWidth: 1.5,
+    borderColor: '#E8E5DA',
     borderRadius: 100 },
   chipSelected: {
-    backgroundColor: '#3FA86B' },
+    backgroundColor: '#3FA86B',
+    borderColor: '#3FA86B' },
   chipText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,

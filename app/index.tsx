@@ -22,14 +22,6 @@ import api from "../services/api";
 
 const { width } = Dimensions.get("window");
 
-// 4 Indikator Milestone Fase Bertani (Nol Emoji)
-const MILESTONES = [
-  { label: "Semai", threshold: 0 },
-  { label: "Nutrisi", threshold: 28 },
-  { label: "Tunas", threshold: 62 },
-  { label: "Kebun Siap", threshold: 92 },
-];
-
 // Helper resolusi rute awal dengan prioritas akun login
 const resolveInitialRoute = async (): Promise<string> => {
   try {
@@ -709,37 +701,6 @@ export default function IndexScreen() {
           <Text style={styles.statusLabel}>{statusText}</Text>
           <Text style={styles.percentText}>{displayPercent}%</Text>
         </View>
-
-        {/* 4 INDIKATOR MILESTONE FASE BERTANI */}
-        <View style={styles.milestoneRow}>
-          {MILESTONES.map((m, idx) => {
-            const isPassed = displayPercent >= m.threshold;
-            const isCurrent =
-              isPassed &&
-              (idx === MILESTONES.length - 1 || displayPercent < MILESTONES[idx + 1].threshold);
-
-            return (
-              <View key={m.label} style={styles.milestoneItem}>
-                <View
-                  style={[
-                    styles.milestoneDot,
-                    isPassed && styles.milestoneDotPassed,
-                    isCurrent && styles.milestoneDotCurrent,
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.milestoneText,
-                    isPassed && styles.milestoneTextPassed,
-                    isCurrent && styles.milestoneTextCurrent,
-                  ]}
-                >
-                  {m.label}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
       </View>
     </Animated.View>
   );
@@ -933,43 +894,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 2,
-  },
-  milestoneRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginTop: 14,
-    paddingHorizontal: 2,
-  },
-  milestoneItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  milestoneDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#D8D5CB",
-  },
-  milestoneDotPassed: {
-    backgroundColor: "#3FA86B",
-  },
-  milestoneDotCurrent: {
-    backgroundColor: "#16A34A",
-    transform: [{ scale: 1.3 }],
-  },
-  milestoneText: {
-    fontSize: 10,
-    fontFamily: "Nunito_700Bold",
-    color: "#8C897E",
-  },
-  milestoneTextPassed: {
-    color: "#2D4A3E",
-  },
-  milestoneTextCurrent: {
-    fontFamily: "Nunito_800ExtraBold",
-    color: "#123924",
   },
 });

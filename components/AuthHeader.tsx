@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Dimensions, StyleSheet } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Animated, { 
+  cancelAnimation,
   useSharedValue, 
   useAnimatedStyle, 
   withTiming, 
   withRepeat, 
   withSequence, 
+  withSpring,
   Easing 
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
@@ -17,7 +19,7 @@ interface AuthHeaderProps {
   isPasswordFocused: boolean;
 }
 
-export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
+function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
 
@@ -30,13 +32,18 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
       -1, 
       true 
     );
+
+    return () => {
+      cancelAnimation(scale);
+      cancelAnimation(translateY);
+    };
   }, []);
 
   useEffect(() => {
     if (isPasswordFocused) {
-      translateY.value = withTiming(80, { duration: 300, easing: Easing.inOut(Easing.ease) });
+      translateY.value = withSpring(85, { damping: 15, stiffness: 120 });
     } else {
-      translateY.value = withTiming(0, { duration: 300, easing: Easing.inOut(Easing.ease) });
+      translateY.value = withSpring(0, { damping: 15, stiffness: 120 });
     }
   }, [isPasswordFocused]);
 
@@ -50,7 +57,7 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
   });
 
   return (
-    <View style={styles.headerContainer}>
+    <View style={styles.headerContainer} pointerEvents="none">
       {/* Decorative Sparkles */}
       <View style={{ position: 'absolute', top: 60, left: 40, width: 20, height: 20, borderRadius: 10, backgroundColor: '#52A875', opacity: 0.2 }} />
       <View style={{ position: 'absolute', top: 40, right: 60, width: 14, height: 14, borderRadius: 7, backgroundColor: '#3FA96B', opacity: 0.3 }} />
@@ -61,6 +68,7 @@ export default function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
           source={require("../assets/images/icontampilanawal/seedling-ngintip.svg")}
           style={{ width: 300, height: 300 }}
           contentFit="contain"
+          cachePolicy="memory-disk"
         />
       </Animated.View>
 
@@ -128,3 +136,5 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
 });
+
+export default React.memo(AuthHeader);

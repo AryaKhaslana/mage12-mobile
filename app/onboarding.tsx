@@ -1,8 +1,10 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from 'expo-image';
 import { router } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     Dimensions,
     Pressable,
@@ -13,6 +15,7 @@ import {
     ViewToken } from "react-native";
 
 import Animated, {
+    cancelAnimation,
     Extrapolation,
     FadeInDown,
     interpolate,
@@ -37,7 +40,7 @@ interface PaginationDotProps {
   width: number;
 }
 
-const PaginationDot = ({ index, scrollX, width }: PaginationDotProps) => {
+const PaginationDot = React.memo(({ index, scrollX, width }: PaginationDotProps) => {
   const animatedDotStyle = useAnimatedStyle(() => {
     const widthVal = interpolate(
       scrollX.value,
@@ -57,7 +60,7 @@ const PaginationDot = ({ index, scrollX, width }: PaginationDotProps) => {
   });
 
   return <Animated.View style={[styles.dot, animatedDotStyle]} />;
-};
+});
 
 const slides = [
   {
@@ -88,10 +91,13 @@ const slides = [
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<Animated.FlatList<any>>(null);
+  const completeLockRef = useRef(false);
+
   // Breathing Maskot Animation
   const breathingScale = useSharedValue(1);
   const floatingTranslateY = useSharedValue(0);
   const floatingTranslateYAlt = useSharedValue(0);
+
   useEffect(() => {
     breathingScale.value = withRepeat(
       withSequence(
@@ -117,7 +123,14 @@ export default function OnboardingScreen() {
       -1,
       true,
     );
+
+    return () => {
+      cancelAnimation(breathingScale);
+      cancelAnimation(floatingTranslateY);
+      cancelAnimation(floatingTranslateYAlt);
+    };
   }, []);
+
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: breathingScale.value }] };
@@ -130,6 +143,7 @@ export default function OnboardingScreen() {
     return {
       transform: [{ translateY: floatingTranslateYAlt.value }] };
   });
+
   // Scroll Animation for Pagination
   const scrollX = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((event) => {
@@ -143,17 +157,34 @@ export default function OnboardingScreen() {
     },
     []
   );
+
   const handleComplete = async () => {
-    await AsyncStorage.setItem("hasSeenOnboarding", "true");
-    router.replace("/");
+    if (completeLockRef.current) return;
+    completeLockRef.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+
+    try {
+      await AsyncStorage.setItem("hasSeenOnboarding", "true");
+      const token = await SecureStore.getItemAsync("userToken");
+      if (token) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/(auth)/login");
+      }
+    } catch (e) {
+      router.replace("/(auth)/login");
+    }
   };
+
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
+      Haptics.selectionAsync().catch(() => {});
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
       handleComplete();
     }
   };
+
   const renderItem = ({ item }: { item: (typeof slides)[0] }) => {
     return (
       <View style={styles.slide}>
@@ -162,19 +193,22 @@ export default function OnboardingScreen() {
             <AnimatedExpoImage
               source={require("../assets/images/icontampilanawal/icon-gedung-chart.svg")}
               style={styles.buildingChart}
-              resizeMode="contain"
+              contentFit="contain"
+              cachePolicy="memory-disk"
             />
           )}
           <AnimatedExpoImage
             source={item.image}
             style={[styles.image, item.id !== "4" && animatedImageStyle]}
-            resizeMode="contain"
+            contentFit="contain"
+            cachePolicy="memory-disk"
           />
           {item.id === "2" && (
             <AnimatedExpoImage
               source={require("../assets/images/icontampilanawal/icon-potkecil.svg")}
               style={[styles.floatingPot, animatedFloatingStyle]}
-              resizeMode="contain"
+              contentFit="contain"
+              cachePolicy="memory-disk"
             />
           )}
           {item.id === "3" && (
@@ -182,12 +216,14 @@ export default function OnboardingScreen() {
               <AnimatedExpoImage
                 source={require("../assets/images/icontampilanawal/icon-notifikasi.svg")}
                 style={[styles.floatingNotif, animatedFloatingStyle]}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
               />
               <AnimatedExpoImage
                 source={require("../assets/images/icontampilanawal/icon-piala.svg")}
                 style={[styles.floatingPiala, animatedFloatingStyleAlt]}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
               />
             </>
           )}

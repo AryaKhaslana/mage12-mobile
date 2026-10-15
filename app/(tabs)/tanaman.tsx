@@ -33,6 +33,7 @@ const JENIS_TANAMAN_ENUM = [
   "Kangkung",
   "Pakcoy",
   "Selada",
+  // coi
   "Sawi Hijau",
   "Kale",
   "Daun Bawang",

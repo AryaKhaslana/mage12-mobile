@@ -219,7 +219,6 @@ export default function KoneksiScreen() {
         showNotification("Profil Belum Siap", "Profil pengguna ini belum dapat diakses saat ini.", "info");
         return;
       }
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       router.push({
         pathname: "/profil-pengguna",
         params: {

@@ -193,8 +193,6 @@ export default function NotifikasiScreen() {
   };
 
   const handlePressCard = async (notif: any) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
     if (!notif.isRead) {
       const prevNotifications = notifications;
       const prevUnreadCount = unreadCount;
@@ -245,10 +243,7 @@ export default function NotifikasiScreen() {
       {/* Custom App Bar */}
       <View style={styles.header}>
         <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
-          }}
+          onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
           hitSlop={8}
           accessibilityLabel="Kembali"

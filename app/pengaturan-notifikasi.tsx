@@ -170,10 +170,7 @@ export default function PengaturanNotifikasiScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <Pressable 
-          onPress={() => {
-            Haptics.selectionAsync().catch(() => {});
-            router.back();
-          }} 
+          onPress={() => router.back()} 
           style={{ marginRight: 16 }} 
           hitSlop={10}
         >

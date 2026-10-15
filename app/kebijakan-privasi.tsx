@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import PolicySection from '../components/PolicySection';
 
 export default function KebijakanPrivasiScreen() {
@@ -16,10 +15,7 @@ export default function KebijakanPrivasiScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <Pressable 
-          onPress={() => {
-            Haptics.selectionAsync().catch(() => {});
-            router.back();
-          }} 
+          onPress={() => router.back()} 
           style={{ marginRight: 16 }} 
           hitSlop={10}
         >

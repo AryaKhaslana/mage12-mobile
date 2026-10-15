@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
 
 const faqs = [
   {
@@ -49,10 +48,7 @@ export default function PusatBantuanScreen() {
         <View style={styles.headerLeft}>
           <Pressable 
             style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]} 
-            onPress={() => {
-              Haptics.selectionAsync().catch(() => {});
-              router.back();
-            }}
+            onPress={() => router.back()}
             hitSlop={10}
           >
             <MaterialIcons name="arrow-back" size={20} color="#123924" />
@@ -108,10 +104,7 @@ export default function PusatBantuanScreen() {
           />
           {searchQuery.length > 0 && (
             <Pressable 
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                setSearchQuery('');
-              }} 
+              onPress={() => setSearchQuery('')} 
               style={styles.clearBtn}
             >
               <MaterialIcons name="cancel" size={20} color="#5C5A4F" />
@@ -129,10 +122,7 @@ export default function PusatBantuanScreen() {
           <View style={styles.gridContainer}>
             <Pressable 
               style={({ pressed }) => [styles.categoryCard, pressed && { opacity: 0.8 }]} 
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                setSearchQuery('hama');
-              }}
+              onPress={() => setSearchQuery('hama')}
             >
               <View style={[styles.categoryIconBox, { backgroundColor: '#b1f1c8' }]}>
                 <MaterialIcons name="eco" size={24} color="#123924" />
@@ -143,10 +133,7 @@ export default function PusatBantuanScreen() {
             
             <Pressable 
               style={({ pressed }) => [styles.categoryCard, pressed && { opacity: 0.8 }]} 
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                setSearchQuery('streak');
-              }}
+              onPress={() => setSearchQuery('streak')}
             >
               <View style={[styles.categoryIconBox, { backgroundColor: 'rgba(255, 182, 39, 0.3)' }]}>
                 <MaterialIcons name="notifications-active" size={24} color="#123924" />
@@ -157,10 +144,7 @@ export default function PusatBantuanScreen() {
             
             <Pressable 
               style={({ pressed }) => [styles.categoryCard, pressed && { opacity: 0.8 }]} 
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                setSearchQuery('smart watering');
-              }}
+              onPress={() => setSearchQuery('smart watering')}
             >
               <View style={[styles.categoryIconBox, { backgroundColor: 'rgba(46, 158, 140, 0.2)' }]}>
                 <MaterialIcons name="sensors" size={24} color="#123924" />
@@ -171,10 +155,7 @@ export default function PusatBantuanScreen() {
             
             <Pressable 
               style={({ pressed }) => [styles.categoryCard, pressed && { opacity: 0.8 }]} 
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                setSearchQuery('level');
-              }}
+              onPress={() => setSearchQuery('level')}
             >
               <View style={[styles.categoryIconBox, { backgroundColor: '#ffd9dc' }]}>
                 <MaterialIcons name="group" size={24} color="#123924" />
@@ -201,10 +182,7 @@ export default function PusatBantuanScreen() {
                 <View key={faq.id} style={styles.faqCard}>
                   <Pressable 
                     style={styles.faqToggle} 
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      setExpandedId(isExpanded ? null : faq.id);
-                    }}
+                    onPress={() => setExpandedId(isExpanded ? null : faq.id)}
                   >
                     <Text style={styles.faqQuestion}>{faq.question}</Text>
                     <MaterialIcons 
@@ -252,10 +230,7 @@ export default function PusatBantuanScreen() {
           <View style={styles.contactButtons}>
             <Pressable 
               style={({ pressed }) => [styles.tanibotButton, pressed && { opacity: 0.85 }]}
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                router.push('/(tabs)/tanibot');
-              }}
+              onPress={() => router.push('/(tabs)/tanibot')}
             >
               <MaterialIcons name="smart-toy" size={20} color="#FFFFFF" />
               <Text style={styles.tanibotButtonText}>Tanya TaniBot AI Sekarang</Text>
@@ -264,7 +239,6 @@ export default function PusatBantuanScreen() {
             <Pressable 
               style={({ pressed }) => [styles.waButton, pressed && { opacity: 0.85 }]} 
               onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
                 Linking.openURL('https://wa.me/6281234567890?text=Halo%20TaniCare,%20saya%20butuh%20bantuan%20seputar%20TaniSync.').catch(() => {});
               }}
             >
@@ -275,7 +249,6 @@ export default function PusatBantuanScreen() {
             <Pressable 
               style={({ pressed }) => [styles.ticketButton, pressed && { opacity: 0.85 }]} 
               onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
                 Linking.openURL('mailto:support@tanisync.id?subject=Tiket Pengaduan TaniSync&body=Halo tim TaniCare, saya ingin melaporkan masalah:').catch(() => {});
               }}
             >

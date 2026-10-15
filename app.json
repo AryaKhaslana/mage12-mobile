@@ -1,21 +1,29 @@
 {
   "expo": {
-    "name": "mage12-mobile",
+    "name": "TaniSync",
     "slug": "mage12-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "mage12mobile",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icontampilanawal/icon-aplikasi.png",
+        "backgroundColor": "#FBF8F0"
+      },
       "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.SCHEDULE_EXACT_ALARM"
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ],
       "package": "com.ryuseieee.mage12mobile"
     },
@@ -32,7 +40,14 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "TaniSync butuh lokasi kamu buat menghubungkan kamu dengan urban farmer lain di sekitarmu broskie."
+          "locationAlwaysAndWhenInUsePermission": "TaniSync memerlukan akses lokasi untuk menampilkan prakiraan cuaca kebun yang akurat dan menghubungkan kamu dengan komunitas petani di sekitarmu."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TaniSync memerlukan izin galeri untuk mengunggah foto profil, kebun, dan postingan komunitas.",
+          "cameraPermission": "TaniSync memerlukan izin kamera untuk mengambil foto perkembangan tanaman secara langsung."
         }
       ],
       [

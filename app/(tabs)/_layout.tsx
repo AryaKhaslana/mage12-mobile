@@ -1,11 +1,39 @@
-import { Image } from 'expo-image';
-import { Tabs } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Tabs } from 'expo-router';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/colors';
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
+const CustomTabBar = React.memo(function CustomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: any) {
   const insets = useSafeAreaInsets();
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  if (isKeyboardVisible) {
+    return null;
+  }
 
   return (
     <View style={[styles.container, { bottom: Math.max(insets.bottom, 16) }]}>
@@ -14,10 +42,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         const isFocused = state.index === index;
 
         const onPress = () => {
+          Haptics.selectionAsync().catch(() => {});
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
-            canPreventDefault: true });
+            canPreventDefault: true,
+          });
 
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
@@ -27,7 +57,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         const onLongPress = () => {
           navigation.emit({
             type: 'tabLongPress',
-            target: route.key });
+            target: route.key,
+          });
         };
 
         const color = isFocused ? Colors.primary : '#8F9B94';
@@ -42,21 +73,36 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 style={({ pressed }) => [
                   styles.fab,
                   pressed && styles.fabPressed,
-                  isFocused && { borderColor: Colors.primary, borderWidth: 2.5 }
+                  isFocused && styles.fabActive,
                 ]}
               >
                 <Image
                   source={require('../../assets/images/navbar/chatbot.svg')}
                   style={{ width: 52, height: 52, transform: [{ translateY: 4 }] }}
                   contentFit="contain"
+                  cachePolicy="memory-disk"
+                  transition={0}
                 />
               </Pressable>
-              <Text style={[styles.fabLabel, { color: isFocused ? Colors.primary : '#8F9B94' }]}>TaniBot</Text>
+              <Text style={[styles.fabLabel, { color: isFocused ? Colors.primary : '#8F9B94' }]}>
+                TaniBot
+              </Text>
             </View>
           );
         }
 
-        // Other Tabs
+        let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
+
+        if (route.name === 'index') {
+          iconName = isFocused ? 'home' : 'home-outline';
+        } else if (route.name === 'tanaman') {
+          iconName = isFocused ? 'leaf' : 'leaf-outline';
+        } else if (route.name === 'komunitas') {
+          iconName = isFocused ? 'people' : 'people-outline';
+        } else if (route.name === 'profil') {
+          iconName = isFocused ? 'person' : 'person-outline';
+        }
+
         return (
           <Pressable
             key={route.key}
@@ -64,43 +110,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             onLongPress={onLongPress}
             style={({ pressed }) => [
               styles.tabItem,
-              pressed && { transform: [{ translateY: 2 }] }
+              pressed && { transform: [{ translateY: 2 }] },
             ]}
           >
             <View style={styles.iconContainer}>
               {isFocused && <View style={styles.badgeIndicator} />}
-              
-              {route.name === 'index' && (
-                <Image 
-                  source={isFocused ? require('../../assets/images/navbar/home-active.svg') : require('../../assets/images/navbar/home.svg')} 
-                  style={{ width: 24, height: 24 }} 
-                  contentFit="contain" 
-                />
-              )}
-
-              {route.name === 'tanaman' && (
-                <Image 
-                  source={isFocused ? require('../../assets/images/navbar/plant-active.svg') : require('../../assets/images/navbar/plant.svg')} 
-                  style={{ width: 24, height: 24 }} 
-                  contentFit="contain" 
-                />
-              )}
-
-              {route.name === 'komunitas' && (
-                <Image 
-                  source={isFocused ? require('../../assets/images/navbar/community-active.svg') : require('../../assets/images/navbar/community.svg')} 
-                  style={{ width: 24, height: 24 }} 
-                  contentFit="contain" 
-                />
-              )}
-
-              {route.name === 'profil' && (
-                <Image 
-                  source={isFocused ? require('../../assets/images/navbar/user-active.svg') : require('../../assets/images/navbar/user.svg')} 
-                  style={{ width: 24, height: 24 }} 
-                  contentFit="contain" 
-                />
-              )}
+              <Ionicons name={iconName} size={24} color={color} />
             </View>
 
             <Text style={[styles.tabLabel, { color }]}>
@@ -111,15 +126,22 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       })}
     </View>
   );
-}
+});
 
 export default function TabLayout() {
+  const renderTabBar = useCallback((props: any) => {
+    return <CustomTabBar {...props} />;
+  }, []);
+
   return (
     <Tabs
-      tabBar={props => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      tabBar={renderTabBar}
+      screenOptions={{
+        headerShown: false,
+        lazy: false,
+      }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="index" options={{ title: 'Beranda' }} />
       <Tabs.Screen name="tanaman" options={{ title: 'Tanaman' }} />
       <Tabs.Screen name="tanibot" options={{ title: 'TaniBot' }} />
       <Tabs.Screen name="komunitas" options={{ title: 'Komunitas' }} />
@@ -150,17 +172,20 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4 },
+    paddingVertical: 4,
+  },
   iconContainer: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative' },
+    position: 'relative',
+  },
   tabLabel: {
     fontSize: 12,
     fontFamily: 'Nunito_800ExtraBold',
-    marginTop: 2 },
+    marginTop: 2,
+  },
   badgeIndicator: {
     position: 'absolute',
     top: -4,
@@ -168,15 +193,17 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     backgroundColor: Colors.primary,
-    borderRadius: 3 },
+    borderRadius: 3,
+  },
   fabWrapper: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center' },
+    justifyContent: 'center',
+  },
   fab: {
     width: 60,
     height: 60,
-    marginTop: -28, // slightly popping up
+    marginTop: -28,
     borderRadius: 30,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
@@ -187,11 +214,19 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 6,
     alignItems: 'center',
-    justifyContent: 'center' },
+    justifyContent: 'center',
+  },
+  fabActive: {
+    backgroundColor: '#E8F7EE',
+    borderColor: Colors.primary,
+    borderWidth: 3,
+  },
   fabPressed: {
-    transform: [{ scale: 0.95 }] },
+    transform: [{ scale: 0.95 }],
+  },
   fabLabel: {
     fontSize: 12,
     fontFamily: 'Nunito_800ExtraBold',
-    marginTop: 2 }
+    marginTop: 2,
+  },
 });

@@ -214,18 +214,30 @@ export default function DetailTanamanModal() {
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
-    if (isPlayingMemory && photoLogsAsc.length > 1) {
-      interval = setInterval(() => {
-        setMemoryIndex(prev => {
-          if (prev >= photoLogsAsc.length - 1) {
-            setIsPlayingMemory(false);
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 300);
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (isPlayingMemory) {
+      if (photoLogsAsc.length > 1) {
+        interval = setInterval(() => {
+          setMemoryIndex(prev => {
+            if (prev >= photoLogsAsc.length - 1) {
+              setIsPlayingMemory(false);
+              return 0;
+            }
+            return prev + 1;
+          });
+        }, 350);
+      } else if (photoLogsAsc.length === 1) {
+        timeout = setTimeout(() => {
+          setIsPlayingMemory(false);
+        }, 2600);
+      }
     }
-    return () => clearInterval(interval);
+
+    return () => {
+      if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
   }, [isPlayingMemory, photoLogsAsc]);
 
   const sudahValidasiHariIni = useMemo(() => {
@@ -589,7 +601,13 @@ export default function DetailTanamanModal() {
         <View style={styles.heroSection}>
           <View style={styles.imageWrapper}>
             {isPlayingMemory ? (
-              <Image source={{ uri: photoLogsAsc[memoryIndex] }} style={styles.heroImage} contentFit="cover" cachePolicy="memory-disk" />
+              <Image 
+                source={{ uri: photoLogsAsc[memoryIndex] }} 
+                style={[styles.heroImage, isPlayingMemory && { transform: [{ scale: 1.04 }] }]} 
+                contentFit="cover" 
+                cachePolicy="memory-disk" 
+                transition={300}
+              />
             ) : latestPhotoUrl ? (
               <Image source={{ uri: latestPhotoUrl }} style={styles.heroImage} contentFit="cover" cachePolicy="memory-disk" />
             ) : (
@@ -625,11 +643,25 @@ export default function DetailTanamanModal() {
             <MaterialIcons name="photo-camera" size={22} color="#123924" />
           </TouchableOpacity>
           
-          {photoLogsAsc.length > 1 && (
+          {photoLogsAsc.length > 0 && (
             <TouchableOpacity 
               style={[styles.floatingCamButton, { right: undefined, left: 12, backgroundColor: isPlayingMemory ? '#FF6B5C' : '#3FA86B' }]} 
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (photoLogsAsc.length === 1) {
+                  if (!isPlayingMemory) {
+                    setMemoryIndex(0);
+                    setIsPlayingMemory(true);
+                    showNotification(
+                      "Memori Pertumbuhan",
+                      "Foto awal tersimpan rapi! Tambahkan jurnal perawatan berikutnya untuk melihat timelapse pertumbuhan lebih panjang.",
+                      "info"
+                    );
+                  } else {
+                    setIsPlayingMemory(false);
+                  }
+                  return;
+                }
                 if (!isPlayingMemory) {
                   setMemoryIndex(0);
                   setIsPlayingMemory(true);

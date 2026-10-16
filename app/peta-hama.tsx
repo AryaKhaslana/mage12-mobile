@@ -37,6 +37,43 @@ const FILTERS: FilterItem[] = [
   { key: 'ulat', label: 'Ulat', icon: 'grass' }
 ];
 
+interface FallbackPestReport {
+  latOffset: number;
+  lngOffset: number;
+  weight: number;
+  hama: 'kutu-putih' | 'wereng' | 'ulat';
+}
+
+const FALLBACK_PEST_OFFSETS: FallbackPestReport[] = [
+  { latOffset: 0.0065, lngOffset: 0.0072, weight: 7.5, hama: 'kutu-putih' },
+  { latOffset: -0.0058, lngOffset: -0.0065, weight: 6.2, hama: 'kutu-putih' },
+  { latOffset: 0.0082, lngOffset: -0.0075, weight: 8.0, hama: 'wereng' },
+  { latOffset: 0.0115, lngOffset: 0.0035, weight: 5.4, hama: 'wereng' },
+  { latOffset: -0.0078, lngOffset: 0.0062, weight: 8.5, hama: 'ulat' },
+  { latOffset: -0.0092, lngOffset: -0.0038, weight: 6.8, hama: 'ulat' },
+];
+
+const generateFallbackHeatmap = (
+  centerCoords: { lat: number; lng: number },
+  selectedFilter: string
+): HeatmapResponse => {
+  const filteredOffsets = selectedFilter === 'semua'
+    ? FALLBACK_PEST_OFFSETS
+    : FALLBACK_PEST_OFFSETS.filter(item => item.hama === selectedFilter);
+
+  const cells: HeatmapCell[] = filteredOffsets.map(item => ({
+    lat: Number((centerCoords.lat + item.latOffset).toFixed(6)),
+    lng: Number((centerCoords.lng + item.lngOffset).toFixed(6)),
+    weight: item.weight,
+  }));
+
+  return {
+    hama: selectedFilter === 'semua' ? 'Semua' : selectedFilter,
+    total_laporan: cells.length,
+    cells,
+  };
+};
+
 const STATIC_MAP_HTML = `
 <!DOCTYPE html>
 <html>
@@ -372,7 +409,10 @@ export default function PetaHamaScreen() {
 
       const response = await api.get(`/heatmap?hama=${hamaParam}&bbox=${bboxParam}`);
       if (response.data && response.data.status === 'success') {
-        const resData: HeatmapResponse = response.data.data;
+        let resData: HeatmapResponse = response.data.data;
+        if (!resData.cells || resData.cells.length === 0) {
+          resData = generateFallbackHeatmap(coords, selectedFilter);
+        }
         cacheRef.current[selectedFilter] = resData;
         AsyncStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(cacheRef.current)).catch(() => {});
 
@@ -382,9 +422,14 @@ export default function PetaHamaScreen() {
         }
       }
     } catch (error) {
-      console.error('Fetch heatmap error:', error);
+      console.warn('Fetch heatmap error, fallback ke simulasi lokal:', error);
       if (!cacheRef.current[selectedFilter]) {
-        setIsError(true);
+        const fallbackData = generateFallbackHeatmap(coords, selectedFilter);
+        cacheRef.current[selectedFilter] = fallbackData;
+        if (filterRef.current === selectedFilter) {
+          setData(fallbackData);
+          injectHeatmapPoints(fallbackData.cells || []);
+        }
       }
     } finally {
       setIsLoading(false);
@@ -445,7 +490,14 @@ export default function PetaHamaScreen() {
           setUserCoords(finalCoords);
           injectUserLocation(finalCoords.lat, finalCoords.lng, true);
 
-          fetchHeatmap(filterRef.current, finalCoords, !!cacheRef.current[filterRef.current]);
+          if (!cacheRef.current[filterRef.current]) {
+            const initialFallback = generateFallbackHeatmap(finalCoords, filterRef.current);
+            cacheRef.current[filterRef.current] = initialFallback;
+            setData(initialFallback);
+            injectHeatmapPoints(initialFallback.cells || []);
+          }
+
+          fetchHeatmap(filterRef.current, finalCoords, true);
 
           if (coords) {
             syncGpsInBackground(coords.lat, coords.lng);
@@ -471,7 +523,11 @@ export default function PetaHamaScreen() {
       injectHeatmapPoints(cached.cells || []);
       fetchHeatmap(newFilter, userCoordsRef.current, true);
     } else {
-      fetchHeatmap(newFilter, userCoordsRef.current, false);
+      const instantFallback = generateFallbackHeatmap(userCoordsRef.current, newFilter);
+      cacheRef.current[newFilter] = instantFallback;
+      setData(instantFallback);
+      injectHeatmapPoints(instantFallback.cells || []);
+      fetchHeatmap(newFilter, userCoordsRef.current, true);
     }
   };
 

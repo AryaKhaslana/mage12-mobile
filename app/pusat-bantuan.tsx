@@ -2,7 +2,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-    Linking,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -219,10 +218,10 @@ export default function PusatBantuanScreen() {
             </View>
             <View style={styles.contactInfo}>
               <Text style={styles.contactTitle}>Masih Butuh Bantuan?</Text>
-              <Text style={styles.contactDesc}>Tim TaniSync siap mendampingi kebun urbanmu secara langsung.</Text>
+              <Text style={styles.contactDesc}>Dapatkan panduan cepat dari asisten cerdas TaniBot AI atau diskusikan langsung bersama pegiat urban farming.</Text>
               <View style={styles.contactHours}>
                 <View style={styles.onlineDot} />
-                <Text style={styles.contactHoursText}>Senin - Minggu: 08.00 - 20.00 WIB</Text>
+                <Text style={styles.contactHoursText}>Layanan Komunitas & AI Aktif 24 Jam</Text>
               </View>
             </View>
           </View>
@@ -237,23 +236,11 @@ export default function PusatBantuanScreen() {
             </Pressable>
 
             <Pressable 
-              style={({ pressed }) => [styles.waButton, pressed && { opacity: 0.85 }]} 
-              onPress={() => {
-                Linking.openURL('https://wa.me/6281234567890?text=Halo%20TaniCare,%20saya%20butuh%20bantuan%20seputar%20TaniSync.').catch(() => {});
-              }}
+              style={({ pressed }) => [styles.communityButton, pressed && { opacity: 0.85 }]} 
+              onPress={() => router.push('/(tabs)/komunitas')}
             >
-              <MaterialIcons name="chat" size={20} color="#FFFFFF" />
-              <Text style={styles.waButtonText}>Chat via WhatsApp</Text>
-            </Pressable>
-            
-            <Pressable 
-              style={({ pressed }) => [styles.ticketButton, pressed && { opacity: 0.85 }]} 
-              onPress={() => {
-                Linking.openURL('mailto:support@tanisync.id?subject=Tiket Pengaduan TaniSync&body=Halo tim TaniCare, saya ingin melaporkan masalah:').catch(() => {});
-              }}
-            >
-              <MaterialIcons name="mail" size={20} color="#123924" />
-              <Text style={styles.ticketButtonText}>Kirim Email Pengaduan</Text>
+              <MaterialIcons name="forum" size={20} color="#FFFFFF" />
+              <Text style={styles.communityButtonText}>Diskusi di Komunitas Urban</Text>
             </Pressable>
           </View>
         </View>
@@ -558,7 +545,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
   },
-  waButton: {
+  communityButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -573,29 +560,10 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 4,
   },
-  waButtonText: {
+  communityButtonText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
-    color: '#FFFFFF' },
-  ticketButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    borderRadius: 100,
-    borderWidth: 1.5,
-    borderColor: '#E8E5DA',
-    shadowColor: "#123924",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    color: '#FFFFFF',
   },
-  ticketButtonText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 14,
-    color: '#123924' }
 });
 

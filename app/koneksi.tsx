@@ -13,7 +13,7 @@ import { useLocalSearchParams, router, useFocusEffect, Stack } from 'expo-router
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { getUserFollowers, getUserFollowing, PublicUserProfile } from '../services/api';
+import { getUserFollowers, getUserFollowing, PublicUserProfile, registerOnLogout } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 
 const C = {
@@ -43,6 +43,7 @@ const shadowSubtle = {
 };
 
 const connectionCache = new Map<number, { followers: PublicUserProfile[]; following: PublicUserProfile[] }>();
+registerOnLogout(() => connectionCache.clear());
 
 const SkeletonCard = () => {
   const opacity = useRef(new Animated.Value(0.4)).current;

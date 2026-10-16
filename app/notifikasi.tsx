@@ -17,6 +17,7 @@ import {
   getMyNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  registerOnLogout,
 } from '../services/api';
 import { getRelativeTime } from '../utils/format';
 
@@ -29,6 +30,9 @@ interface CachedNotifs {
 }
 
 let memoryNotificationsCache: CachedNotifs | null = null;
+registerOnLogout(() => {
+  memoryNotificationsCache = null;
+});
 
 const NotificationSkeleton = () => {
   const [pulseAnim] = useState(() => new RNAnimated.Value(0.4));

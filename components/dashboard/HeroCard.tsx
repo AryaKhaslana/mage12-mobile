@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
-export default function HeroCard({ streak, onPress }: { streak: number, onPress: () => void }) {
+const HeroCard = React.memo(function HeroCard({ streak, onPress }: { streak: number, onPress: () => void }) {
   const isZero = streak === 0;
   
   return (
@@ -44,7 +44,9 @@ export default function HeroCard({ streak, onPress }: { streak: number, onPress:
       </View>
     </Pressable>
   );
-}
+});
+
+export default HeroCard;
 
 const styles = StyleSheet.create({
   cardContainer: {

@@ -23,8 +23,18 @@ import ProfileOnboardingModal from "../../components/dashboard/ProfileOnboarding
 import CoachMarkOverlay, { CoachMarkStep } from "../../components/CoachMarkOverlay";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
-import api from "../../services/api";
+import api, { registerOnLogout } from "../../services/api";
 import { checkTutorialFinished, markTutorialFinished } from "../../utils/tutorial";
+
+let memoryHomeUser: any = null;
+let memoryHomeTanaman: any[] | null = null;
+let memoryHomeWeather: any = null;
+
+registerOnLogout(() => {
+  memoryHomeUser = null;
+  memoryHomeTanaman = null;
+  memoryHomeWeather = null;
+});
 
 
 import { Image } from 'expo-image';
@@ -63,7 +73,8 @@ const EmptyHint = forwardRef<View, {
     {imageSource ? (
       <Image 
         source={imageSource} 
-        style={{ width: 120, height: 120, marginBottom: 12, resizeMode: 'contain' }} 
+        style={{ width: 120, height: 120, marginBottom: 12 }} 
+        contentFit="contain"
       />
     ) : (
       <MaterialIcons
@@ -141,12 +152,14 @@ const HomeSkeleton = () => {
   const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [fadeAnim]);
 
   const boxStyles = { backgroundColor: '#E8E5DA' };
@@ -206,7 +219,7 @@ export default function DashboardScreen() {
     if (hour >= 15 && hour < 18) return "Selamat sore";
     return "Selamat malam";
   };
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(() => memoryHomeUser);
   const [showGamification, setShowGamification] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialSteps, setTutorialSteps] = useState<CoachMarkStep[]>([]);
@@ -224,9 +237,9 @@ export default function DashboardScreen() {
   
   const insets = useSafeAreaInsets();
   
-  const [tanamanList, setTanamanList] = useState<any[]>([]);
-  const [weather, setWeather] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [tanamanList, setTanamanList] = useState<any[]>(() => memoryHomeTanaman || []);
+  const [weather, setWeather] = useState<any>(() => memoryHomeWeather);
+  const [isLoading, setIsLoading] = useState(() => !memoryHomeUser && !memoryHomeTanaman);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBadgeInfo, setShowBadgeInfo] = useState(false);
@@ -376,7 +389,7 @@ export default function DashboardScreen() {
         await AsyncStorage.setItem(key, 'true');
         
         setShowRestorePopup(false);
-        showNotification("Streak Dipulihkan! 🔥", "Jangan lupa menyiram tanaman kamu hari ini ya!", "success");
+        showNotification("Streak Dipulihkan!", "Jangan lupa menyiram tanaman kamu hari ini ya!", "success");
       }
     } catch (e: any) {
       const msg = e.response?.data?.message || "Gagal memulihkan streak, coba lagi nanti.";
@@ -411,8 +424,8 @@ export default function DashboardScreen() {
         const cachedWeather = await AsyncStorage.getItem("dashboard_weather");
         
         let hasCache = false;
-        if (cachedUser) { setUserData(JSON.parse(cachedUser)); hasCache = true; }
-        if (cachedTanaman) { setTanamanList(sortTanamanItems(JSON.parse(cachedTanaman))); hasCache = true; }
+        if (cachedUser) { const parsed = JSON.parse(cachedUser); setUserData(parsed); memoryHomeUser = parsed; hasCache = true; }
+        if (cachedTanaman) { const parsed = sortTanamanItems(JSON.parse(cachedTanaman)); setTanamanList(parsed); memoryHomeTanaman = parsed; hasCache = true; }
         if (cachedWeather) {
           const parsed = JSON.parse(cachedWeather);
           if (parsed.savedAt) {
@@ -420,6 +433,7 @@ export default function DashboardScreen() {
           }
           if (parsed.savedAt && Date.now() - parsed.savedAt < 3 * 60 * 60 * 1000) {
             setWeather(parsed.data);
+            memoryHomeWeather = parsed.data;
             hasCache = true;
           }
         }
@@ -458,6 +472,7 @@ export default function DashboardScreen() {
         .then(async (weatherRes) => {
           if (weatherRes?.data?.data) {
             const weatherData = weatherRes.data.data;
+            memoryHomeWeather = weatherData;
             setWeather(weatherData);
             AsyncStorage.setItem(
               "dashboard_weather",
@@ -478,8 +493,8 @@ export default function DashboardScreen() {
                 const lastNotified = await AsyncStorage.getItem("last_rain_notified");
                 if (lastNotified !== todayStr) {
                   showNotification(
-                    "☔ Prakiraan Hujan",
-                    "Penyiraman otomatis ditunda hari ini karena diprediksi turun hujan. Tetap perhatikan kebun kamu ya! 🌧️",
+                    "Prakiraan Hujan",
+                    "Penyiraman otomatis ditunda hari ini karena diprediksi turun hujan. Tetap perhatikan kebun kamu ya!",
                     "info"
                   );
                   await AsyncStorage.setItem("last_rain_notified", todayStr);
@@ -518,6 +533,7 @@ export default function DashboardScreen() {
             };
           }
           SecureStore.setItemAsync("userData", JSON.stringify(merged)).catch(console.error);
+          memoryHomeUser = merged;
           return merged;
         });
 
@@ -528,6 +544,7 @@ export default function DashboardScreen() {
       if (tanamanRes?.data?.data) {
         hasLoadedDataRef.current = true;
         const sorted = sortTanamanItems(tanamanRes.data.data);
+        memoryHomeTanaman = sorted;
         setTanamanList(sorted);
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(sorted)).catch(() => {});
       }
@@ -630,7 +647,7 @@ export default function DashboardScreen() {
 
     // 5. Notifikasi Sukses Instan (0ms)
     showNotification(
-      "Berhasil Menyiram! 💧",
+      "Berhasil Menyiram!",
       `Berhasil menyiram ${plantName || 'tanaman'}! +1 EXP & Streak terjaga!`,
       "success"
     );
@@ -658,7 +675,7 @@ export default function DashboardScreen() {
 
         if (d.levelUp) {
           showNotification(
-            "Level Up! 🎉",
+            "Level Up!",
             `Level Meningkat! Sekarang kamu berada di Level ${d.level}!`,
             "success"
           );
@@ -962,7 +979,7 @@ export default function DashboardScreen() {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
-              ☔ Pelindung Streak
+              Pelindung Streak
             </Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
               Nyalain lagi apimu kalau kamu lupa siram sehari. Dapet +1 tiap naik level!
@@ -983,10 +1000,10 @@ export default function DashboardScreen() {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
-              Apinya Padam! 😱
+              Apinya Padam!
             </Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
-              Kemarin kamu lupa siram tanaman ya? 😢 Tenang, kamu masih punya {userData?.pelindung_streak || 0} ☔ Pelindung. Mau pakai 1 buat nyalain apimu lagi?
+              Kemarin kamu lupa siram tanaman ya? Tenang, kamu masih punya {userData?.pelindung_streak || 0} Pelindung. Mau pakai 1 buat nyalain apimu lagi?
             </Text>
             
             <View style={{ gap: 12 }}>
@@ -1000,7 +1017,7 @@ export default function DashboardScreen() {
                 {isRestoring ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>☔ Pakai Pelindung</Text>
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Pakai Pelindung</Text>
                 )}
               </Pressable>
               

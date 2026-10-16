@@ -700,8 +700,7 @@ const styles = StyleSheet.create({
     borderWidth: 0 },
   postImage: {
     width: '100%',
-    height: '100%',
-    resizeMode: 'cover' },
+    height: '100%' },
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',

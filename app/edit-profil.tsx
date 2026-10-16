@@ -319,6 +319,7 @@ export default function EditProfilScreen() {
                   isDirtyRef.current = true;
                   setNama(text);
                 }}
+                maxLength={50}
                 placeholder="Masukkan nama"
                 placeholderTextColor="#5C5A4F"
               />
@@ -333,6 +334,7 @@ export default function EditProfilScreen() {
                   isDirtyRef.current = true;
                   setUsername(text.replace(/\s+/g, '').toLowerCase());
                 }}
+                maxLength={30}
                 placeholder="Masukkan username"
                 placeholderTextColor="#5C5A4F"
                 autoCapitalize="none"
@@ -348,6 +350,7 @@ export default function EditProfilScreen() {
                   isDirtyRef.current = true;
                   setNoHp(text);
                 }}
+                maxLength={15}
                 placeholder="08xxxxxxxxxx"
                 placeholderTextColor="#5C5A4F"
                 keyboardType="phone-pad"

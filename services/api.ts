@@ -1,5 +1,4 @@
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
-import { Alert } from "react-native";
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -43,13 +42,29 @@ export const ALL_CACHE_KEYS = [
   "heatmap_cache_v1_wereng",
   "heatmap_cache_v1_ulat",
   "peta_hama_cache_store",
+  "notifications_cache_v1",
+  "notifications_cache",
 ];
+
+type LogoutCallback = () => void;
+const logoutCallbacks: LogoutCallback[] = [];
+
+export const registerOnLogout = (cb: LogoutCallback) => {
+  logoutCallbacks.push(cb);
+};
 
 export const clearAppCache = async () => {
   try {
-    await AsyncStorage.multiRemove(ALL_CACHE_KEYS);
+    const keys = await AsyncStorage.getAllKeys();
+    const keysToRemove = keys.filter((k) => k !== "hasSeenOnboarding");
+    if (keysToRemove.length > 0) {
+      await AsyncStorage.multiRemove(keysToRemove);
+    }
   } catch (error) {
     console.warn("Failed to clear app cache:", error);
+    try {
+      await AsyncStorage.multiRemove(ALL_CACHE_KEYS);
+    } catch {}
   }
 };
 
@@ -102,6 +117,14 @@ api.get = (function (
 export const logoutUser = async () => {
   setAuthToken(null);
   clearInFlightRequests();
+  logoutCallbacks.forEach((cb) => {
+    try {
+      cb();
+    } catch (e) {
+      console.warn("Logout callback error:", e);
+    }
+  });
+
   if (isLoggingOut) return;
   isLoggingOut = true;
 
@@ -305,7 +328,7 @@ export const googleSignIn = async () => {
       } else if (!userData?.latitude) {
         router.replace("/(auth)/location-setup");
       } else {
-        router.replace("/");
+        router.replace("/(tabs)");
       }
       
       return userData;
@@ -316,18 +339,7 @@ export const googleSignIn = async () => {
       return null;
     }
     
-    if (error.response) {
-       if (error.response.status === 401) {
-         Alert.alert("Gagal Masuk", "Sesi Google telah kedaluwarsa. Silakan coba masuk kembali.");
-       } else if (error.response.status === 400) {
-         Alert.alert("Gagal Masuk", error.response.data?.message || "Permintaan tidak dapat diproses.");
-       } else {
-         Alert.alert("Kesalahan Server", error.response.data?.message || "Terjadi kesalahan pada server. Silakan coba lagi nanti.");
-       }
-    } else {
-       Alert.alert("Gagal Masuk", error.message || "Gagal masuk dengan akun Google.");
-    }
-    
+    // Propagate error to caller for unified in-app notification
     throw error;
   }
 };

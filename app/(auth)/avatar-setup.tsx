@@ -227,7 +227,7 @@ export default function AvatarSetupScreen() {
           >
             {banner ? (
               <>
-                <Image source={{ uri: banner.uri }} style={styles.bannerImage} contentFit="cover" />
+                <Image source={{ uri: banner.uri }} style={styles.bannerImage} contentFit="cover" cachePolicy="memory-disk" />
                 <View style={styles.bannerActionRow}>
                   <Pressable
                     style={styles.bannerIconBtn}
@@ -247,7 +247,7 @@ export default function AvatarSetupScreen() {
               </>
             ) : userData?.bannerUrl ? (
               <>
-                <Image source={{ uri: userData.bannerUrl }} style={styles.bannerImage} contentFit="cover" />
+                <Image source={{ uri: userData.bannerUrl }} style={styles.bannerImage} contentFit="cover" cachePolicy="memory-disk" />
                 <View style={styles.bannerActionRow}>
                   <Pressable
                     style={styles.bannerIconBtn}
@@ -277,9 +277,9 @@ export default function AvatarSetupScreen() {
               disabled={isLoading}
             >
               {avatar ? (
-                <Image source={{ uri: avatar.uri }} style={styles.avatarImage} contentFit="cover" />
+                <Image source={{ uri: avatar.uri }} style={styles.avatarImage} contentFit="cover" cachePolicy="memory-disk" />
               ) : userData?.avatarUrl ? (
-                <Image source={{ uri: userData.avatarUrl }} style={styles.avatarImage} contentFit="cover" />
+                <Image source={{ uri: userData.avatarUrl }} style={styles.avatarImage} contentFit="cover" cachePolicy="memory-disk" />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Text style={styles.avatarInitialText}>{initialLetter}</Text>

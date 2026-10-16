@@ -296,8 +296,7 @@ const styles = StyleSheet.create({
     gap: 4 },
   headerLogo: {
     width: 32,
-    height: 32,
-    resizeMode: 'contain' },
+    height: 32 },
   headerTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 20,
@@ -359,8 +358,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center' },
   heroImage: {
     width: '100%',
-    height: '100%',
-    resizeMode: 'contain' },
+    height: '100%' },
   heroAmbientCircle: {
     position: 'absolute',
     right: -24,

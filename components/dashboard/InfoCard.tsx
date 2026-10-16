@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function InfoCard({ onPress }: { onPress: () => void }) {
+const InfoCard = React.memo(function InfoCard({ onPress }: { onPress: () => void }) {
   return (
     <Pressable 
       style={({ pressed }) => [
@@ -21,7 +21,9 @@ export default function InfoCard({ onPress }: { onPress: () => void }) {
       <MaterialIcons name="chevron-right" size={24} color="#8F9B94" />
     </Pressable>
   );
-}
+});
+
+export default InfoCard;
 
 const styles = StyleSheet.create({
   card: {

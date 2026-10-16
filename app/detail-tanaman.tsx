@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from "expo-secure-store";
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
@@ -37,7 +37,8 @@ const JENIS_TANAMAN_ENUM = [
 
 const FALLBACK_THUMB = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAK72N9bfUnTDR_qxCQtZfhdGFtdZeRDYs-OsNC2lUxmLLI86pKo2ugpOTvGWWwZL9sOkbzXCmRvMwHqent34F7rwvgUHge8_BFG9hN7iYc902WRQsddbBhE_9RiOVhij3iicG_BjbjGLfbqAgjgG9U9a64_nAsnjBQH2_AoUiMWgVBpRNDZeugVxjpYWAoqgIcNd6whl3ktEPbbtfIzxtMOHeRnbZXGuogESuoFy2lwMymfV81rGAUhA';
 
-const formatDate = (isoString: string) => {
+const formatDate = (isoString?: string | null) => {
+  if (!isoString) return '-';
   const date = new Date(isoString);
   if (isNaN(date.getTime())) return '-';
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + 
@@ -129,6 +130,8 @@ export default function DetailTanamanModal() {
   const [showCertificate, setShowCertificate] = useState(false);
   const [showHarvestConfirm, setShowHarvestConfirm] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const wateringLockRef = useRef(false);
+  const photoLockRef = useRef(false);
 
   
   const handleOpenEdit = () => {
@@ -335,7 +338,9 @@ export default function DetailTanamanModal() {
   };
 
   const handleValidasiButton = async () => {
-    if (isSubmitting) return;
+    if (wateringLockRef.current || isSubmitting) return;
+    wateringLockRef.current = true;
+    setIsSubmitting(true);
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -379,7 +384,6 @@ export default function DetailTanamanModal() {
       }
     }).catch(() => {});
 
-    setIsSubmitting(true);
     try {
       const res = await createLog({ tanamanId, tipeValidasi: "button_only" });
       if (res.levelUp) {
@@ -405,11 +409,12 @@ export default function DetailTanamanModal() {
       fetchData();
     } finally {
       setIsSubmitting(false);
+      wateringLockRef.current = false;
     }
   };
 
   const handleValidasiPhoto = async () => {
-    if (isSubmitting || isUploadingPhoto) return;
+    if (photoLockRef.current || isSubmitting || isUploadingPhoto) return;
     
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -428,6 +433,8 @@ export default function DetailTanamanModal() {
         Alert.alert("Validasi Foto", "Apakah kamu yakin ingin mengirim foto ini?", [
           { text: "Batal", style: "cancel" },
           { text: "Kirim", onPress: async () => {
+              if (photoLockRef.current || isSubmitting) return;
+              photoLockRef.current = true;
               setIsSubmitting(true);
               setIsUploadingPhoto(true);
               try {
@@ -452,6 +459,7 @@ export default function DetailTanamanModal() {
               } finally {
                 setIsSubmitting(false);
                 setIsUploadingPhoto(false);
+                photoLockRef.current = false;
               }
           }}
         ]);
@@ -459,6 +467,7 @@ export default function DetailTanamanModal() {
     } catch (e: any) {
       setIsSubmitting(false);
       setIsUploadingPhoto(false);
+      photoLockRef.current = false;
       showNotification("Gagal", e?.message || "Gagal membuka kamera", "error");
     }
   };
@@ -580,9 +589,9 @@ export default function DetailTanamanModal() {
         <View style={styles.heroSection}>
           <View style={styles.imageWrapper}>
             {isPlayingMemory ? (
-              <Image source={{ uri: photoLogsAsc[memoryIndex] }} style={styles.heroImage} />
+              <Image source={{ uri: photoLogsAsc[memoryIndex] }} style={styles.heroImage} contentFit="cover" cachePolicy="memory-disk" />
             ) : latestPhotoUrl ? (
-              <Image source={{ uri: latestPhotoUrl }} style={styles.heroImage} />
+              <Image source={{ uri: latestPhotoUrl }} style={styles.heroImage} contentFit="cover" cachePolicy="memory-disk" />
             ) : (
               <Image 
                 source={getPlantImage(tanaman?.jenisTanaman)} 
@@ -776,7 +785,7 @@ export default function DetailTanamanModal() {
                   ]}
                 >
                   {log.tipeValidasi === 'photo' ? (
-                    <Image source={{ uri: log.fotoUrl || FALLBACK_THUMB }} style={styles.historyImage} />
+                    <Image source={{ uri: log.fotoUrl || FALLBACK_THUMB }} style={styles.historyImage} contentFit="cover" cachePolicy="memory-disk" />
                   ) : (
                     <View style={[styles.historyImage, styles.historyIconPlaceholder]}>
                       <MaterialIcons name="check-circle" size={22} color="#3FA86B" />
@@ -893,7 +902,7 @@ export default function DetailTanamanModal() {
       <Modal visible={showDeleteConfirm} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
-            <Image source={require("../assets/images/icontampilanawal/seedling-ngantuk.svg")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
+            <Image source={require("../assets/images/icontampilanawal/seedling-ngantuk.svg")} style={{ width: 120, height: 120, marginBottom: 16 }} contentFit="contain" />
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Hapus Tanaman?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Tanaman ini beserta seluruh riwayat jurnalnya akan dihapus permanen dan tidak bisa dikembalikan.
@@ -913,7 +922,7 @@ export default function DetailTanamanModal() {
       <Modal visible={showHarvestConfirm} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
-            <Image source={require("../assets/images/icontampilanawal/seedling-lompat.svg")} style={{ width: 120, height: 120, marginBottom: 16, resizeMode: 'contain' }} />
+            <Image source={require("../assets/images/icontampilanawal/seedling-lompat.svg")} style={{ width: 120, height: 120, marginBottom: 16 }} contentFit="contain" />
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 8 }}>Panen Tanaman Ini?</Text>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
               Perjuanganmu merawat {tanaman?.nickname || tanaman?.jenisTanaman} sudah selesai! Tanaman ini akan dicatat di riwayat panenmu.
@@ -957,7 +966,7 @@ export default function DetailTanamanModal() {
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 24 }}>
                 {photoLogsAsc.slice(0, 3).map((url, i) => (
                   <View key={i} style={{ width: 80, height: 80, borderRadius: 12, borderWidth: 0,  overflow: 'hidden', transform: [{ rotate: i === 1 ? '5deg' : '-5deg' }] }}>
-                    <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
+                    <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" />
                   </View>
                 ))}
                 {photoLogsAsc.length === 0 && (
@@ -1091,7 +1100,7 @@ const styles = StyleSheet.create({
   iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 0, alignItems: 'center', justifyContent: 'center', elevation: 4 },
   heroSection: { marginHorizontal: 20, position: 'relative', marginBottom: 20 },
   imageWrapper: { width: '100%', aspectRatio: 1, borderRadius: 20, borderWidth: 0,  overflow: 'hidden', backgroundColor: '#96d4ad', elevation: 4 },
-  heroImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  heroImage: { width: '100%', height: '100%' },
   floatingCamButton: { 
     position: 'absolute', 
     bottom: 12, 

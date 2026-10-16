@@ -28,6 +28,7 @@ import {
   TanamanDetail,
   toggleCommunityLike,
   toggleFollowUser,
+  registerOnLogout,
 } from "../services/api";
 
 // ===== Design tokens (sesuai design.md + mockup profil) =====
@@ -90,6 +91,7 @@ interface PublicProfileCacheEntry {
 }
 
 const publicProfileCache = new Map<string, PublicProfileCacheEntry>();
+registerOnLogout(() => publicProfileCache.clear());
 
 // ===== Helpers =====
 const getRankTitle = (level: number) => {
@@ -181,15 +183,17 @@ export default function ProfilPenggunaScreen() {
   const params = useLocalSearchParams<{ userId?: string; nama?: string; avatarUrl?: string; bannerUrl?: string; username?: string }>();
   const targetIdentifier = params.username || params.userId;
 
-  const [profile, setProfile] = useState<PublicUserProfile | null>(null);
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [plants, setPlants] = useState<TanamanDetail[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedData = targetIdentifier ? publicProfileCache.get(targetIdentifier) : undefined;
+
+  const [profile, setProfile] = useState<PublicUserProfile | null>(() => cachedData ? cachedData.profile : null);
+  const [posts, setPosts] = useState<CommunityPost[]>(() => cachedData ? cachedData.posts : []);
+  const [plants, setPlants] = useState<TanamanDetail[]>(() => cachedData ? cachedData.plants : []);
+  const [isLoading, setIsLoading] = useState(() => !cachedData);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"postingan" | "kebun">("postingan");
 
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(() => Boolean(cachedData?.profile?.isFollowing));
+  const [followerCount, setFollowerCount] = useState(() => cachedData?.profile?.jumlahPengikut || 0);
   const [isFollowBusy, setIsFollowBusy] = useState(false);
 
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});

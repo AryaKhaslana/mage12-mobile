@@ -1,7 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator, Animated,
     FlatList,
@@ -19,7 +19,12 @@ import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import { getPlantImage } from "../../constants/plantImages";
-import api, { TanamanDetail } from "../../services/api";
+import api, { registerOnLogout, TanamanDetail } from "../../services/api";
+
+let memoryTanamanCache: TanamanDetail[] | null = null;
+registerOnLogout(() => {
+  memoryTanamanCache = null;
+});
 
 const JENIS_TANAMAN_ENUM = [
   "Tomat",
@@ -48,12 +53,14 @@ const PlantGridSkeleton = () => {
   const [fadeAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 0.4, duration: 800, useNativeDriver: true })
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [fadeAnim]);
 
   return (
@@ -73,15 +80,130 @@ const PlantGridSkeleton = () => {
 };
 
 
+const PlantCardItem = memo(function PlantCardItem({
+  tanaman,
+  onPress,
+}: {
+  tanaman: TanamanDetail;
+  onPress: (id: number) => void;
+}) {
+  let bgColor = "#E8F5E9";
+  let borderColor = "#3FA86B";
+  let textColor = "#1B5E20";
+  let statusText = "Aman";
+  let iconName: keyof typeof MaterialIcons.glyphMap = "check-circle";
+
+  if ((tanaman.sisaHariPanen ?? 999) <= 0) {
+    bgColor = "#FFF9E6";
+    borderColor = "#FFB627";
+    textColor = "#B45309";
+    statusText = "Siap Panen";
+    iconName = "event-available";
+  } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+    bgColor = "#FFECEB";
+    borderColor = "#FF6B5C";
+    textColor = "#D32F2F";
+    statusText = "Perlu Disiram";
+    iconName = "water-drop";
+  } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+    bgColor = "#FFF9E6";
+    borderColor = "#FFB627";
+    textColor = "#B45309";
+    statusText = "Ditunda Hujan";
+    iconName = "cloud";
+  } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+    bgColor = "#E8F5E9";
+    borderColor = "#3FA86B";
+    textColor = "#1B5E20";
+    statusText = "Sudah Disiram";
+    iconName = "check-circle";
+  }
+
+  const sudahValidasiHariIni =
+    (tanaman.logTerakhir &&
+      new Date(tanaman.logTerakhir.createdAt).toDateString() ===
+        new Date().toDateString()) ||
+    tanaman.statusPenyiraman === "SUDAH_DISIRAM";
+  if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
+    bgColor = "#E8F5E9";
+    borderColor = "#3FA86B";
+    textColor = "#1B5E20";
+    statusText = "Sudah Disiram";
+    iconName = "check-circle";
+  }
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.pressedShadow4,
+      ]}
+      onPress={() => onPress(tanaman.id)}
+    >
+      <View style={[styles.imageContainer, { overflow: "hidden" }]}>
+        {tanaman.logTerakhir?.fotoUrl ? (
+          <Image
+            source={{ uri: tanaman.logTerakhir.fotoUrl }}
+            placeholder={getPlantImage(tanaman.jenisTanaman)}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+          />
+        ) : (
+          <Image
+            source={getPlantImage(tanaman.jenisTanaman)}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+          />
+        )}
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {tanaman.nickname || tanaman.jenisTanaman}
+        </Text>
+        <Text style={styles.cardSubtitle}>
+          Skor {tanaman.predictiveScore ?? 0} | Panen {tanaman.sisaHariPanen ?? 0} hari
+        </Text>
+        <View style={styles.cardFooter}>
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: bgColor,
+                borderColor: borderColor,
+                flexDirection: "row",
+                alignItems: "center",
+              },
+            ]}
+          >
+            <MaterialIcons
+              name={iconName}
+              size={11}
+              color={textColor}
+              style={{ marginRight: 3 }}
+            />
+            <Text style={[styles.badgeText, { color: textColor }]}>
+              {statusText}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+});
+
 export default function TanamanScreen() {
   const { showNotification } = useNotification();
   const [activeFilter, setActiveFilter] = useState("Semua");
   const filters = ["Semua", "Perlu Disiram", "Sudah Disiram"];
-  const [tanamanList, setTanamanList] = useState<TanamanDetail[]>([]);
-  const tanamanListRef = useRef<TanamanDetail[]>([]);
+  const [tanamanList, setTanamanList] = useState<TanamanDetail[]>(() => memoryTanamanCache || []);
+  const tanamanListRef = useRef<TanamanDetail[]>(tanamanList);
   tanamanListRef.current = tanamanList;
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !memoryTanamanCache || memoryTanamanCache.length === 0);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -98,6 +220,7 @@ export default function TanamanScreen() {
         if (cached) {
           const parsed: TanamanDetail[] = JSON.parse(cached);
           if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+            memoryTanamanCache = parsed;
             setTanamanList(parsed);
             tanamanListRef.current = parsed;
             setIsLoading(false);
@@ -132,6 +255,7 @@ export default function TanamanScreen() {
       const response = await api.get("/tanaman");
       if (response.data?.status === "success") {
         const data = response.data.data;
+        memoryTanamanCache = data;
         setTanamanList(data);
         tanamanListRef.current = data;
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(data)).catch(() => {});
@@ -154,6 +278,7 @@ export default function TanamanScreen() {
         .then((cached) => {
           if (cached) {
             const parsed: TanamanDetail[] = JSON.parse(cached);
+            memoryTanamanCache = parsed;
             setTanamanList(parsed);
             tanamanListRef.current = parsed;
             setIsLoading(false);
@@ -166,11 +291,13 @@ export default function TanamanScreen() {
   );
 
   const handleTambahTanaman = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    const cleanNick = nickname.trim();
     try {
       const response = await api.post("/tanaman", {
         jenisTanaman: selectedTanaman,
-        nickname: nickname || undefined });
+        nickname: cleanNick || undefined });
       if (response.data?.status === "success") {
         const newTanaman = response.data.data;
         showNotification(
@@ -184,6 +311,7 @@ export default function TanamanScreen() {
         // Instant state & cache prepend: tidak perlu nunggu GET /tanaman ulang
         if (newTanaman) {
           const updated = [newTanaman, ...tanamanListRef.current];
+          memoryTanamanCache = updated;
           setTanamanList(updated);
           tanamanListRef.current = updated;
           AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated)).catch(() => {});
@@ -252,91 +380,16 @@ export default function TanamanScreen() {
     </>
   );
 
-  const renderItem = ({ item: tanaman }: { item: TanamanDetail }) => {
-    let bgColor = "#E8F5E9";
-    let borderColor = "#3FA86B";
-    let textColor = "#1B5E20";
-    let statusText = "Aman";
-    let iconName: keyof typeof MaterialIcons.glyphMap = "check-circle";
-    
-    if ((tanaman.sisaHariPanen ?? 999) <= 0) {
-      bgColor = "#FFF9E6";
-      borderColor = "#FFB627";
-      textColor = "#B45309";
-      statusText = "Siap Panen";
-      iconName = "event-available";
-    } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
-      bgColor = "#FFECEB";
-      borderColor = "#FF6B5C";
-      textColor = "#D32F2F";
-      statusText = "Perlu Disiram";
-      iconName = "water-drop";
-    } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
-      bgColor = "#FFF9E6";
-      borderColor = "#FFB627";
-      textColor = "#B45309";
-      statusText = "Ditunda Hujan";
-      iconName = "cloud";
-    } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
-      bgColor = "#E8F5E9";
-      borderColor = "#3FA86B";
-      textColor = "#1B5E20";
-      statusText = "Sudah Disiram";
-      iconName = "check-circle";
-    }
-    
-    const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
-    if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
-      bgColor = "#E8F5E9";
-      borderColor = "#3FA86B";
-      textColor = "#1B5E20";
-      statusText = "Sudah Disiram";
-      iconName = "check-circle";
-    }
+  const handlePressTanaman = useCallback((id: number) => {
+    router.push({ pathname: "/detail-tanaman", params: { id } });
+  }, []);
 
-    return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          pressed && styles.pressedShadow4,
-        ]}
-        onPress={() => router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } })}
-      >
-        <View style={[styles.imageContainer, { overflow: 'hidden' }]}>
-          {tanaman.logTerakhir?.fotoUrl ? (
-            <Image 
-              source={{ uri: tanaman.logTerakhir.fotoUrl }} 
-              placeholder={getPlantImage(tanaman.jenisTanaman)}
-              style={{ width: '100%', height: '100%' }} 
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <Image 
-              source={getPlantImage(tanaman.jenisTanaman)} 
-              style={{ width: '100%', height: '100%' }} 
-              contentFit="cover"
-              transition={200}
-            />
-          )}
-        </View>
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {tanaman.nickname || tanaman.jenisTanaman}
-          </Text>
-          <Text style={styles.cardSubtitle}>Skor {tanaman.predictiveScore ?? 0} • Panen {tanaman.sisaHariPanen ?? 0} hari</Text>
-          <View style={styles.cardFooter}>
-            <View style={[styles.badge, { backgroundColor: bgColor, borderColor: borderColor, flexDirection: 'row', alignItems: 'center' }]}>
-              <MaterialIcons name={iconName} size={11} color={textColor} style={{ marginRight: 3 }} />
-              <Text style={[styles.badgeText, { color: textColor }]}>
-                {statusText}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </Pressable>
-    );
-  };
+  const renderItem = useCallback(
+    ({ item }: { item: TanamanDetail }) => (
+      <PlantCardItem tanaman={item} onPress={handlePressTanaman} />
+    ),
+    [handlePressTanaman]
+  );
 
   const renderEmpty = () => {
     if (isLoading) return <PlantGridSkeleton />;
@@ -409,6 +462,7 @@ export default function TanamanScreen() {
                 placeholder="Misal: Tomat Si Jago"
                 value={nickname}
                 onChangeText={setNickname}
+                maxLength={50}
                 placeholderTextColor="#a09d91"
               />
               <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>

@@ -27,12 +27,24 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createCommunityPost,
-  getCommunityPosts, getMyCommunityPosts, toggleCommunityLike, deleteCommunityPost
+  getCommunityPosts, getMyCommunityPosts, toggleCommunityLike, deleteCommunityPost,
+  registerOnLogout
 } from "../../services/api";
-
 import { useNotification } from "../../components/NotificationContext";
+
+interface CommunityMemoryCache {
+  posts: any[];
+  likes: Record<number, { liked: boolean; count: number }>;
+  savedAt: number;
+}
+
+let memoryCommunityCache: CommunityMemoryCache | null = null;
+registerOnLogout(() => {
+  memoryCommunityCache = null;
+});
 
 const EmptyHint = ({
   icon,
@@ -557,18 +569,38 @@ export default function KomunitasScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const [posts, setPosts] = useState<any[]>([]);
-  const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
+  const [posts, setPosts] = useState<any[]>(() => memoryCommunityCache ? memoryCommunityCache.posts : []);
+  const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>(() => memoryCommunityCache ? memoryCommunityCache.likes : {});
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !memoryCommunityCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isError, setIsError] = useState(false);
   const [activeTab, setActiveTab] = useState<"terbaru" | "terdekat">("terbaru");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [userFilter, setUserFilter] = useState<"semua" | "saya">("semua");
+
+  useEffect(() => {
+    if (!memoryCommunityCache) {
+      AsyncStorage.getItem("community_feed_cache_v1")
+        .then((cachedStr) => {
+          if (cachedStr) {
+            try {
+              const parsed: CommunityMemoryCache = JSON.parse(cachedStr);
+              if (parsed?.posts?.length) {
+                memoryCommunityCache = parsed;
+                setPosts(parsed.posts);
+                setLikes(parsed.likes || {});
+                setIsLoading(false);
+              }
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
 
   // Form State
@@ -662,6 +694,14 @@ export default function KomunitasScreen() {
           newLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
         });
         setLikes(newLikes);
+        if (activeTab === "terbaru" && userFilter === "semua" && !debouncedSearch) {
+          memoryCommunityCache = {
+            posts: newPosts,
+            likes: newLikes,
+            savedAt: Date.now(),
+          };
+          AsyncStorage.setItem("community_feed_cache_v1", JSON.stringify(memoryCommunityCache)).catch(() => {});
+        }
       } else {
         setPosts((prev) => [...prev, ...newPosts]);
         setLikes((prev) => {
@@ -785,7 +825,13 @@ export default function KomunitasScreen() {
   };
 
   const handleSubmitPost = async () => {
-    if (!deskripsi.trim()) {
+    if (isSubmitting) return;
+
+    const cleanDeskripsi = deskripsi.trim();
+    const cleanJudul = judul.trim();
+    const cleanLokasi = lokasiNama.trim();
+
+    if (!cleanDeskripsi) {
       showNotification("Perhatian", "Konten postingan tidak boleh kosong.", "error");
       return;
     }
@@ -793,10 +839,10 @@ export default function KomunitasScreen() {
     try {
       const formData = new FormData();
 
-      formData.append("deskripsi", deskripsi);
+      formData.append("deskripsi", cleanDeskripsi);
       formData.append("tipe", tipePost);
-      if (judul) formData.append("judul", judul);
-      if (lokasiNama) formData.append("lokasiNama", lokasiNama);
+      if (cleanJudul) formData.append("judul", cleanJudul);
+      if (cleanLokasi) formData.append("lokasiNama", cleanLokasi);
       if (lokasiLat !== null) formData.append("latitude", lokasiLat.toString());
       if (lokasiLng !== null) formData.append("longitude", lokasiLng.toString());
 
@@ -853,7 +899,7 @@ export default function KomunitasScreen() {
           <View style={{ flexDirection: "row", marginTop: 16, marginBottom: 12, gap: 12 }}>
             <View style={{ flex: 1, height: 52, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 16, borderRadius: 20, borderWidth: 0, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4 }}>
               <MaterialIcons name="search" size={24} color="#5C5A4F" />
-              <TextInput style={{ flex: 1, marginLeft: 8, height: '100%', fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924', paddingVertical: 0 }} placeholder="Cari username, lokasi..." placeholderTextColor="#5C5A4F" value={searchQuery} onChangeText={setSearchQuery} />
+              <TextInput style={{ flex: 1, marginLeft: 8, height: '100%', fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#123924', paddingVertical: 0 }} placeholder="Cari username, lokasi..." placeholderTextColor="#5C5A4F" value={searchQuery} onChangeText={setSearchQuery} maxLength={100} />
             </View>
             <Pressable onPress={() => setIsFilterModalVisible(true)} style={({ pressed }) => [{ backgroundColor: '#FFFFFF', width: 52, height: 52, borderRadius: 20, alignItems: 'center', justifyContent: 'center', shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 4 }, pressed && { opacity: 0.7 }]}>
               <MaterialIcons name="tune" size={24} color="#123924" />
@@ -1026,7 +1072,7 @@ export default function KomunitasScreen() {
               </Pressable>
             ) : (
               <View style={styles.clayPreviewContainer}>
-                <Image source={{ uri: foto.uri }} style={styles.clayPreviewImage} />
+                <Image source={{ uri: foto.uri }} style={styles.clayPreviewImage} contentFit="cover" cachePolicy="memory-disk" />
                 <Pressable
                   style={({ pressed }) => [
                     styles.clayRemovePhoto,
@@ -1072,6 +1118,7 @@ export default function KomunitasScreen() {
                 placeholderTextColor="#5C5A4F"
                 value={judul}
                 onChangeText={setJudul}
+                maxLength={100}
               />
             </View>
             {/* 4. CERITA / DESKRIPSI */}
@@ -1124,6 +1171,7 @@ export default function KomunitasScreen() {
                   placeholderTextColor="#5C5A4F"
                   value={lokasiNama}
                   onChangeText={handleLocationChange}
+                  maxLength={80}
                   onFocus={() => {
                     if (lokasiNama && filteredCities.length === 0) {
                       handleLocationChange(lokasiNama);
@@ -1479,7 +1527,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
   },
-  clayPreviewImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  clayPreviewImage: { width: "100%", height: "100%" },
   clayRemovePhoto: {
     position: "absolute",
     top: 12,

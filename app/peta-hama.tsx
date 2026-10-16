@@ -240,23 +240,32 @@ export default function PetaHamaScreen() {
 
   const injectHeatmapPoints = (cells: HeatmapCell[]) => {
     const validCells = (cells || []).filter(
-      c => typeof c.lat === 'number' && typeof c.lng === 'number' && !isNaN(c.lat) && !isNaN(c.lng)
+      c => typeof c.lat === 'number' && typeof c.lng === 'number' && Number.isFinite(c.lat) && Number.isFinite(c.lng)
     );
     if (!isMapReadyRef.current) {
       pendingPointsRef.current = validCells;
       return;
     }
-    const points = validCells.map(c => [c.lat, c.lng, c.weight || 1]);
+    const points = validCells.map(c => [
+      Number(c.lat.toFixed(6)),
+      Number(c.lng.toFixed(6)),
+      typeof c.weight === 'number' && Number.isFinite(c.weight) ? Number(c.weight.toFixed(2)) : 1,
+    ]);
     const js = `if (window.updateHeatmapData) { window.updateHeatmapData(${JSON.stringify(points)}); } true;`;
     webViewRef.current?.injectJavaScript(js);
   };
 
   const injectUserLocation = (lat: number, lng: number, doPan = true) => {
+    if (typeof lat !== 'number' || typeof lng !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return;
+    }
     if (!isMapReadyRef.current) {
       pendingLocationRef.current = { lat, lng };
       return;
     }
-    const js = `if (window.updateUserLocation) { window.updateUserLocation(${lat}, ${lng}, ${doPan}); } true;`;
+    const safeLat = Number(lat.toFixed(6));
+    const safeLng = Number(lng.toFixed(6));
+    const js = `if (window.updateUserLocation) { window.updateUserLocation(${safeLat}, ${safeLng}, ${Boolean(doPan)}); } true;`;
     webViewRef.current?.injectJavaScript(js);
   };
 
@@ -301,18 +310,37 @@ export default function PetaHamaScreen() {
     try {
       const { status } = await Location.getForegroundPermissionsAsync();
       if (status === 'granted') {
+        const lastKnown = await Location.getLastKnownPositionAsync();
+        if (lastKnown?.coords) {
+          const freshLat = lastKnown.coords.latitude;
+          const freshLng = lastKnown.coords.longitude;
+          if (Number.isFinite(freshLat) && Number.isFinite(freshLng)) {
+            if (Math.abs(freshLat - currentLat) > 0.005 || Math.abs(freshLng - currentLng) > 0.005) {
+              const freshCoords = { lat: freshLat, lng: freshLng };
+              userCoordsRef.current = freshCoords;
+              setUserCoords(freshCoords);
+              injectUserLocation(freshLat, freshLng, false);
+              fetchHeatmap(filterRef.current, freshCoords, true);
+              currentLat = freshLat;
+              currentLng = freshLng;
+            }
+          }
+        }
+
         const locPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 3500));
         const loc = await Promise.race([locPromise, timeoutPromise]);
         if (loc?.coords) {
           const freshLat = loc.coords.latitude;
           const freshLng = loc.coords.longitude;
-          if (Math.abs(freshLat - currentLat) > 0.005 || Math.abs(freshLng - currentLng) > 0.005) {
-            const freshCoords = { lat: freshLat, lng: freshLng };
-            userCoordsRef.current = freshCoords;
-            setUserCoords(freshCoords);
-            injectUserLocation(freshLat, freshLng, false);
-            fetchHeatmap(filterRef.current, freshCoords, true);
+          if (Number.isFinite(freshLat) && Number.isFinite(freshLng)) {
+            if (Math.abs(freshLat - currentLat) > 0.005 || Math.abs(freshLng - currentLng) > 0.005) {
+              const freshCoords = { lat: freshLat, lng: freshLng };
+              userCoordsRef.current = freshCoords;
+              setUserCoords(freshCoords);
+              injectUserLocation(freshLat, freshLng, false);
+              fetchHeatmap(filterRef.current, freshCoords, true);
+            }
           }
         }
       }
@@ -393,11 +421,17 @@ export default function PetaHamaScreen() {
               status = permission.status;
             }
             if (status === 'granted') {
-              const locPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-              const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 3000));
-              const loc = await Promise.race([locPromise, timeoutPromise]);
-              if (loc?.coords) {
-                coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+              // Cek lastKnown terlebih dahulu untuk 0ms instant resolve
+              const lastKnown = await Location.getLastKnownPositionAsync();
+              if (lastKnown?.coords && Number.isFinite(lastKnown.coords.latitude) && Number.isFinite(lastKnown.coords.longitude)) {
+                coords = { lat: lastKnown.coords.latitude, lng: lastKnown.coords.longitude };
+              } else {
+                const locPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 3000));
+                const loc = await Promise.race([locPromise, timeoutPromise]);
+                if (loc?.coords && Number.isFinite(loc.coords.latitude) && Number.isFinite(loc.coords.longitude)) {
+                  coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+                }
               }
             }
           } catch {
@@ -443,12 +477,17 @@ export default function PetaHamaScreen() {
 
   const handleRecenter = () => {
     const { lat, lng } = userCoordsRef.current;
-    const js = `if (window.recenterMap) { window.recenterMap(${lat}, ${lng}); } true;`;
+    if (typeof lat !== 'number' || typeof lng !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return;
+    }
+    const safeLat = Number(lat.toFixed(6));
+    const safeLng = Number(lng.toFixed(6));
+    const js = `if (window.recenterMap) { window.recenterMap(${safeLat}, ${safeLng}); } true;`;
     webViewRef.current?.injectJavaScript(js);
   };
 
   const cells = (data?.cells || []).filter(
-    c => typeof c.lat === 'number' && typeof c.lng === 'number' && !isNaN(c.lat) && !isNaN(c.lng)
+    c => typeof c.lat === 'number' && typeof c.lng === 'number' && Number.isFinite(c.lat) && Number.isFinite(c.lng)
   );
 
   return (

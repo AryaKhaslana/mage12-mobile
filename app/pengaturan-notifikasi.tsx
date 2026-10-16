@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import api from '../services/api';
+import api, { registerOnLogout } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 import { registerForPushNotificationsAsync, scheduleDailyPlantReminder, cancelAllPlantReminders } from '../services/notificationService';
 
@@ -18,10 +18,15 @@ const TIME_OPTIONS = [
   { label: '18:00', hour: 18, minute: 0 },
 ];
 
+let memoryNotifSettings: { isEnabled: boolean; selectedTime: typeof TIME_OPTIONS[0] } | null = null;
+registerOnLogout(() => {
+  memoryNotifSettings = null;
+});
+
 export default function PengaturanNotifikasiScreen() {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [selectedTime, setSelectedTime] = useState(TIME_OPTIONS[1]); // default 07:00
-  const [isLoading, setIsLoading] = useState(true);
+  const [isEnabled, setIsEnabled] = useState(() => memoryNotifSettings ? memoryNotifSettings.isEnabled : false);
+  const [selectedTime, setSelectedTime] = useState(() => memoryNotifSettings ? memoryNotifSettings.selectedTime : TIME_OPTIONS[1]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const { showNotification } = useNotification();
 
@@ -57,8 +62,8 @@ export default function PengaturanNotifikasiScreen() {
         const shouldEnable = jamNotifBackend !== null || savedEnabled === 'true';
         setIsEnabled(shouldEnable);
 
-        // 0ms instant display - reveal UI immediately after reading SecureStore
-        setIsLoading(false);
+        const targetTime = matchedTime || selectedTime;
+        memoryNotifSettings = { isEnabled: shouldEnable, selectedTime: targetTime };
 
         // Run permission verification and schedule refresh in the background non-blocking
         if (shouldEnable) {
@@ -85,6 +90,9 @@ export default function PengaturanNotifikasiScreen() {
     Haptics.selectionAsync().catch(() => {});
     try {
       setIsEnabled(value);
+      if (memoryNotifSettings) {
+        memoryNotifSettings.isEnabled = value;
+      }
       await SecureStore.setItemAsync('notifEnabled', value ? 'true' : 'false');
       
       if (value) {
@@ -104,6 +112,9 @@ export default function PengaturanNotifikasiScreen() {
         } else {
           showNotification("Izin Notifikasi Ditolak", "Silakan aktifkan izin notifikasi melalui pengaturan perangkat kamu untuk menerima pengingat harian.", "error");
           setIsEnabled(false);
+          if (memoryNotifSettings) {
+            memoryNotifSettings.isEnabled = false;
+          }
           await SecureStore.setItemAsync('notifEnabled', 'false');
         }
       } else {
@@ -122,6 +133,9 @@ export default function PengaturanNotifikasiScreen() {
     } catch (e) {
       console.error(e);
       setIsEnabled(!value);
+      if (memoryNotifSettings) {
+        memoryNotifSettings.isEnabled = !value;
+      }
       showNotification("Gagal", "Tidak dapat memperbarui pengaturan pengingat. Silakan coba lagi.", "error");
     }
   };
@@ -131,6 +145,9 @@ export default function PengaturanNotifikasiScreen() {
     const previousTime = selectedTime;
     try {
       setSelectedTime(timeOption);
+      if (memoryNotifSettings) {
+        memoryNotifSettings.selectedTime = timeOption;
+      }
       await SecureStore.setItemAsync('notifTime', JSON.stringify({ hour: timeOption.hour, minute: timeOption.minute }));
       
       await api.put('/user/setting-notif', { jamNotif: timeOption.label });
@@ -150,18 +167,12 @@ export default function PengaturanNotifikasiScreen() {
     } catch (e) {
       console.error(e);
       setSelectedTime(previousTime);
+      if (memoryNotifSettings) {
+        memoryNotifSettings.selectedTime = previousTime;
+      }
       showNotification("Gagal", "Tidak dapat mengubah waktu pengingat. Silakan coba lagi.", "error");
     }
   };
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator size="large" color="#3FA86B" />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>

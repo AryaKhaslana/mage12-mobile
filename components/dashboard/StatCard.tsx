@@ -4,7 +4,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { getMyNotifications } from '../../services/api';
 
-export default function StatCard({ userData, tanamanCount, onBadgePress, onTanamanPress, onStreakPress }: { userData: any, tanamanCount: number, onBadgePress: () => void, onTanamanPress?: () => void, onStreakPress?: () => void }) {
+const StatCard = React.memo(function StatCard({ userData, tanamanCount, onBadgePress, onTanamanPress, onStreakPress }: { userData: any, tanamanCount: number, onBadgePress: () => void, onTanamanPress?: () => void, onStreakPress?: () => void }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useFocusEffect(
@@ -84,7 +84,9 @@ export default function StatCard({ userData, tanamanCount, onBadgePress, onTanam
       </Pressable>
     </View>
   );
-}
+});
+
+export default StatCard;
 
 const styles = StyleSheet.create({
   card: {

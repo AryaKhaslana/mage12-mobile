@@ -8,10 +8,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from "expo-image";
 import { router, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
-import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser } from '../../services/api';
+import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser, registerOnLogout } from '../../services/api';
 import { getRelativeTime } from "../../utils/format";
 import { useNotification } from '../../components/NotificationContext';
 import { getPlantImage } from '../../constants/plantImages';
+
+interface ProfileMemoryCache {
+  user: any;
+  tanaman: any[];
+  posts: CommunityPost[];
+  achievements: AchievementResponse | null;
+  riwayat: any[];
+}
+
+let memoryProfileCache: ProfileMemoryCache | null = null;
+registerOnLogout(() => {
+  memoryProfileCache = null;
+});
 
 // ===== Design tokens (sesuai design.md + mockup profil) =====
 const C = {
@@ -132,22 +145,22 @@ export default function ProfilScreen() {
   const insets = useSafeAreaInsets();
   const { showNotification } = useNotification();
 
-  const [userData, setUserData] = useState<any>(null);
-  const [tanamanList, setTanamanList] = useState<any[]>([]);
-  const [achievementsData, setAchievementsData] = useState<AchievementResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(() => memoryProfileCache ? memoryProfileCache.user : null);
+  const [tanamanList, setTanamanList] = useState<any[]>(() => memoryProfileCache ? memoryProfileCache.tanaman : []);
+  const [achievementsData, setAchievementsData] = useState<AchievementResponse | null>(() => memoryProfileCache ? memoryProfileCache.achievements : null);
+  const [isLoading, setIsLoading] = useState(() => !memoryProfileCache?.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [showRiwayatPanen, setShowRiwayatPanen] = useState(false);
   const [isLoadingRiwayat, setIsLoadingRiwayat] = useState(false);
-  const [riwayatPanen, setRiwayatPanen] = useState<any[]>([]);
+  const [riwayatPanen, setRiwayatPanen] = useState<any[]>(() => memoryProfileCache ? memoryProfileCache.riwayat : []);
 
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<"postingan" | "koleksi">("postingan");
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [posts, setPosts] = useState<CommunityPost[]>(() => memoryProfileCache ? memoryProfileCache.posts : []);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(() => !memoryProfileCache?.posts?.length);
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
 
   // Modal Pencapaian Neoclay
@@ -179,19 +192,23 @@ export default function ProfilScreen() {
           AsyncStorage.getItem("profile_riwayat_cache"),
         ]);
 
-        if (cachedUser) {
-          const parsed = JSON.parse(cachedUser);
-          setUserData(parsed);
-          userDataRef.current = parsed;
+        const parsedUser = cachedUser ? JSON.parse(cachedUser) : null;
+        const parsedTanaman = cachedTanaman ? JSON.parse(cachedTanaman) : [];
+        const parsedPosts: CommunityPost[] = cachedPosts ? JSON.parse(cachedPosts) : [];
+        const parsedAch = cachedAch ? JSON.parse(cachedAch) : null;
+        const parsedRiwayat = cachedRiwayat ? JSON.parse(cachedRiwayat) : [];
+
+        if (parsedUser) {
+          setUserData(parsedUser);
+          userDataRef.current = parsedUser;
           setIsLoading(false);
         }
-        if (cachedTanaman) {
-          setTanamanList(JSON.parse(cachedTanaman));
+        if (parsedTanaman.length > 0) {
+          setTanamanList(parsedTanaman);
         }
-        if (cachedPosts) {
-          const parsedPosts: CommunityPost[] = JSON.parse(cachedPosts);
+        if (parsedPosts.length > 0) {
           setPosts(parsedPosts);
-          hasPostsRef.current = parsedPosts.length > 0;
+          hasPostsRef.current = true;
           const initialLikes: Record<number, { liked: boolean; count: number }> = {};
           parsedPosts.forEach((p) => {
             initialLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
@@ -199,12 +216,20 @@ export default function ProfilScreen() {
           setLikes(initialLikes);
           setIsLoadingPosts(false);
         }
-        if (cachedAch) {
-          setAchievementsData(JSON.parse(cachedAch));
+        if (parsedAch) {
+          setAchievementsData(parsedAch);
         }
-        if (cachedRiwayat) {
-          setRiwayatPanen(JSON.parse(cachedRiwayat));
+        if (parsedRiwayat.length > 0) {
+          setRiwayatPanen(parsedRiwayat);
         }
+
+        memoryProfileCache = {
+          user: parsedUser || memoryProfileCache?.user,
+          tanaman: parsedTanaman.length > 0 ? parsedTanaman : (memoryProfileCache?.tanaman || []),
+          posts: parsedPosts.length > 0 ? parsedPosts : (memoryProfileCache?.posts || []),
+          achievements: parsedAch || memoryProfileCache?.achievements,
+          riwayat: parsedRiwayat.length > 0 ? parsedRiwayat : (memoryProfileCache?.riwayat || []),
+        };
       } catch (e) {
         console.warn("Failed reading profile cache:", e);
       }
@@ -244,6 +269,7 @@ export default function ProfilScreen() {
           if (postsRes?.data) {
             setPosts(postsRes.data);
             hasPostsRef.current = postsRes.data.length > 0;
+            if (memoryProfileCache) memoryProfileCache.posts = postsRes.data;
             AsyncStorage.setItem("profile_posts_cache", JSON.stringify(postsRes.data)).catch(() => {});
             const initialLikes: Record<number, { liked: boolean; count: number }> = {};
             postsRes.data.forEach((p: CommunityPost) => {
@@ -271,6 +297,7 @@ export default function ProfilScreen() {
         const freshUser = userRes.data.data;
         setUserData(freshUser);
         userDataRef.current = freshUser;
+        if (memoryProfileCache) memoryProfileCache.user = freshUser;
         SecureStore.setItemAsync("userData", JSON.stringify(freshUser)).catch(console.error);
         setIsLoading(false);
 
@@ -286,10 +313,12 @@ export default function ProfilScreen() {
 
       if (tanamanRes?.data?.data) {
         setTanamanList(tanamanRes.data.data);
+        if (memoryProfileCache) memoryProfileCache.tanaman = tanamanRes.data.data;
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(tanamanRes.data.data)).catch(() => {});
       }
       if (achRes) {
         setAchievementsData(achRes);
+        if (memoryProfileCache) memoryProfileCache.achievements = achRes;
         AsyncStorage.setItem("profile_achievements_cache", JSON.stringify(achRes)).catch(() => {});
       }
 
@@ -454,7 +483,7 @@ export default function ProfilScreen() {
       >
         {/* BANNER */}
         {userData?.bannerUrl ? (
-          <Image source={{ uri: userData.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" />
+          <Image source={{ uri: userData.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" cachePolicy="memory-disk" />
         ) : (
           <BotanicBanner />
         )}
@@ -464,7 +493,7 @@ export default function ProfilScreen() {
           <View>
             <View style={[styles.avatarFrame, shadowCard]}>
               {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" />
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" cachePolicy="memory-disk" />
               ) : (
                 <View style={[styles.avatarImage, { backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={{ color: "#FFFFFF", fontFamily: F.extra, fontSize: 34 }}>{initial}</Text>
@@ -570,7 +599,7 @@ export default function ProfilScreen() {
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
                         <View style={styles.postAvatarRing}>
                           {avatarUrl ? (
-                            <Image source={{ uri: avatarUrl }} style={{ width: 34, height: 34, borderRadius: 17 }} />
+                            <Image source={{ uri: avatarUrl }} style={{ width: 34, height: 34, borderRadius: 17 }} contentFit="cover" cachePolicy="memory-disk" />
                           ) : (
                             <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}>
                               <Text style={{ color: "#FFFFFF", fontFamily: F.extra, fontSize: 14 }}>{initial}</Text>
@@ -596,7 +625,7 @@ export default function ProfilScreen() {
                       {post.judul ? <Text style={styles.postTitle}>{post.judul}</Text> : null}
                       <Text style={styles.postBody}>{post.deskripsi}</Text>
                       {post.fotoUrl ? (
-                        <Image source={{ uri: post.fotoUrl }} style={styles.postImage} contentFit="cover" transition={200} />
+                        <Image source={{ uri: post.fotoUrl }} style={styles.postImage} contentFit="cover" cachePolicy="memory-disk" transition={200} />
                       ) : null}
                     </Pressable>
 
@@ -663,6 +692,7 @@ export default function ProfilScreen() {
                         placeholder={getPlantImage(t.jenisTanaman)}
                         style={{ width: '100%', height: '100%' }} 
                         contentFit="cover"
+                        cachePolicy="memory-disk"
                         transition={200}
                       />
                     ) : (

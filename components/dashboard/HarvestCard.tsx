@@ -2,8 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function HarvestCard({ task }: { task: any }) {
-  const progress = task.sisaHariPanen ? Math.max(0, 1 - (task.sisaHariPanen / (task.daysToHarvest || 30))) : 0;
+const HarvestCard = React.memo(function HarvestCard({ task }: { task: any }) {
+  const sisa =
+    typeof task?.sisaHariPanen === 'number' && !isNaN(task.sisaHariPanen)
+      ? Math.max(0, task.sisaHariPanen)
+      : 0;
+  const totalDays =
+    typeof task?.daysToHarvest === 'number' && task.daysToHarvest > 0
+      ? task.daysToHarvest
+      : 30;
+  const progress = Math.min(1, Math.max(0, 1 - sisa / totalDays));
   
   return (
     <View style={styles.card}>
@@ -11,12 +19,12 @@ export default function HarvestCard({ task }: { task: any }) {
         <View style={styles.iconBox}>
           <MaterialIcons name="grass" size={24} color="#3FA96B" />
         </View>
-        <Text style={styles.title}>{task.nickname || task.jenisTanaman}</Text>
+        <Text style={styles.title}>{task?.nickname || task?.jenisTanaman || 'Tanaman'}</Text>
       </View>
       
       <View style={styles.daysRow}>
-        <Text style={styles.daysNumber}>{task.sisaHariPanen || 0}</Text>
-        <Text style={styles.daysLabel}>hari lagi</Text>
+        <Text style={styles.daysNumber}>{sisa}</Text>
+        <Text style={styles.daysLabel}>{sisa === 0 ? 'siap panen!' : 'hari lagi'}</Text>
       </View>
       
       <View style={styles.progressBg}>
@@ -24,7 +32,9 @@ export default function HarvestCard({ task }: { task: any }) {
       </View>
     </View>
   );
-}
+});
+
+export default HarvestCard;
 
 const styles = StyleSheet.create({
   card: {

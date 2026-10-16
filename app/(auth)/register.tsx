@@ -77,10 +77,14 @@ export default function RegisterScreen() {
           };
         }
 
-        // Ambil posisi presisi di background tanpa memblokir form
-        Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        })
+        // Ambil posisi presisi di background tanpa memblokir form dengan batas timeout 3.5s
+        const locationTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500));
+        Promise.race([
+          Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          }),
+          locationTimeout,
+        ])
           .then((loc) => {
             if (loc?.coords && isMounted) {
               coordsRef.current = {
@@ -267,6 +271,7 @@ export default function RegisterScreen() {
                   value={nama}
                   onChangeText={setNama}
                   autoCapitalize="words"
+                  maxLength={100}
                   returnKeyType="next"
                   onSubmitEditing={() => emailInputRef.current?.focus()}
                   blurOnSubmit={false}
@@ -286,6 +291,7 @@ export default function RegisterScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  maxLength={100}
                   returnKeyType="next"
                   onSubmitEditing={() => usernameInputRef.current?.focus()}
                   blurOnSubmit={false}
@@ -305,6 +311,7 @@ export default function RegisterScreen() {
                   onChangeText={(text) => setUsername(text.replace(/\s+/g, "").toLowerCase())}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  maxLength={30}
                   returnKeyType="next"
                   onSubmitEditing={() => passwordInputRef.current?.focus()}
                   blurOnSubmit={false}
@@ -328,6 +335,7 @@ export default function RegisterScreen() {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  maxLength={128}
                   returnKeyType="next"
                   onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
                   blurOnSubmit={false}
@@ -362,6 +370,7 @@ export default function RegisterScreen() {
                   secureTextEntry={!showConfirmPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  maxLength={128}
                   returnKeyType="done"
                   onSubmitEditing={handleRegister}
                   blurOnSubmit={true}

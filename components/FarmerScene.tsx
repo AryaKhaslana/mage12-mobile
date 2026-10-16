@@ -45,7 +45,7 @@ interface FarmerSceneProps {
   onProfilePress?: () => void;
 }
 
-export default function FarmerScene({
+const FarmerScene = React.memo(function FarmerScene({
   userName,
   avatarUrl,
   weatherCondition,
@@ -775,7 +775,9 @@ export default function FarmerScene({
       </View>
     </View>
   );
-}
+});
+
+export default FarmerScene;
 
 const styles = StyleSheet.create({
   sceneContainer: {

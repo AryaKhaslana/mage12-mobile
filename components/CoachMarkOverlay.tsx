@@ -183,7 +183,7 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
             <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0,  padding: 24 }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 8 }}>
-                Yakin ingin melewati panduan? 🥺
+                Yakin ingin melewati panduan?
               </Text>
               <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
                 Panduan ini hanya sebentar dan akan membantu kamu merawat tanaman dengan lebih optimal.

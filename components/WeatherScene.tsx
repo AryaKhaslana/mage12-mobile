@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { View, Dimensions, StyleSheet } from 'react-native';
 import Svg, { Rect, Circle, Path, G, LinearGradient, Stop, Defs } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { cancelAnimation, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 
 const SCENE_HEIGHT = 280;
 
-export default function WeatherScene({ weatherCondition, isNight }: { weatherCondition: string, isNight?: boolean }) {
+const WeatherScene = React.memo(function WeatherScene({ weatherCondition, isNight }: { weatherCondition: string, isNight?: boolean }) {
   const { width } = Dimensions.get('window');
 
   // Animations
@@ -29,6 +29,11 @@ export default function WeatherScene({ weatherCondition, isNight }: { weatherCon
       -1,
       false
     );
+
+    return () => {
+      cancelAnimation(mascotY);
+      cancelAnimation(cloudX);
+    };
   }, [width, cloudX, mascotY]);
 
   const mascotStyle = useAnimatedStyle(() => ({
@@ -152,7 +157,9 @@ export default function WeatherScene({ weatherCondition, isNight }: { weatherCon
       </Animated.View>
     </View>
   );
-}
+});
+
+export default WeatherScene;
 
 const styles = StyleSheet.create({
   container: {

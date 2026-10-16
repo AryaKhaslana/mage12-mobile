@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api';
+import api, { registerOnLogout } from '../services/api';
 import WeatherScene from '../components/WeatherScene';
 
 const COLORS = {
@@ -22,9 +22,14 @@ const COLORS = {
   muted: "#5C5A4F"
 };
 
+let memoryWeatherCache: any = null;
+registerOnLogout(() => {
+  memoryWeatherCache = null;
+});
+
 export default function CuacaScreen() {
-  const [weatherData, setWeatherData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [weatherData, setWeatherData] = useState<any>(() => memoryWeatherCache);
+  const [isLoading, setIsLoading] = useState(() => !memoryWeatherCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isError, setIsError] = useState(false);
 
@@ -46,6 +51,7 @@ export default function CuacaScreen() {
       const response = await api.get('/weather/today');
       if (response.data?.status === 'success' && response.data?.data) {
         const freshData = response.data.data;
+        memoryWeatherCache = freshData;
         setWeatherData(freshData);
         AsyncStorage.setItem(
           'dashboard_weather',
@@ -84,6 +90,7 @@ export default function CuacaScreen() {
             const parsed = JSON.parse(cached);
             const data = parsed.data || parsed;
             if (data && isMounted) {
+              memoryWeatherCache = data;
               setWeatherData(data);
               setIsLoading(false);
               hasValidCache = true;

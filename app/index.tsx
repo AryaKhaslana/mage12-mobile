@@ -5,6 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   interpolate,
   runOnJS,
@@ -390,6 +391,37 @@ export default function IndexScreen() {
     );
 
     return () => {
+      cancelAnimation(sunGlowScale);
+      cancelAnimation(sunGlowOpacity);
+      cancelAnimation(breezeAngle);
+      cancelAnimation(seedOpacity);
+      cancelAnimation(seedRotation);
+      cancelAnimation(seedScale);
+      cancelAnimation(seedY);
+      cancelAnimation(soilScaleY);
+      cancelAnimation(dropOpacity);
+      cancelAnimation(dropScaleY);
+      cancelAnimation(dropScaleX);
+      cancelAnimation(dropY);
+      cancelAnimation(ripple1Scale);
+      cancelAnimation(ripple1Opacity);
+      cancelAnimation(ripple2Scale);
+      cancelAnimation(ripple2Opacity);
+      cancelAnimation(stemGrowth);
+      cancelAnimation(stemSkew);
+      cancelAnimation(leafScale);
+      cancelAnimation(leafLeftRotate);
+      cancelAnimation(leafRightRotate);
+      cancelAnimation(pollenOpacity);
+      cancelAnimation(pollenScale);
+      cancelAnimation(pollenY);
+      cancelAnimation(brandOpacity);
+      cancelAnimation(brandTranslateY);
+      cancelAnimation(progressValue);
+      cancelAnimation(bloomScale);
+      cancelAnimation(bloomOpacity);
+      cancelAnimation(stageScale);
+      cancelAnimation(screenOpacity);
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;

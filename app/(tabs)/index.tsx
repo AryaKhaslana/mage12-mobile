@@ -389,7 +389,7 @@ export default function DashboardScreen() {
         await AsyncStorage.setItem(key, 'true');
         
         setShowRestorePopup(false);
-        showNotification("Streak Dipulihkan! 🔥", "Jangan lupa menyiram tanaman kamu hari ini ya!", "success");
+        showNotification("Streak Dipulihkan!", "Jangan lupa menyiram tanaman kamu hari ini ya!", "success");
       }
     } catch (e: any) {
       const msg = e.response?.data?.message || "Gagal memulihkan streak, coba lagi nanti.";
@@ -493,8 +493,8 @@ export default function DashboardScreen() {
                 const lastNotified = await AsyncStorage.getItem("last_rain_notified");
                 if (lastNotified !== todayStr) {
                   showNotification(
-                    "☔ Prakiraan Hujan",
-                    "Penyiraman otomatis ditunda hari ini karena diprediksi turun hujan. Tetap perhatikan kebun kamu ya! 🌧️",
+                    "Prakiraan Hujan",
+                    "Penyiraman otomatis ditunda hari ini karena diprediksi turun hujan. Tetap perhatikan kebun kamu ya!",
                     "info"
                   );
                   await AsyncStorage.setItem("last_rain_notified", todayStr);
@@ -647,7 +647,7 @@ export default function DashboardScreen() {
 
     // 5. Notifikasi Sukses Instan (0ms)
     showNotification(
-      "Berhasil Menyiram! 💧",
+      "Berhasil Menyiram!",
       `Berhasil menyiram ${plantName || 'tanaman'}! +1 EXP & Streak terjaga!`,
       "success"
     );
@@ -675,7 +675,7 @@ export default function DashboardScreen() {
 
         if (d.levelUp) {
           showNotification(
-            "Level Up! 🎉",
+            "Level Up!",
             `Level Meningkat! Sekarang kamu berada di Level ${d.level}!`,
             "success"
           );
@@ -978,9 +978,12 @@ export default function DashboardScreen() {
       <Modal transparent visible={showBadgeInfo} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
-              ☔ Pelindung Streak
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+              <MaterialIcons name="shield" size={24} color="#3FA86B" />
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center' }}>
+                Pelindung Streak
+              </Text>
+            </View>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
               Nyalain lagi apimu kalau kamu lupa siram sehari. Dapet +1 tiap naik level!
             </Text>
@@ -999,11 +1002,14 @@ export default function DashboardScreen() {
       <Modal transparent visible={showRestorePopup} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center', marginBottom: 12 }}>
-              Apinya Padam! 😱
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+              <MaterialIcons name="local-fire-department" size={28} color="#FF6B5C" />
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924', textAlign: 'center' }}>
+                Apinya Padam!
+              </Text>
+            </View>
             <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 16, color: '#5C5A4F', textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
-              Kemarin kamu lupa siram tanaman ya? 😢 Tenang, kamu masih punya {userData?.pelindung_streak || 0} ☔ Pelindung. Mau pakai 1 buat nyalain apimu lagi?
+              Kemarin kamu lupa siram tanaman ya? Tenang, kamu masih punya {userData?.pelindung_streak || 0} Pelindung Streak. Mau pakai 1 buat nyalain apimu lagi?
             </Text>
             
             <View style={{ gap: 12 }}>
@@ -1017,7 +1023,10 @@ export default function DashboardScreen() {
                 {isRestoring ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>☔ Pakai Pelindung</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <MaterialIcons name="shield" size={18} color="#FFFFFF" />
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Pakai Pelindung</Text>
+                  </View>
                 )}
               </Pressable>
               

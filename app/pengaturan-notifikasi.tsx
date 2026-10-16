@@ -108,7 +108,7 @@ export default function PengaturanNotifikasiScreen() {
               await SecureStore.setItemAsync('userData', JSON.stringify(u));
             } catch {}
           }
-          showNotification("Berhasil", "Pengingat harian berhasil diaktifkan! 🔔", "success");
+          showNotification("Berhasil", "Pengingat harian berhasil diaktifkan!", "success");
         } else {
           showNotification("Izin Notifikasi Ditolak", "Silakan aktifkan izin notifikasi melalui pengaturan perangkat kamu untuk menerima pengingat harian.", "error");
           setIsEnabled(false);

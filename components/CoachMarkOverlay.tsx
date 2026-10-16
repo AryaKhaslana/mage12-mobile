@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, Dimensions } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -182,9 +183,12 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
         <Modal transparent visible={showConfirmSkip} animationType="fade">
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
             <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0,  padding: 24 }}>
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center', marginBottom: 8 }}>
-                Yakin ingin melewati panduan? 🥺
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+                <MaterialIcons name="help-outline" size={24} color="#3FA86B" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924', textAlign: 'center' }}>
+                  Yakin Ingin Melewati Panduan?
+                </Text>
+              </View>
               <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#5C5A4F', textAlign: 'center', marginBottom: 24 }}>
                 Panduan ini hanya sebentar dan akan membantu kamu merawat tanaman dengan lebih optimal.
               </Text>

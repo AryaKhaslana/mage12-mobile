@@ -297,8 +297,9 @@ export default function AvatarSetupScreen() {
             {userData?.username ? (
               <Text style={styles.userHandleText}>@{userData.username}</Text>
             ) : null}
-            <View style={styles.memberTag}>
-              <Text style={styles.memberTagText}>🌱 Petani Pemula</Text>
+            <View style={[styles.memberTag, { flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <MaterialIcons name="eco" size={14} color={C.primary} />
+              <Text style={styles.memberTagText}>Petani Pemula</Text>
             </View>
           </View>
         </View>

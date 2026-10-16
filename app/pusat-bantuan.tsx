@@ -20,7 +20,7 @@ const faqs = [
     answer: 'Kamu bisa menaikkan level dengan mengumpulkan EXP. EXP didapatkan setiap kali kamu rajin menyiram tanaman sesuai jadwal dan menyelesaikan tugas harian di Dashboard.' },
   {
     id: 2,
-    question: 'Apa fungsi dari Pelindung Streak?',
+    question: 'Apa fungsi dari ☔ Pelindung Streak?',
     answer: 'Pelindung Streak berfungsi menyelamatkan rekor beruntun (Streak) kamu agar api tidak padam jika kamu lupa menyiram tanaman dalam satu hari. Pelindung ini sangat berharga dan bisa didapatkan saat naik level!' },
   {
     id: 3,

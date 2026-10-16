@@ -298,7 +298,7 @@ export default function AvatarSetupScreen() {
               <Text style={styles.userHandleText}>@{userData.username}</Text>
             ) : null}
             <View style={styles.memberTag}>
-              <Text style={styles.memberTagText}>Petani Pemula</Text>
+              <Text style={styles.memberTagText}>🌱 Petani Pemula</Text>
             </View>
           </View>
         </View>

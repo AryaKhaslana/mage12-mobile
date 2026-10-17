@@ -817,7 +817,7 @@ export default function KomunitasScreen() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.7,
+      quality: 0.6,
     });
     if (!result.canceled) {
       setFoto(result.assets[0]);

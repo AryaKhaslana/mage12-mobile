@@ -82,3 +82,4 @@ Agar Dewan Juri dapat langsung menguji seluruh fitur aplikasi secara utuh tanpa 
 ---
 
 *Disusun dengan penuh dedikasi oleh Tim Pengembang TaniSync — SMK Telkom Sidoarjo untuk Penjurian Tahap 2 MAGE 12 ITS.*
+

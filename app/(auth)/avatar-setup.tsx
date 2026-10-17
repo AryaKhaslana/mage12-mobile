@@ -86,7 +86,7 @@ export default function AvatarSetupScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.6,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -115,7 +115,7 @@ export default function AvatarSetupScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [16, 9],
-        quality: 0.8,
+        quality: 0.6,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {

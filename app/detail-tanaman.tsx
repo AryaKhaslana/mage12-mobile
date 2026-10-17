@@ -143,11 +143,20 @@ export default function DetailTanamanModal() {
   };
 
   const handleEditSave = async () => {
+    const trimmedNick = editNickname.trim();
+    const currentNick = tanaman?.nickname || "";
+    const currentJenis = tanaman?.jenisTanaman || "";
+
+    // Jika tidak ada perubahan nickname maupun jenis tanaman, langsung tutup modal tanpa memanggil API
+    if (trimmedNick === currentNick && editJenis === currentJenis) {
+      setIsEditModalVisible(false);
+      return;
+    }
+
     setIsSavingEdit(true);
-    const trimmedNick = editNickname.trim() || undefined;
     try {
       await updateTanaman(tanamanId, {
-        nickname: trimmedNick,
+        nickname: trimmedNick || undefined,
         jenisTanaman: editJenis,
       });
 
@@ -164,7 +173,7 @@ export default function DetailTanamanModal() {
         await AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated));
       }
 
-      showNotification("Sukses", "Tanaman berhasil diupdate!");
+      showNotification("Sukses", "Tanaman berhasil diperbarui!");
       setIsEditModalVisible(false);
       fetchData(); // refetch to update UI
     } catch (e: any) {
@@ -186,8 +195,27 @@ export default function DetailTanamanModal() {
       setTanaman(tanamanData);
       setLogs(logsData);
     } catch (e: any) {
-      showNotification("Gagal", e.response?.data?.message || "Gagal memuat data tanaman", "error");
-      router.back();
+      console.warn("Gagal sinkronisasi data tanaman terbaru:", e);
+      try {
+        const cached = await AsyncStorage.getItem("dashboard_tanaman");
+        if (cached) {
+          const list: TanamanDetail[] = JSON.parse(cached);
+          const found = list.find((t) => t.id === tanamanId);
+          if (found) {
+            setTanaman(found);
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      setTanaman((curr) => {
+        if (!curr) {
+          showNotification("Koneksi Terputus", "Gagal memuat data tanaman. Silakan periksa koneksi internet.", "error");
+          router.back();
+        }
+        return curr;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -452,7 +480,7 @@ export default function DetailTanamanModal() {
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.7 });
+        quality: 0.6 });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
@@ -895,6 +923,7 @@ export default function DetailTanamanModal() {
               onChangeText={setEditNickname}
               placeholder="Nickname tanaman"
               placeholderTextColor="#a09d91"
+              maxLength={30}
             />
 
             <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>

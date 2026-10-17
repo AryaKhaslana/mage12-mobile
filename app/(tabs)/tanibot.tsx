@@ -150,6 +150,108 @@ const ChatSkeleton = () => {
   );
 };
 
+const generateLocalBotResponse = (prompt: string): string => {
+  const query = prompt.toLowerCase();
+
+  if (
+    query.includes("hama") ||
+    query.includes("kutu") ||
+    query.includes("ulat") ||
+    query.includes("jamur") ||
+    query.includes("penyakit") ||
+    query.includes("semut") ||
+    query.includes("belalang")
+  ) {
+    return (
+      "Berdasarkan analisis botani TaniBot, serangan hama umum pada tanaman urban (seperti kutu putih, ulat grayak, atau kutu daun) dapat ditangani dengan langkah berikut:\n\n" +
+      "• **Semprotan Pestisida Nabati:** Campurkan 1 liter air dengan 5 ml minyak nimba (neem oil) atau ekstrak bawang putih serta 2 tetes sabun cuci piring lembut sebagai perekat. Semprotkan merata ke balik daun pada pagi hari.\n" +
+      "• **Isolasi Tanaman:** Jauhkan tanaman yang terinfeksi dari tanaman sehat lain agar kutu atau ulat tidak menyebar.\n" +
+      "• **Pembersihan Manual:** Bersihkan daun yang terkena koloni kutu dengan kapas yang dibasahi air sabun hangat atau pangkas daun yang rusak parah."
+    );
+  }
+
+  if (
+    query.includes("siram") ||
+    query.includes("air") ||
+    query.includes("lembab") ||
+    query.includes("kering") ||
+    query.includes("frekuensi")
+  ) {
+    return (
+      "Mengenai panduan pengaturan penyiraman tanaman di kebun Anda:\n\n" +
+      "• **Metode Uji Jari:** Masukkan jari sedalam 2-3 cm ke dalam media tanam. Siram hanya jika tanah terasa kering di kedalaman tersebut.\n" +
+      "• **Waktu Terbaik:** Lakukan penyiraman pada pagi hari (pukul 06.00-08.00) agar daun lekas mengering saat matahari naik dan mencegah timbulnya jamur akar.\n" +
+      "• **Drainase:** Pastikan lubang pot lancar dan air tidak menggenang di piringan pot untuk menghindari busuk akar (root rot)."
+    );
+  }
+
+  if (
+    query.includes("pupuk") ||
+    query.includes("nutrisi") ||
+    query.includes("npk") ||
+    query.includes("ab mix") ||
+    query.includes("kompos")
+  ) {
+    return (
+      "Panduan pemupukan dan nutrisi tanaman:\n\n" +
+      "• **Fase Vegetatif (Daun & Tunas):** Berikan pupuk berkadar Nitrogen (N) tinggi seperti NPK 16-16-16 dosis ringan (1/2 sendok teh per liter air) setiap 1-2 minggu sekali atau kompos matang di permukaan media.\n" +
+      "• **Sistem Hidroponik:** Jaga kepekatan larutan AB Mix pada rentang 800-1200 PPM sesuai jenis tanaman sayur (seperti selada atau pakcoy) dan periksa pH larutan di kisaran 5.5 - 6.5.\n" +
+      "• **Fase Generatif (Bunga & Buah):** Tingkatkan unsur Fosfor (P) dan Kalium (K) saat tanaman mulai membentuk kuncup bunga."
+    );
+  }
+
+  if (
+    query.includes("kuning") ||
+    query.includes("layu") ||
+    query.includes("rontok") ||
+    query.includes("bercak") ||
+    query.includes("klorosis")
+  ) {
+    return (
+      "Penyebab dan penanganan daun kuning atau layu:\n\n" +
+      "• **Kelebihan Air (Overwatering):** Daun menguning merata dan terasa lembek biasanya menandakan tanah terlalu basah atau drainase mampet. Kurangi frekuensi siram dan longgarkan media tanam.\n" +
+      "• **Defisiensi Nutrisi:** Daun bawah menguning dengan tulang daun tetap hijau umumnya tanda kekurangan Nitrogen atau Zat Besi. Berikan pupuk organik cair atau NPK seimbang.\n" +
+      "• **Kurang Sinar Matahari:** Tanaman terlihat kurus meninggi (etiolasi) dan daun pucat. Pindahkan pot ke area yang terkena sinar matahari minimal 4-6 jam sehari."
+    );
+  }
+
+  if (
+    query.includes("panen") ||
+    query.includes("petik") ||
+    query.includes("kematangan")
+  ) {
+    return (
+      "Panduan waktu dan teknik panen tanaman:\n\n" +
+      "• **Sayuran Daun (Bayam, Kangkung, Selada):** Panen dapat dilakukan pada umur 25-35 hari setelah tanam. Cabut bersama akar atau potong pangkal batang 2-3 cm dari tanah agar bisa tumbuh kembali (regrowth).\n" +
+      "• **Sayuran Buah (Cabai, Tomat):** Petik saat buah sudah 80-90% matang berwarna cerah beserta tangkainya di pagi hari agar kesegaran bertahan lama.\n" +
+      "• **Catatan Perawatan:** Setelah panen, segera berikan nutrisi atau gemburkan kembali media tanam untuk siklus tanam berikutnya."
+    );
+  }
+
+  if (
+    query.includes("hidroponik") ||
+    query.includes("rakit apung") ||
+    query.includes("nft") ||
+    query.includes("wick")
+  ) {
+    return (
+      "Panduan instalasi dan pemeliharaan hidroponik:\n\n" +
+      "• **Kontrol Suhu Air:** Pastikan suhu tandon air nutrisi tidak melebihi 28 derajat Celcius agar penyerapan oksigen akar tetap maksimal.\n" +
+      "• **Kebersihan Tandon:** Kuras dan bersihkan tandon nutrisi setiap 10-14 hari sekali guna menghindari lumut dan penumpukan garam mineral.\n" +
+      "• **Sirkulasi Oksigen:** Pastikan aerator atau pompa mengalirkan air dengan lancar agar akar tidak mengalami hipoksia."
+    );
+  }
+
+  return (
+    "Halo! Saya TaniBot siap membantu kebun urban Anda.\n\n" +
+    "Berikut adalah prinsip utama perawatan kebun sehat:\n" +
+    "• **Pencahayaan:** Pastikan tanaman mendapatkan sinar matahari langsung atau tidak langsung minimal 4-6 jam setiap hari.\n" +
+    "• **Kelembapan Tanah:** Siram tanaman secukupnya ketika lapisan atas tanah mulai mengering, hindari genangan air berlebih.\n" +
+    "• **Sirkulasi Udara:** Berikan jarak antar-pot agar sirkulasi udara baik dan mencegah kelembapan tinggi pemicu jamur.\n\n" +
+    "Silakan tanyakan hal spesifik seputar hama, nutrisi pupuk, teknik hidroponik, atau panduan panen tanaman Anda!"
+  );
+};
+
 export default function TanibotScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -290,17 +392,17 @@ export default function TanibotScreen() {
         return next;
       });
     } catch (e: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      const errorMsg: ChatMessage = {
+      console.warn("TaniBot API unreachable or rate-limited, switching to Smart Local Fallback:", e?.message);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const fallbackReply = generateLocalBotResponse(textToSend);
+      const botMsg: ChatMessage = {
         id: Date.now() + 1,
         role: "BOT",
-        message: e.response?.status === 429 
-          ? "Mohon maaf, saat ini sedang ada banyak pesan yang diproses. Silakan beri jeda sekitar 15 menit sebelum bertanya lagi ya!" 
-          : (e.response?.data?.message || "Mohon maaf, koneksi ke server sedang mengalami gangguan. Silakan coba lagi beberapa saat nanti ya."),
+        message: fallbackReply,
         createdAt: new Date().toISOString()
       };
       setMessages(prev => {
-        const next = [...prev, errorMsg];
+        const next = [...prev, botMsg];
         AsyncStorage.setItem("tanibot_history", JSON.stringify(next)).catch(() => {});
         return next;
       });

@@ -201,12 +201,15 @@ export default function DetailTanamanModal() {
 
   const latestPhotoUrl = useMemo(() => {
     const photoLog = logs.find(l => l.fotoUrl);
-    return photoLog?.fotoUrl || null;
-  }, [logs]);
+    return photoLog?.fotoUrl || tanaman?.logTerakhir?.fotoUrl || null;
+  }, [logs, tanaman?.logTerakhir?.fotoUrl]);
 
   const photoLogsAsc = useMemo(() => {
-    return logs.filter(l => !!l.fotoUrl).map(l => l.fotoUrl as string).reverse();
-  }, [logs]);
+    const fromLogs = logs.filter(l => !!l.fotoUrl).map(l => l.fotoUrl as string).reverse();
+    if (fromLogs.length > 0) return fromLogs;
+    if (tanaman?.logTerakhir?.fotoUrl) return [tanaman.logTerakhir.fotoUrl];
+    return [];
+  }, [logs, tanaman?.logTerakhir?.fotoUrl]);
 
   const wateringCount = useMemo(() => logs.filter(l => l.tipeValidasi !== 'photo').length, [logs]);
   const photoCount = useMemo(() => logs.filter(l => l.tipeValidasi === 'photo').length, [logs]);
@@ -226,7 +229,7 @@ export default function DetailTanamanModal() {
             }
             return prev + 1;
           });
-        }, 350);
+        }, 1100);
       } else if (photoLogsAsc.length === 1) {
         timeout = setTimeout(() => {
           setIsPlayingMemory(false);
@@ -270,6 +273,18 @@ export default function DetailTanamanModal() {
         parsed.exp = d.expSekarang;
         parsed.level = d.level;
         await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
+      }
+
+      // Perbarui cache lokal dashboard_tanaman agar daftar tanaman di Beranda langsung sinkron
+      try {
+        const cachedTanaman = await AsyncStorage.getItem("dashboard_tanaman");
+        if (cachedTanaman) {
+          const list: TanamanDetail[] = JSON.parse(cachedTanaman);
+          const filtered = list.filter((t) => t.id !== tanamanId);
+          await AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(filtered));
+        }
+      } catch (err) {
+        console.warn("Gagal memperbarui cache tanaman setelah panen:", err);
       }
       
       setShowCertificate(true);

@@ -192,7 +192,7 @@ const STATIC_MAP_HTML = `
 
     function initMap(centerLat, centerLng) {
       if (map) return;
-      map = L.map('map', { zoomControl: false }).setView([centerLat, centerLng], 12);
+      map = L.map('map', { zoomControl: false }).setView([centerLat, centerLng], 14);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
       }).addTo(map);
@@ -237,7 +237,7 @@ const STATIC_MAP_HTML = `
 
     function recenterMap(lat, lng) {
       if (map) {
-        map.flyTo([lat, lng], 13, { duration: 1.0 });
+        map.flyTo([lat, lng], 14, { duration: 1.0 });
       }
     }
 
@@ -357,6 +357,8 @@ export default function PetaHamaScreen() {
               userCoordsRef.current = freshCoords;
               setUserCoords(freshCoords);
               injectUserLocation(freshLat, freshLng, false);
+              cacheRef.current = {};
+              AsyncStorage.removeItem(STORAGE_CACHE_KEY).catch(() => {});
               fetchHeatmap(filterRef.current, freshCoords, true);
               currentLat = freshLat;
               currentLng = freshLng;
@@ -376,6 +378,8 @@ export default function PetaHamaScreen() {
               userCoordsRef.current = freshCoords;
               setUserCoords(freshCoords);
               injectUserLocation(freshLat, freshLng, false);
+              cacheRef.current = {};
+              AsyncStorage.removeItem(STORAGE_CACHE_KEY).catch(() => {});
               fetchHeatmap(filterRef.current, freshCoords, true);
             }
           }
@@ -423,13 +427,11 @@ export default function PetaHamaScreen() {
       }
     } catch (error) {
       console.warn('Fetch heatmap error, fallback ke simulasi lokal:', error);
-      if (!cacheRef.current[selectedFilter]) {
-        const fallbackData = generateFallbackHeatmap(coords, selectedFilter);
-        cacheRef.current[selectedFilter] = fallbackData;
-        if (filterRef.current === selectedFilter) {
-          setData(fallbackData);
-          injectHeatmapPoints(fallbackData.cells || []);
-        }
+      const fallbackData = generateFallbackHeatmap(coords, selectedFilter);
+      cacheRef.current[selectedFilter] = fallbackData;
+      if (filterRef.current === selectedFilter) {
+        setData(fallbackData);
+        injectHeatmapPoints(fallbackData.cells || []);
       }
     } finally {
       setIsLoading(false);
@@ -576,7 +578,7 @@ export default function PetaHamaScreen() {
               {data?.total_laporan ?? 0} Laporan Wabah Terdeteksi
             </Text>
             <Text style={styles.statsSubtext}>
-              Area radius 35 km dari kebun
+              Radius pantauan lokal sekitar kebun
             </Text>
           </View>
           <View style={styles.badgePill}>

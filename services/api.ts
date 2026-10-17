@@ -4,6 +4,12 @@ import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    bypassDedupe?: boolean;
+  }
+}
+
 // Fix Fail-Safe URL: Jadikan production sebagai default jika env kosong
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL ||
@@ -101,9 +107,11 @@ api.get = (function (
 ): Promise<any> {
   const dedupeKey = getDedupeKey(url, config);
 
-  const existing = inFlightRequests.get(dedupeKey);
-  if (existing) {
-    return existing;
+  if (!config?.bypassDedupe) {
+    const existing = inFlightRequests.get(dedupeKey);
+    if (existing) {
+      return existing;
+    }
   }
 
   const promise = (originalGet as any)(url, config).finally(() => {

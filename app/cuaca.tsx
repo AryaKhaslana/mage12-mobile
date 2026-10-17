@@ -5,8 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { registerOnLogout } from '../services/api';
+import api, { registerOnLogout, clearInFlightRequests } from '../services/api';
 import WeatherScene from '../components/WeatherScene';
+import ErrorState from '../components/ErrorState';
 
 const COLORS = {
   primary: "#3FA86B",
@@ -41,6 +42,7 @@ export default function CuacaScreen() {
     isFetchingRef.current = true;
 
     if (isManualRefresh) {
+      clearInFlightRequests();
       setIsRefreshing(true);
     } else if (!isSilent) {
       setIsLoading(true);
@@ -48,7 +50,7 @@ export default function CuacaScreen() {
     setIsError(false);
 
     try {
-      const response = await api.get('/weather/today');
+      const response = await api.get('/weather/today', { bypassDedupe: isManualRefresh });
       if (response.data?.status === 'success' && response.data?.data) {
         const freshData = response.data.data;
         memoryWeatherCache = freshData;
@@ -57,6 +59,7 @@ export default function CuacaScreen() {
           'dashboard_weather',
           JSON.stringify({ data: freshData, savedAt: Date.now() })
         ).catch(() => {});
+        setIsError(false);
       } else {
         setWeatherData((prev: any) => {
           if (!prev) setIsError(true);
@@ -161,7 +164,7 @@ export default function CuacaScreen() {
   // ERROR STATE WITH RETRY AND BACK BUTTON
   if (isError && !weatherData) {
     return (
-      <View style={[styles.container, styles.errorContainer, { paddingTop: insets.top + 20 }]}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <Pressable
           onPress={handleBack}
@@ -174,17 +177,12 @@ export default function CuacaScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.ink} />
         </Pressable>
-        <Ionicons name="cloud-offline-outline" size={64} color={COLORS.muted} style={{ marginBottom: 16 }} />
-        <Text style={styles.errorTitle}>Gagal Memuat Cuaca</Text>
-        <Text style={styles.errorSubtitle}>
-          Terjadi gangguan koneksi atau lokasi belum diatur. Silakan periksa kembali koneksi internet dan pengaturan lokasi kebun kamu.
-        </Text>
-        <Pressable
-          onPress={() => fetchWeather(false, false)}
-          style={({ pressed }) => [styles.retryButton, pressed && styles.btnPressed]}
-        >
-          <Text style={styles.retryButtonText}>Coba Lagi</Text>
-        </Pressable>
+        <ErrorState
+          title="Gagal Memuat Cuaca"
+          subtitle="Terjadi gangguan koneksi atau lokasi belum diatur. Silakan periksa kembali koneksi internet dan pengaturan lokasi kebun kamu."
+          onRetry={() => fetchWeather(false, true)}
+          isRetrying={isLoading || isRefreshing}
+        />
       </View>
     );
   }

@@ -19,7 +19,7 @@ import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import { getPlantImage } from "../../constants/plantImages";
-import api, { registerOnLogout, TanamanDetail } from "../../services/api";
+import api, { registerOnLogout, TanamanDetail, clearInFlightRequests } from "../../services/api";
 
 let memoryTanamanCache: TanamanDetail[] | null = null;
 registerOnLogout(() => {
@@ -243,16 +243,17 @@ export default function TanamanScreen() {
     }
   }, [params.openModal]);
   const fetchTanaman = useCallback(async (isManualRefresh = false) => {
-    // Gunakan tanamanListRef.current untuk menghindari stale closure
-    if (tanamanListRef.current.length === 0) {
+    if (isManualRefresh) {
+      clearInFlightRequests();
+      setIsRefreshing(true);
+      setIsError(false);
+    } else if (tanamanListRef.current.length === 0) {
       setIsLoading(true);
       setIsError(false);
-    } else if (isManualRefresh) {
-      setIsRefreshing(true);
     }
-    // Jika bukan manual refresh dan list sudah ada, fetch berjalan SILENT (tanpa skeleton / kedipan)
+
     try {
-      const response = await api.get("/tanaman");
+      const response = await api.get("/tanaman", { bypassDedupe: isManualRefresh });
       if (response.data?.status === "success") {
         const data = response.data.data;
         memoryTanamanCache = data;
@@ -260,10 +261,27 @@ export default function TanamanScreen() {
         tanamanListRef.current = data;
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(data)).catch(() => {});
       }
+      setIsError(false);
     } catch (error: any) {
       console.error("Error get tanaman:", error);
       if (tanamanListRef.current.length === 0) {
         setIsError(true);
+        if (isManualRefresh) {
+          showNotification(
+            "Gagal Memuat Tanaman",
+            error.response?.data?.message || "Terjadi kesalahan koneksi saat memuat data tanaman.",
+            "error"
+          );
+        }
+      } else {
+        setIsError(false);
+        if (isManualRefresh) {
+          showNotification(
+            "Koneksi Kurang Stabil",
+            "Menampilkan data tanaman tersimpan.",
+            "info"
+          );
+        }
       }
     } finally {
       setIsLoading(false);
@@ -393,7 +411,6 @@ export default function TanamanScreen() {
 
   const renderEmpty = () => {
     if (isLoading) return <PlantGridSkeleton />;
-    if (isError) return <ErrorState onRetry={() => fetchTanaman(true)} />;
     return (
       <View style={styles.emptyState}>
         <MaterialIcons name="eco" size={64} color="#bdcabd" />
@@ -404,6 +421,14 @@ export default function TanamanScreen() {
       </View>
     );
   };
+
+  if (isError && tanamanList.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ErrorState onRetry={() => fetchTanaman(true)} isRetrying={isRefreshing} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>

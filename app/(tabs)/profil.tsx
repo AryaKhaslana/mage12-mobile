@@ -8,10 +8,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from "expo-image";
 import { router, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
-import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser, registerOnLogout } from '../../services/api';
+import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser, registerOnLogout, clearInFlightRequests } from '../../services/api';
 import { getRelativeTime } from "../../utils/format";
 import { useNotification } from '../../components/NotificationContext';
 import { getPlantImage } from '../../constants/plantImages';
+import ErrorState from '../../components/ErrorState';
 
 interface ProfileMemoryCache {
   user: any;
@@ -150,6 +151,7 @@ export default function ProfilScreen() {
   const [achievementsData, setAchievementsData] = useState<AchievementResponse | null>(() => memoryProfileCache ? memoryProfileCache.achievements : null);
   const [isLoading, setIsLoading] = useState(() => !memoryProfileCache?.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const [showRiwayatPanen, setShowRiwayatPanen] = useState(false);
   const [isLoadingRiwayat, setIsLoadingRiwayat] = useState(false);
@@ -242,9 +244,12 @@ export default function ProfilScreen() {
     isFetchingRef.current = true;
 
     if (isRefresh) {
+      clearInFlightRequests();
       setIsRefreshing(true);
+      setIsError(false);
     } else if (!userDataRef.current) {
       setIsLoading(true);
+      setIsError(false);
     }
     if (!hasPostsRef.current) {
       setIsLoadingPosts(true);
@@ -288,8 +293,8 @@ export default function ProfilScreen() {
 
       // 3. Panggil API User, Tanaman, dan Achievements secara paralel
       const [userRes, tanamanRes, achRes] = await Promise.all([
-        api.get("/user/me").catch((err) => { console.error("Error fetch user:", err); return null; }),
-        api.get("/tanaman").catch((err) => { console.error("Error fetch tanaman:", err); return null; }),
+        api.get("/user/me", { bypassDedupe: isRefresh }).catch((err) => { console.error("Error fetch user:", err); return null; }),
+        api.get("/tanaman", { bypassDedupe: isRefresh }).catch((err) => { console.error("Error fetch tanaman:", err); return null; }),
         getAchievements().catch((err) => { console.error("Error fetch achievements:", err); return null; })
       ]);
 
@@ -300,14 +305,23 @@ export default function ProfilScreen() {
         if (memoryProfileCache) memoryProfileCache.user = freshUser;
         SecureStore.setItemAsync("userData", JSON.stringify(freshUser)).catch(console.error);
         setIsLoading(false);
+        setIsError(false);
 
         // Jika tadi belum punya target username atau username berubah, fetch sekarang
         if (!postsPromise || freshUser.username !== targetUsername) {
           postsPromise = fetchPostsAsync(freshUser.username);
         }
       } else {
-        if (!isRefresh && !userDataRef.current) {
-          showNotification("Gagal Memuat Profil", "Gagal memuat data profil kamu.", "error");
+        if (!userDataRef.current) {
+          setIsError(true);
+          if (isRefresh) {
+            showNotification("Gagal Memuat Profil", "Gagal memuat data profil kamu.", "error");
+          }
+        } else {
+          setIsError(false);
+          if (isRefresh) {
+            showNotification("Koneksi Kurang Stabil", "Menampilkan data profil tersimpan.", "info");
+          }
         }
       }
 
@@ -324,9 +338,22 @@ export default function ProfilScreen() {
 
       // Tunggu posts selesai jika masih diproses
       if (postsPromise) await postsPromise;
+      if (userRes?.data?.data || userDataRef.current) {
+        setIsError(false);
+      }
     } catch (error) {
       console.error("Gagal mengambil data profil:", error);
-      showNotification("Error", "Terjadi kesalahan saat memuat profil.", "error");
+      if (!userDataRef.current) {
+        setIsError(true);
+        if (isRefresh) {
+          showNotification("Gagal Memuat Profil", "Terjadi kesalahan saat memuat profil.", "error");
+        }
+      } else {
+        setIsError(false);
+        if (isRefresh) {
+          showNotification("Koneksi Kurang Stabil", "Menampilkan data profil tersimpan.", "info");
+        }
+      }
     } finally {
       setIsLoading(false);
       setIsLoadingPosts(false);
@@ -451,6 +478,14 @@ export default function ProfilScreen() {
       },
     } as any);
   };
+
+  if (isError && !userData) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        <ErrorState onRetry={() => fetchAllData(true)} isRetrying={isRefreshing} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>

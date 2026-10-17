@@ -23,7 +23,7 @@ import ProfileOnboardingModal from "../../components/dashboard/ProfileOnboarding
 import CoachMarkOverlay, { CoachMarkStep } from "../../components/CoachMarkOverlay";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
-import api, { registerOnLogout } from "../../services/api";
+import api, { registerOnLogout, clearInFlightRequests } from "../../services/api";
 import { checkTutorialFinished, markTutorialFinished } from "../../utils/tutorial";
 
 let memoryHomeUser: any = null;
@@ -453,12 +453,13 @@ export default function DashboardScreen() {
     if (isFetchingDashboardRef.current && !isManualRefresh) return;
     isFetchingDashboardRef.current = true;
 
-    // Hindari Stale Closure: gunakan hasLoadedDataRef.current
-    if (!hasLoadedDataRef.current) {
+    if (isManualRefresh) {
+      clearInFlightRequests();
+      setIsRefreshing(true);
+      setIsError(false);
+    } else if (!hasLoadedDataRef.current && tanamanList.length === 0) {
       setIsLoading(true);
       setIsError(false);
-    } else if (isManualRefresh) {
-      setIsRefreshing(true);
     }
 
     // PROTEKSI KUOTA WEATHER: Hanya panggil /weather/today jika manual refresh ATAU sudah lewat 15 menit sejak request terakhir
@@ -468,7 +469,7 @@ export default function DashboardScreen() {
     if (isManualRefresh || now - lastWeatherFetchRef.current > WEATHER_COOLDOWN_MS) {
       lastWeatherFetchRef.current = now;
 
-      api.get("/weather/today")
+      api.get("/weather/today", { bypassDedupe: isManualRefresh })
         .then(async (weatherRes) => {
           if (weatherRes?.data?.data) {
             const weatherData = weatherRes.data.data;
@@ -514,11 +515,11 @@ export default function DashboardScreen() {
 
     try {
       const [meRes, tanamanRes] = await Promise.all([
-        api.get("/user/me").catch((e) => {
+        api.get("/user/me", { bypassDedupe: isManualRefresh }).catch((e) => {
           if (e.response && e.response.status === 404) return null;
           throw e;
         }),
-        api.get("/tanaman"),
+        api.get("/tanaman", { bypassDedupe: isManualRefresh }),
       ]);
       if (meRes?.data?.data) {
         hasLoadedDataRef.current = true;
@@ -548,23 +549,35 @@ export default function DashboardScreen() {
         setTanamanList(sorted);
         AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(sorted)).catch(() => {});
       }
+      setIsError(false);
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
-      if (!hasLoadedDataRef.current) {
+      if (!hasLoadedDataRef.current && tanamanList.length === 0) {
         setIsError(true);
+        if (isManualRefresh) {
+          showNotification(
+            "Gagal Memuat Data",
+            error.response?.data?.message ||
+              "Terjadi kesalahan koneksi saat memuat dashboard.",
+            "error"
+          );
+        }
+      } else {
+        setIsError(false);
+        if (isManualRefresh) {
+          showNotification(
+            "Koneksi Kurang Stabil",
+            "Menampilkan data lokal kebun tersimpan.",
+            "info"
+          );
+        }
       }
-      showNotification(
-        "Gagal Memuat Data",
-        error.response?.data?.message ||
-          "Terjadi kesalahan koneksi saat memuat dashboard.",
-        "error"
-      );
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
       isFetchingDashboardRef.current = false;
     }
-  }, []);
+  }, [tanamanList.length]);
 
   // Data Fetcher - Runs on focus
   useFocusEffect(
@@ -738,6 +751,14 @@ export default function DashboardScreen() {
   const isRaining = currentCond.includes('HUJAN') || currentCond.includes('RAIN') || currentCond.includes('GERIMIS') || currentCond.includes('DRIZZLE') || currentCond.includes('THUNDER') || weather?.prediksiHujanHariIni;
   const farmerState = isRaining ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
 
+  if (isError && tanamanList.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F0' }} edges={["top", "bottom"]}>
+        <ErrorState onRetry={() => fetchDashboardData(true)} isRetrying={isRefreshing} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1' }} edges={["bottom"]}>
       <ScrollView
@@ -748,8 +769,6 @@ export default function DashboardScreen() {
       >
         {isLoading ? (
           <View style={{ padding: 24 }}><HomeSkeleton /></View>
-        ) : isError ? (
-          <ErrorState onRetry={() => fetchDashboardData(true)} />
         ) : (
           <>
             {/* 1. Header Scene */}

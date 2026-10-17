@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api';
+import api, { clearInFlightRequests } from '../services/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HeatmapCell {
@@ -393,8 +393,12 @@ export default function PetaHamaScreen() {
   const fetchHeatmap = async (
     selectedFilter: string,
     targetCoords?: { lat: number; lng: number },
-    isSilent = false
+    isSilent = false,
+    isRetry = false
   ) => {
+    if (isRetry) {
+      clearInFlightRequests();
+    }
     const coords = targetCoords || userCoordsRef.current;
     const hasCache = !!cacheRef.current[selectedFilter];
 
@@ -411,7 +415,7 @@ export default function PetaHamaScreen() {
       const maxLng = (coords.lng + 0.35).toFixed(4);
       const bboxParam = `${minLat},${minLng},${maxLat},${maxLng}`;
 
-      const response = await api.get(`/heatmap?hama=${hamaParam}&bbox=${bboxParam}`);
+      const response = await api.get(`/heatmap?hama=${hamaParam}&bbox=${bboxParam}`, { bypassDedupe: isRetry });
       if (response.data && response.data.status === 'success') {
         let resData: HeatmapResponse = response.data.data;
         if (!resData.cells || resData.cells.length === 0) {
@@ -624,7 +628,7 @@ export default function PetaHamaScreen() {
             <MaterialIcons name="error-outline" size={36} color="#DC2626" style={{ marginBottom: 8 }} />
             <Text style={styles.errorText}>Gagal memuat peta sebaran hama</Text>
             <Pressable
-              onPress={() => fetchHeatmap(filter, userCoords, false)}
+              onPress={() => fetchHeatmap(filter, userCoords, false, true)}
               style={({ pressed }) => [styles.retryBtn, pressed && styles.btnPressed]}
             >
               <Text style={styles.retryText}>Coba Lagi</Text>

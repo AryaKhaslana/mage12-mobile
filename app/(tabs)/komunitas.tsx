@@ -31,9 +31,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createCommunityPost,
   getCommunityPosts, getMyCommunityPosts, toggleCommunityLike, deleteCommunityPost,
-  registerOnLogout
+  registerOnLogout, clearInFlightRequests
 } from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
+import ErrorState from "../../components/ErrorState";
 
 interface CommunityMemoryCache {
   posts: any[];
@@ -651,8 +652,9 @@ export default function KomunitasScreen() {
     try {
       setIsError(false);
       if (shouldRefresh) {
+        clearInFlightRequests();
         setIsRefreshing(true);
-      } else if (pageNum === 1) {
+      } else if (pageNum === 1 && posts.length === 0) {
         setIsLoading(true);
       }
       const userDataStr = await SecureStore.getItemAsync("userData");
@@ -715,15 +717,25 @@ export default function KomunitasScreen() {
 
       setHasMore(response.meta.halamanSekarang < response.meta.totalHalaman);
       setPage(pageNum);
+      setIsError(false);
     } catch (error) {
       console.error(error);
-      setIsError(true);
-      showNotification("Error", "Gagal memuat feed", "error");
+      if (posts.length === 0) {
+        setIsError(true);
+        if (shouldRefresh) {
+          showNotification("Gagal Memuat Komunitas", "Terjadi kesalahan koneksi saat memuat feed.", "error");
+        }
+      } else {
+        setIsError(false);
+        if (shouldRefresh) {
+          showNotification("Koneksi Kurang Stabil", "Menampilkan postingan tersimpan.", "info");
+        }
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [activeTab, debouncedSearch, userFilter, showNotification]);
+  }, [activeTab, debouncedSearch, userFilter, showNotification, posts.length]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -878,6 +890,8 @@ export default function KomunitasScreen() {
   };
 
   const handleRefresh = async () => {
+    clearInFlightRequests();
+    setIsError(false);
     await fetchPosts(1, true);
   };
 
@@ -886,6 +900,14 @@ export default function KomunitasScreen() {
       fetchPosts(page + 1, false);
     }
   };
+
+  if (isError && posts.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ErrorState onRetry={handleRefresh} isRetrying={isRefreshing} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -988,14 +1010,6 @@ export default function KomunitasScreen() {
                 <PostSkeleton />
                 <PostSkeleton />
               </View>
-            ) : isError ? (
-              <EmptyHint
-                icon="wifi-off"
-                title="Tidak ada koneksi internet"
-                subtitle="Periksa koneksi internetmu lalu coba lagi."
-                ctaText="Coba Lagi"
-                onCtaPress={handleRefresh}
-              />
             ) : (
               <EmptyHint
                 icon="groups"

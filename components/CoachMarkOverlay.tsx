@@ -45,28 +45,45 @@ export default function CoachMarkOverlay({
   const currentR = useSharedValue(0);
   const opacity = useSharedValue(0);
 
-  // Initialize values when visible
+  const stepsRef = React.useRef(steps);
+  stepsRef.current = steps;
+
+  const wasVisibleRef = React.useRef(false);
+  const hasInitializedRef = React.useRef(false);
+
+  // Initialize values only when overlay transitions from invisible to visible
   useEffect(() => {
-    if (visible && steps.length > 0) {
-      const timer = setTimeout(() => {
+    if (visible) {
+      if (!wasVisibleRef.current) {
+        wasVisibleRef.current = true;
+        hasInitializedRef.current = false;
         setCurrentStepIndex(0);
-      }, 0);
-      const step = steps[0];
-      currentX.value = step.rect.x;
-      currentY.value = step.rect.y;
-      currentW.value = step.rect.width;
-      currentH.value = step.rect.height;
-      currentR.value = step.borderRadius || 12;
-      opacity.value = withTiming(1, { duration: 300 });
-      return () => clearTimeout(timer);
+        setShowConfirmSkip(false);
+        setIsTransitioning(false);
+      }
+
+      if (!hasInitializedRef.current && steps.length > 0) {
+        hasInitializedRef.current = true;
+        const step = steps[0];
+        currentX.value = step.rect.x - 8;
+        currentY.value = step.rect.y - 8;
+        currentW.value = step.rect.width + 16;
+        currentH.value = step.rect.height + 16;
+        currentR.value = step.borderRadius || 12;
+        opacity.value = withTiming(1, { duration: 300 });
+      }
     } else {
-      opacity.value = withTiming(0, { duration: 300 });
+      if (wasVisibleRef.current) {
+        wasVisibleRef.current = false;
+        hasInitializedRef.current = false;
+        opacity.value = withTiming(0, { duration: 300 });
+      }
     }
   }, [visible, steps, currentX, currentY, currentW, currentH, currentR, opacity]);
 
-  // Update target coordinates when step changes
+  // Update target coordinates when step changes or when step rect is dynamically updated
   useEffect(() => {
-    if (visible && steps[currentStepIndex]) {
+    if (visible && steps[currentStepIndex] && hasInitializedRef.current) {
       const step = steps[currentStepIndex];
       const config = { damping: 15, stiffness: 120 };
       // Tambah padding 8px biar ujungnya (border-radius) nggak motong teks/konten
@@ -150,7 +167,8 @@ export default function CoachMarkOverlay({
         if (onBeforeStepChange) {
           await Promise.resolve(onBeforeStepChange(currentStepIndex, nextIndex));
         }
-        onStepChange?.(nextIndex, steps[nextIndex]);
+        const latestStep = stepsRef.current[nextIndex] || steps[nextIndex];
+        onStepChange?.(nextIndex, latestStep);
         setCurrentStepIndex(nextIndex);
       } finally {
         setIsTransitioning(false);

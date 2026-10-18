@@ -110,9 +110,13 @@ export default function LoginScreen() {
       setIsGoogleLoading(true);
       await clearAppCache();
       await googleSignIn();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Login Google Sign-In Error:", error?.code, error?.message || error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      showNotification("Gagal", "Google Sign In bermasalah.", "error");
+      const msg = error?.code === "10" || error?.message?.includes("DEVELOPER_ERROR")
+        ? "Google Sign-In memerlukan build APK / Client ID (.env) yang sesuai."
+        : error?.message || "Google Sign In bermasalah.";
+      showNotification("Gagal", msg, "error");
     } finally {
       setIsGoogleLoading(false);
       authLockRef.current = false;

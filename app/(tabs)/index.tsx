@@ -229,6 +229,7 @@ export default function DashboardScreen() {
   const step2Ref = useRef<View>(null);
   const step3Ref = useRef<View>(null);
   const step4Ref = useRef<View>(null);
+  const mainScrollRef = useRef<ScrollView>(null);
 
   // Anti-Spam & Mutex Lock untuk stress test penyiraman
   const processingWateringRef = useRef<Set<number>>(new Set());
@@ -266,6 +267,84 @@ export default function DashboardScreen() {
     }
   }, [userData, isLoading, tanamanList.length]);
 
+  const startTutorialGuide = useCallback(() => {
+    if (isLoading) return;
+
+    // 1. Reset posisi scroll ke paling atas terlebih dahulu agar pengukuran elemen akurat
+    mainScrollRef.current?.scrollTo({ y: 0, animated: false });
+
+    // 2. Beri jeda 150ms agar scroll selesai stabil sebelum mengukur koordinat
+    setTimeout(() => {
+      const measurePromises = [
+        new Promise<any>((resolve) => {
+          if (!step1Ref.current) return resolve(null);
+          step1Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? { x, y, w, h } : null));
+        }),
+        new Promise<any>((resolve) => {
+          if (!step2Ref.current) return resolve(null);
+          step2Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? { x, y, w, h } : null));
+        }),
+        new Promise<any>((resolve) => {
+          if (!step3Ref.current) return resolve(null);
+          step3Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? { x, y, w, h } : null));
+        }),
+        new Promise<any>((resolve) => {
+          if (!step4Ref.current) return resolve(null);
+          step4Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? { x, y, w, h } : null));
+        }),
+      ];
+
+      Promise.all(measurePromises).then((results) => {
+        const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
+        const tabBarHeight = 64 + insets.bottom;
+
+        const allSteps = [
+          {
+            rect: results[0] ? { x: results[0].x, y: results[0].y, width: results[0].w, height: results[0].h } : null,
+            title: "Streak Belajar",
+            description: "Lihat seberapa konsisten kamu merawat tanaman tiap harinya. Pertahankan streak-mu!",
+            borderRadius: 24 
+          },
+          {
+            rect: results[1] ? { x: results[1].x, y: results[1].y, width: results[1].w, height: results[1].h } : null,
+            title: "Tugas Hari Ini",
+            description: "Semua tanaman yang butuh perhatianmu hari ini akan muncul di sini.",
+            borderRadius: 24 
+          },
+          {
+            rect: results[2] ? { x: results[2].x, y: results[2].y, width: results[2].w, height: results[2].h } : null,
+            title: tanamanList.length === 0 ? "Mulai Bertani" : "Tandai Selesai",
+            description: tanamanList.length === 0 ? "Tambahkan tanaman pertamamu lewat menu di bawah nanti ya!" : "Tekan tombol ini setelah menyiram tanaman untuk mencatat log dan dapatkan EXP!",
+            borderRadius: 24,
+          },
+          {
+            rect: results[3] ? { x: results[3].x, y: results[3].y, width: results[3].w, height: results[3].h } : null,
+            title: "Panen Terdekat",
+            description: "Pantau tanaman yang mendekati masa panen agar tidak terlewatkan.",
+            borderRadius: 24 
+          },
+          {
+            rect: { 
+              x: 0, 
+              y: windowHeight - tabBarHeight, 
+              width: windowWidth, 
+              height: tabBarHeight 
+            },
+            title: "Navigasi Utama",
+            description: "Pindah ke halaman lain seperti Tambah Tanaman, ChatBot, atau Komunitas lewat menu ini.",
+            borderRadius: 0 
+          },
+        ];
+
+        const validSteps = allSteps.filter(s => s.rect !== null);
+        if (validSteps.length > 0) {
+          setTutorialSteps(validSteps as CoachMarkStep[]);
+          setShowTutorial(true);
+        }
+      });
+    }, 150);
+  }, [isLoading, insets.bottom, tanamanList.length]);
+
   useEffect(() => {
     if (needsTutorial && !isLoading) {
       let attempts = 0;
@@ -276,80 +355,53 @@ export default function DashboardScreen() {
           return;
         }
 
-        const measurePromises = [
-          new Promise<any>((resolve) => {
-            if (!step1Ref.current) return resolve(null);
-            step1Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
-          }),
-          new Promise<any>((resolve) => {
-            if (!step2Ref.current) return resolve(null);
-            step2Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
-          }),
-          new Promise<any>((resolve) => {
-            if (!step3Ref.current) return resolve(null);
-            step3Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
-          }),
-          new Promise<any>((resolve) => {
-            if (!step4Ref.current) return resolve(null);
-            step4Ref.current.measureInWindow((x, y, w, h) => resolve(w > 0 ? {x, y, w, h} : null));
-          }),
-        ];
-
-        Promise.all(measurePromises).then((results) => {
+        if (step1Ref.current && step2Ref.current) {
           clearInterval(interval);
-          const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
-          const tabBarHeight = 64 + insets.bottom;
-
-          const allSteps = [
-            {
-              rect: results[0] ? { x: results[0].x, y: results[0].y, width: results[0].w, height: results[0].h } : null,
-              title: "Streak Belajar",
-              description: "Lihat seberapa konsisten kamu merawat tanaman tiap harinya. Pertahankan streak-mu!",
-              borderRadius: 24 
-            },
-            {
-              rect: results[1] ? { x: results[1].x, y: results[1].y, width: results[1].w, height: results[1].h } : null,
-              title: "Tugas Hari Ini",
-              description: "Semua tanaman yang butuh perhatianmu hari ini akan muncul di sini.",
-              borderRadius: 24 
-            },
-            {
-              rect: results[2] ? { x: results[2].x, y: results[2].y, width: results[2].w, height: results[2].h } : null,
-              title: tanamanList.length === 0 ? "Mulai Bertani" : "Tandai Selesai",
-              description: tanamanList.length === 0 ? "Tambahkan tanaman pertamamu lewat menu di bawah nanti ya!" : "Tekan tombol ini setelah menyiram tanaman untuk mencatat log dan dapatkan EXP!",
-              borderRadius: 24,
-            },
-            {
-              rect: results[3] ? { x: results[3].x, y: results[3].y, width: results[3].w, height: results[3].h } : null,
-              title: "Panen Terdekat",
-              description: "Pantau tanaman yang mendekati masa panen agar tidak terlewatkan.",
-              borderRadius: 24 
-            },
-            {
-              rect: { 
-                x: 0, 
-                y: windowHeight - tabBarHeight, 
-                width: windowWidth, 
-                height: tabBarHeight 
-              },
-              title: "Navigasi Utama",
-              description: "Pindah ke halaman lain seperti Tambah Tanaman, ChatBot, atau Komunitas lewat menu ini.",
-              borderRadius: 0 
-            },
-          ];
-
-          const validSteps = allSteps.filter(s => s.rect !== null);
-          if (validSteps.length > 0) {
-            setTutorialSteps(validSteps as CoachMarkStep[]);
-            setShowTutorial(true);
-            setNeedsTutorial(false); // Stop trying
-          }
-        });
+          startTutorialGuide();
+          setNeedsTutorial(false);
+        }
       }, 500);
 
       return () => clearInterval(interval);
     }
-  }, [needsTutorial, isLoading]);
+  }, [needsTutorial, isLoading, startTutorialGuide]);
+
+  const handleBeforeTutorialStepChange = async (_currentIndex: number, nextIndex: number) => {
+    const nextStep = tutorialSteps[nextIndex];
+    if (!nextStep) return;
+
+    if (nextStep.title === "Panen Terdekat") {
+      // 1. Gulir ke bawah agar section Panen Terdekat terlihat sepenuhnya dan tidak tertutup navbar tab bar
+      mainScrollRef.current?.scrollToEnd({ animated: true });
+
+      // 2. Beri jeda animasi scroll (~320ms) agar ScrollView berhenti di posisi baru
+      await new Promise<void>((resolve) => setTimeout(resolve, 320));
+
+      // 3. Ukur ulang posisi riil step4Ref di layar agar highlight coach mark presisi
+      await new Promise<void>((resolve) => {
+        if (!step4Ref.current) return resolve();
+        step4Ref.current.measureInWindow((x, y, w, h) => {
+          if (w > 0 && h > 0) {
+            setTutorialSteps((prev) =>
+              prev.map((s, idx) =>
+                idx === nextIndex
+                  ? { ...s, rect: { x, y, width: w, height: h } }
+                  : s
+              )
+            );
+          }
+          resolve();
+        });
+      });
+    } else if (
+      nextStep.title === "Streak Belajar" ||
+      nextStep.title === "Tugas Hari Ini" ||
+      nextStep.title === "Mulai Bertani" ||
+      nextStep.title === "Tandai Selesai"
+    ) {
+      mainScrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  };
 
   // Check Pelindung Streak Pop-up
   useEffect(() => {
@@ -762,6 +814,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1' }} edges={["bottom"]}>
       <ScrollView
+        ref={mainScrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }, { paddingBottom: 140 }]}
         showsVerticalScrollIndicator={false}
@@ -806,7 +859,29 @@ export default function DashboardScreen() {
             </View>
 {/* 3. Tugas Hari Ini */}
             <View style={{ paddingHorizontal: 24, marginTop: 32 }} ref={step2Ref}>
-              <Text style={{ fontSize: 18, fontFamily: 'Nunito_800ExtraBold', color: '#1B4332', marginBottom: 16 }}>Hari ini</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Pressable
+                  onLongPress={startTutorialGuide}
+                  delayLongPress={400}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={{ fontSize: 18, fontFamily: 'Nunito_800ExtraBold', color: '#1B4332' }}>Hari ini</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={startTutorialGuide}
+                  style={({ pressed }) => [
+                    styles.hiddenTutorialBtn,
+                    pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+                  ]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel="Ulangi Panduan"
+                  accessibilityRole="button"
+                >
+                  <MaterialIcons name="help-outline" size={13} color="#2D6A4F" />
+                  <Text style={styles.hiddenTutorialBtnText}>Panduan</Text>
+                </Pressable>
+              </View>
               
               {reminders.length === 0 ? (
                 <EmptyHint
@@ -816,32 +891,33 @@ export default function DashboardScreen() {
                   subtitle="Belum ada yang perlu disiram. Nikmati harimu!"
                 />
               ) : (
-                reminders.map((tanaman) => {
+                reminders.map((tanaman, index) => {
                   const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
                   // Task penyiraman aktif tiap hari, kecuali kalau ditunda hujan
                   const isWateringTask = tanaman.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni;
 
                   return (
-                    <TaskCard 
-                      key={tanaman.id}
-                      task={tanaman}
-                      isWateringTask={isWateringTask}
-                      isWateredToday={sudahValidasiHariIni}
-                      onTaskPress={() => {
-                        // Anti-Spam: Cek apakah tanaman ini baru saja disiram (dalam 1.5 detik terakhir)
-                        const lastWatered = recentlyWateredRef.current.get(tanaman.id) || 0;
-                        if (Date.now() - lastWatered < 1500) {
-                          // Abaikan double-tap agar juri tidak terlempar ke detail tanaman!
-                          return;
-                        }
+                    <View key={tanaman.id} ref={index === 0 ? step3Ref : undefined}>
+                      <TaskCard 
+                        task={tanaman}
+                        isWateringTask={isWateringTask}
+                        isWateredToday={sudahValidasiHariIni}
+                        onTaskPress={() => {
+                          // Anti-Spam: Cek apakah tanaman ini baru saja disiram (dalam 1.5 detik terakhir)
+                          const lastWatered = recentlyWateredRef.current.get(tanaman.id) || 0;
+                          if (Date.now() - lastWatered < 1500) {
+                            // Abaikan double-tap agar juri tidak terlempar ke detail tanaman!
+                            return;
+                          }
 
-                        if (isWateringTask && !sudahValidasiHariIni) {
-                          handleLogAktivitas(tanaman.id, tanaman.nickname || tanaman.jenisTanaman);
-                        } else {
-                          router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } });
-                        }
-                      }}
-                    />
+                          if (isWateringTask && !sudahValidasiHariIni) {
+                            handleLogAktivitas(tanaman.id, tanaman.nickname || tanaman.jenisTanaman);
+                          } else {
+                            router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } });
+                          }
+                        }}
+                      />
+                    </View>
                   );
                 })
               )}
@@ -984,13 +1060,16 @@ export default function DashboardScreen() {
       <CoachMarkOverlay
         visible={showTutorial}
         steps={tutorialSteps}
+        onBeforeStepChange={handleBeforeTutorialStepChange}
         onFinish={() => {
           setShowTutorial(false);
           markTutorialFinished();
+          mainScrollRef.current?.scrollTo({ y: 0, animated: true });
         }}
         onSkip={() => {
           setShowTutorial(false);
           markTutorialFinished();
+          mainScrollRef.current?.scrollTo({ y: 0, animated: true });
         }}
       />
 
@@ -1275,4 +1354,20 @@ const styles = StyleSheet.create({
     borderRadius: 100 },
   badgeText: {
     fontSize: 10,
-    fontFamily: "Nunito_700Bold" } });
+    fontFamily: "Nunito_700Bold" },
+  hiddenTutorialBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F5E9",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 99,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "rgba(45, 106, 79, 0.15)",
+  },
+  hiddenTutorialBtnText: {
+    fontSize: 12,
+    fontFamily: "Nunito_700Bold",
+    color: "#2D6A4F",
+  } });

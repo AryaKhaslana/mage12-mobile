@@ -346,7 +346,7 @@ export const googleSignIn = async () => {
       // user cancelled the login flow
       return null;
     }
-    
+    console.error("GoogleSignin service error:", error?.code, error?.message || error);
     // Propagate error to caller for unified in-app notification
     throw error;
   }

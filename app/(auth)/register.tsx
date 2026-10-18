@@ -209,9 +209,13 @@ export default function RegisterScreen() {
       setIsGoogleLoading(true);
       await clearAppCache();
       await googleSignIn();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Register Google Sign-In Error:", error?.code, error?.message || error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      showNotification("Gagal", "Google Sign In bermasalah.", "error");
+      const msg = error?.code === "10" || error?.message?.includes("DEVELOPER_ERROR")
+        ? "Google Sign-In memerlukan build APK / Client ID (.env) yang sesuai."
+        : error?.message || "Google Sign In bermasalah.";
+      showNotification("Gagal", msg, "error");
     } finally {
       setIsGoogleLoading(false);
       authLockRef.current = false;
@@ -242,20 +246,6 @@ export default function RegisterScreen() {
           >
             {/* Title and Subtitle with Step Indicator */}
             <View style={{ marginBottom: 20, paddingHorizontal: 8, alignItems: "center" }}>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: '#E8F5E9',
-                paddingHorizontal: 12,
-                paddingVertical: 5,
-                borderRadius: 100,
-                marginBottom: 8,
-              }}>
-                <MaterialIcons name="person-outline" size={14} color="#3FA86B" style={{ marginRight: 4 }} />
-                <Text style={{ fontFamily: "Nunito_700Bold", fontSize: 12, color: "#3FA86B" }}>
-                  Langkah 1 dari 2: Data Akun
-                </Text>
-              </View>
               <Text style={{ fontSize: 26, fontFamily: "Nunito_800ExtraBold", color: "#1B4332", marginBottom: 4, textAlign: "center" }}>Daftar Akun TaniSync</Text>
               <Text style={{ fontSize: 14, fontFamily: "Nunito_500Medium", color: "#5C5A4F", textAlign: "center" }}>Nama dan username wajib diisi untuk identitas kebun kamu</Text>
             </View>

@@ -19,14 +19,24 @@ interface CoachMarkOverlayProps {
   steps: CoachMarkStep[];
   onFinish: () => void;
   onSkip: () => void;
+  onBeforeStepChange?: (currentStepIndex: number, nextStepIndex: number) => Promise<void> | void;
+  onStepChange?: (stepIndex: number, step?: CoachMarkStep) => void;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUBBLE_WIDTH = SCREEN_WIDTH - 48; // 24px padding on sides
 
-export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: CoachMarkOverlayProps) {
+export default function CoachMarkOverlay({
+  visible,
+  steps,
+  onFinish,
+  onSkip,
+  onBeforeStepChange,
+  onStepChange,
+}: CoachMarkOverlayProps) {
   const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
   const [showConfirmSkip, setShowConfirmSkip] = React.useState(false);
+  const [isTransitioning, setIsTransitioning] = React.useState(false);
 
   const currentX = useSharedValue(0);
   const currentY = useSharedValue(0);
@@ -35,28 +45,45 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
   const currentR = useSharedValue(0);
   const opacity = useSharedValue(0);
 
-  // Initialize values when visible
+  const stepsRef = React.useRef(steps);
+  stepsRef.current = steps;
+
+  const wasVisibleRef = React.useRef(false);
+  const hasInitializedRef = React.useRef(false);
+
+  // Initialize values only when overlay transitions from invisible to visible
   useEffect(() => {
-    if (visible && steps.length > 0) {
-      const timer = setTimeout(() => {
+    if (visible) {
+      if (!wasVisibleRef.current) {
+        wasVisibleRef.current = true;
+        hasInitializedRef.current = false;
         setCurrentStepIndex(0);
-      }, 0);
-      const step = steps[0];
-      currentX.value = step.rect.x;
-      currentY.value = step.rect.y;
-      currentW.value = step.rect.width;
-      currentH.value = step.rect.height;
-      currentR.value = step.borderRadius || 12;
-      opacity.value = withTiming(1, { duration: 300 });
-      return () => clearTimeout(timer);
+        setShowConfirmSkip(false);
+        setIsTransitioning(false);
+      }
+
+      if (!hasInitializedRef.current && steps.length > 0) {
+        hasInitializedRef.current = true;
+        const step = steps[0];
+        currentX.value = step.rect.x - 8;
+        currentY.value = step.rect.y - 8;
+        currentW.value = step.rect.width + 16;
+        currentH.value = step.rect.height + 16;
+        currentR.value = step.borderRadius || 12;
+        opacity.value = withTiming(1, { duration: 300 });
+      }
     } else {
-      opacity.value = withTiming(0, { duration: 300 });
+      if (wasVisibleRef.current) {
+        wasVisibleRef.current = false;
+        hasInitializedRef.current = false;
+        opacity.value = withTiming(0, { duration: 300 });
+      }
     }
   }, [visible, steps, currentX, currentY, currentW, currentH, currentR, opacity]);
 
-  // Update target coordinates when step changes
+  // Update target coordinates when step changes or when step rect is dynamically updated
   useEffect(() => {
-    if (visible && steps[currentStepIndex]) {
+    if (visible && steps[currentStepIndex] && hasInitializedRef.current) {
       const step = steps[currentStepIndex];
       const config = { damping: 15, stiffness: 120 };
       // Tambah padding 8px biar ujungnya (border-radius) nggak motong teks/konten
@@ -129,11 +156,23 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
   const currentStep = steps[currentStepIndex];
   const isLastStep = currentStepIndex === steps.length - 1;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (isTransitioning) return;
     if (isLastStep) {
       onFinish();
     } else {
-      setCurrentStepIndex((prev) => prev + 1);
+      setIsTransitioning(true);
+      try {
+        const nextIndex = currentStepIndex + 1;
+        if (onBeforeStepChange) {
+          await Promise.resolve(onBeforeStepChange(currentStepIndex, nextIndex));
+        }
+        const latestStep = stepsRef.current[nextIndex] || steps[nextIndex];
+        onStepChange?.(nextIndex, latestStep);
+        setCurrentStepIndex(nextIndex);
+      } finally {
+        setIsTransitioning(false);
+      }
     }
   };
 
@@ -167,9 +206,11 @@ export default function CoachMarkOverlay({ visible, steps, onFinish, onSkip }: C
               <Pressable 
                 style={({ pressed }) => [
                   styles.nextButton,
-                  pressed && { transform: [{ scale: 0.98 }] }
+                  isTransitioning && { opacity: 0.7 },
+                  pressed && !isTransitioning && { transform: [{ scale: 0.98 }] }
                 ]}
                 onPress={handleNext}
+                disabled={isTransitioning}
               >
                 <Text style={styles.nextText}>
                   {isLastStep ? "Mengerti!" : "Lanjut"}

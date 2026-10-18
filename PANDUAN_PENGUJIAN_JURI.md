@@ -29,6 +29,9 @@ Agar Dewan Juri dapat langsung menguji seluruh fitur aplikasi secara utuh tanpa 
    * Untuk menguji bagaimana sistem merespons cuaca hujan tanpa harus menunggu turun hujan asli, **tekan dan tahan (long-press selama 1 detik)** pada kotak indikator cuaca di pojok kanan atas Beranda.
    * Langit akan berubah mendung, animasi rintik hujan akan turun, dan jadwal penyiraman pada kartu tanaman otomatis beralih ke status **"Ditunda Hujan"** guna mencegah pembusukan akar akibat kelebihan air (*overwatering*).
    * Tekan dan tahan kembali indikator cuaca untuk mengembalikan ke mode cuaca normal.
+3. **Fitur Pengujian Panduan Interaktif (Coach Mark Overlay):**
+   * Untuk memunculkan kembali panduan interaktif 5 langkah (*Coach Mark Tour*) yang memperkenalkan fitur-fitur beranda, tekan tombol kecil **Panduan** di samping kanan judul **Hari ini** (atau tekan & tahan / *long-press* teks **"Hari ini"**).
+   * Panduan akan menuntun juri dari Streak Belajar, Tugas Hari Ini, Tombol Selesai, Panen Terdekat (lengkap dengan *auto-scroll* mulus dan kalkulasi posisi akurat), hingga Navigasi Bawah.
 
 ### B. Gamifikasi Kebun, Daily Streak, & Pelindung Streak
 1. **Penyiraman Cepat & EXP Instan:**

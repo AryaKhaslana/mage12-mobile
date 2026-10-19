@@ -697,7 +697,10 @@ export default function KomunitasScreen() {
         try {
           const servicesEnabled = await Location.hasServicesEnabledAsync();
           if (servicesEnabled) {
-            const perm = await Location.getForegroundPermissionsAsync();
+            let perm = await Location.getForegroundPermissionsAsync();
+            if (perm.status !== "granted" && perm.canAskAgain) {
+              perm = await Location.requestForegroundPermissionsAsync();
+            }
             if (perm.status === "granted") {
               try {
                 const curPos = await Location.getCurrentPositionAsync({

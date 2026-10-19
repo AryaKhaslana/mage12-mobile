@@ -1,6 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as Haptics from "expo-haptics";
 import React, { useState, useEffect, useRef } from "react";
@@ -36,6 +36,7 @@ const DEFAULT_COORDS = {
 };
 
 export default function LocationSetupScreen() {
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [showDeniedModal, setShowDeniedModal] = useState(false);
@@ -153,9 +154,9 @@ export default function LocationSetupScreen() {
     showNotification("Lokasi Default Dipilih", "Menggunakan koordinat default Sidoarjo.", "info");
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace("/(tabs)");
+    await handleSaveLocation({ lat: DEFAULT_COORDS.lat, lon: DEFAULT_COORDS.lon });
   };
 
   const handleSaveLocation = async (coordsOverride?: { lat: string; lon: string }) => {
@@ -189,7 +190,11 @@ export default function LocationSetupScreen() {
 
       showNotification("Berhasil", "Lokasi kamu berhasil disimpan.", "success");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace("/(tabs)");
+      if (from === "edit-profil" && router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (error: any) {
       console.error("Gagal simpan lokasi:", error);
       const msg = getFriendlyErrorMessage(error, "Gagal menyimpan lokasi ke server.");
@@ -208,6 +213,15 @@ export default function LocationSetupScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
+          {from === "edit-profil" && (
+            <Pressable
+              onPress={() => router.back()}
+              style={{ alignSelf: 'flex-start', padding: 8, marginBottom: 4 }}
+              hitSlop={12}
+            >
+              <MaterialIcons name="arrow-back" size={24} color="#123924" />
+            </Pressable>
+          )}
           <View style={styles.iconContainer}>
             <AnimatedExpoImage
               source={require("../../assets/images/icontampilanawal/seedling-meneropong.svg")}
@@ -312,10 +326,12 @@ export default function LocationSetupScreen() {
               pressed && { opacity: 0.7 },
               isLoading && styles.buttonDisabled,
             ]}
-            onPress={handleSkip}
+            onPress={from === "edit-profil" ? () => router.back() : handleSkip}
             disabled={isLoading}
           >
-            <Text style={styles.skipButtonText}>Lewati untuk Sekarang</Text>
+            <Text style={styles.skipButtonText}>
+              {from === "edit-profil" ? "Batal" : "Lewati untuk Sekarang"}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>

@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import api, { updateProfile } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
@@ -27,6 +28,8 @@ export default function EditProfilScreen() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [latitude, setLatitude] = useState<string | number | null>(null);
+  const [longitude, setLongitude] = useState<string | number | null>(null);
 
   const [fotoBaru, setFotoBaru] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [bannerBaru, setBannerBaru] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -54,6 +57,8 @@ export default function EditProfilScreen() {
           setBio(cachedUser.bio || '');
           setAvatarUrl(cachedUser.avatarUrl || null);
           setBannerUrl(cachedUser.bannerUrl || null);
+          setLatitude(cachedUser.latitude || null);
+          setLongitude(cachedUser.longitude || null);
           setIsLoading(false);
         }
       } catch (err) {
@@ -69,6 +74,9 @@ export default function EditProfilScreen() {
 
           // Update SecureStore dengan data terbaru
           await SecureStore.setItemAsync("userData", JSON.stringify(freshUser));
+
+          if (freshUser.latitude) setLatitude(freshUser.latitude);
+          if (freshUser.longitude) setLongitude(freshUser.longitude);
 
           // Hanya isi field jika pengguna belum mengetik
           if (!isDirtyRef.current) {
@@ -95,6 +103,23 @@ export default function EditProfilScreen() {
       isMounted = false;
     };
   }, []);
+
+  // Sinkronisasi koordinat saat kembali dari location-setup
+  useFocusEffect(
+    useCallback(() => {
+      SecureStore.getItemAsync("userData").then((cachedRaw) => {
+        if (cachedRaw) {
+          try {
+            const user = JSON.parse(cachedRaw);
+            if (user.latitude && user.longitude) {
+              setLatitude(user.latitude);
+              setLongitude(user.longitude);
+            }
+          } catch {}
+        }
+      });
+    }, [])
+  );
 
   const pickImage = async () => {
     try {
@@ -375,6 +400,91 @@ export default function EditProfilScreen() {
                 maxLength={160}
                 textAlignVertical="top"
               />
+            </View>
+
+            {/* LOKASI KEBUN */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Lokasi Kebun</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "#F4F1E8",
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: "#E8E5DA",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1, marginRight: 12 }}>
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: "#E8F5E9",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <MaterialIcons name="place" size={20} color="#3FA86B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: "Nunito_800ExtraBold",
+                        fontSize: 14,
+                        color: "#123924",
+                      }}
+                      numberOfLines={1}
+                    >
+                      {latitude && longitude
+                        ? `${Number(latitude).toFixed(4)}, ${Number(longitude).toFixed(4)}`
+                        : "Sidoarjo, Jawa Timur (Default)"}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "Nunito_500Medium",
+                        fontSize: 12,
+                        color: "#5C5A4F",
+                      }}
+                    >
+                      Koordinat cuaca kebun
+                    </Text>
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push({
+                      pathname: "/(auth)/location-setup",
+                      params: { from: "edit-profil" },
+                    });
+                  }}
+                  style={({ pressed }) => [
+                    {
+                      backgroundColor: "#123924",
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 10,
+                    },
+                    pressed && { opacity: 0.8 },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "Nunito_700Bold",
+                      fontSize: 12,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    Ubah
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </ScrollView>

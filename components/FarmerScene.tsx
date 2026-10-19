@@ -43,6 +43,8 @@ interface FarmerSceneProps {
   temperature: number;
   farmerState?: 'needsWatering' | 'allClear' | 'raining';
   onProfilePress?: () => void;
+  onWeatherToggle?: (isRaining: boolean) => void;
+  isSimulatedRain?: boolean | null;
 }
 
 const FarmerScene = React.memo(function FarmerScene({
@@ -52,6 +54,8 @@ const FarmerScene = React.memo(function FarmerScene({
   temperature = 28,
   farmerState = 'allClear',
   onProfilePress,
+  onWeatherToggle,
+  isSimulatedRain,
 }: FarmerSceneProps) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -112,7 +116,8 @@ const FarmerScene = React.memo(function FarmerScene({
     return words.length > 1 ? `${words[0]} ${words[1]}` : words[0];
   }, [userName]);
 
-  const [demoRain, setDemoRain] = useState<boolean | null>(null);
+  const [internalDemoRain, setInternalDemoRain] = useState<boolean | null>(null);
+  const demoRain = isSimulatedRain !== undefined ? isSimulatedRain : internalDemoRain;
 
   const isNight = hour >= 18 || hour < 6;
   const isSunset = !isNight && hour >= 15 && hour < 18;
@@ -279,7 +284,9 @@ const FarmerScene = React.memo(function FarmerScene({
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    setDemoRain((prev) => (prev === null ? !isRaining : !prev));
+    const nextVal = demoRain !== null ? !demoRain : !isRaining;
+    setInternalDemoRain(nextVal);
+    onWeatherToggle?.(nextVal);
   };
 
   const renderWeatherPill = () => {
@@ -296,7 +303,7 @@ const FarmerScene = React.memo(function FarmerScene({
 
     const weatherLabel =
       demoRain !== null
-        ? 'Mode Demo'
+        ? (demoRain ? 'Hujan (Demo)' : 'Cerah (Demo)')
         : isRaining
         ? 'Hujan'
         : weatherCondition?.toLowerCase().includes('berawan')

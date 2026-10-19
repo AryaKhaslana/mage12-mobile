@@ -240,6 +240,7 @@ export default function DashboardScreen() {
   
   const [tanamanList, setTanamanList] = useState<any[]>(() => memoryHomeTanaman || []);
   const [weather, setWeather] = useState<any>(() => memoryHomeWeather);
+  const [simulatedRain, setSimulatedRain] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(() => !memoryHomeUser && !memoryHomeTanaman);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -780,27 +781,41 @@ export default function DashboardScreen() {
 
   // isLoading check handled inside return to preserve Header
 
-  const reminders = [...tanamanList]
-    .filter((t) => {
-      // Keep watering task in the list if it needs watering or was watered today
-      const sudahValidasiHariIni = (t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || t.statusPenyiraman === "SUDAH_DISIRAM";
-      // Selalu tampilkan plant sebagai task nyiram tiap hari KECUALI kalau statusnya DITUNDA_HUJAN (dan belum disiram hari ini)
-      if (t.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni) return true;
-      
-      if ((t.sisaHariPanen ?? 999) <= 7) return true;
-      return false;
-    });
+  const currentCond = (weather?.kondisi || '').toUpperCase();
+  const apiIsRaining = Boolean(
+    currentCond.includes('HUJAN') ||
+    currentCond.includes('RAIN') ||
+    currentCond.includes('GERIMIS') ||
+    currentCond.includes('DRIZZLE') ||
+    currentCond.includes('THUNDER') ||
+    weather?.prediksiHujanHariIni
+  );
+  const isRaining = simulatedRain !== null ? simulatedRain : apiIsRaining;
+
+  // Olah daftar tanaman: saat cuaca hujan (nyata atau simulasi easter egg),
+  // semua tanaman yang belum disiram hari ini dialihkan statusnya ke DITUNDA_HUJAN
+  const processedTanamanList = tanamanList.map((t) => {
+    const sudahValidasiHariIni = (t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || t.statusPenyiraman === "SUDAH_DISIRAM";
+    const effectiveStatus = (isRaining && !sudahValidasiHariIni)
+      ? "DITUNDA_HUJAN"
+      : t.statusPenyiraman;
+
+    return {
+      ...t,
+      statusPenyiraman: effectiveStatus,
+    };
+  });
+
+  const reminders = sortTanamanItems(processedTanamanList);
 
   const { width } = Dimensions.get('window');
 
   const upcomingHarvests = [...tanamanList].sort((a, b) => (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999));
   
   const hasWateringTask = reminders.some(t => {
-      const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-      return t.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
+    const sudahValidasiHariIni = (t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || t.statusPenyiraman === "SUDAH_DISIRAM";
+    return t.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
   });
-  const currentCond = (weather?.kondisi || '').toUpperCase();
-  const isRaining = currentCond.includes('HUJAN') || currentCond.includes('RAIN') || currentCond.includes('GERIMIS') || currentCond.includes('DRIZZLE') || currentCond.includes('THUNDER') || weather?.prediksiHujanHariIni;
   const farmerState = isRaining ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
 
   if (isError && tanamanList.length === 0) {
@@ -832,6 +847,17 @@ export default function DashboardScreen() {
               temperature={weather?.suhu ? Math.round(weather.suhu) : 28}
               farmerState={farmerState}
               onProfilePress={() => router.push('/(tabs)/profil')}
+              onWeatherToggle={(nextIsRaining) => {
+                setSimulatedRain(nextIsRaining);
+                showNotification(
+                  nextIsRaining ? "Simulasi Hujan Aktif" : "Cuaca Normal",
+                  nextIsRaining 
+                    ? "Sistem mendeteksi hujan! Jadwal penyiraman otomatis dialihkan ke Ditunda Hujan."
+                    : "Cuaca kembali normal. Jadwal penyiraman aktif kembali.",
+                  nextIsRaining ? "info" : "success"
+                );
+              }}
+              isSimulatedRain={simulatedRain}
             />
 
             <View style={{ zIndex: 10 }}>
@@ -894,7 +920,7 @@ export default function DashboardScreen() {
                 reminders.map((tanaman, index) => {
                   const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
                   // Task penyiraman aktif tiap hari, kecuali kalau ditunda hujan
-                  const isWateringTask = tanaman.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni;
+                  const isWateringTask = tanaman.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
 
                   return (
                     <View key={tanaman.id} ref={index === 0 ? step3Ref : undefined}>
@@ -903,6 +929,16 @@ export default function DashboardScreen() {
                         isWateringTask={isWateringTask}
                         isWateredToday={sudahValidasiHariIni}
                         onTaskPress={() => {
+                          if (tanaman.statusPenyiraman === "DITUNDA_HUJAN" && !sudahValidasiHariIni) {
+                            showNotification(
+                              "Penyiraman Ditunda",
+                              "Sistem mendeteksi cuaca hujan. Penyiraman ditunda hari ini untuk mencegah pembusukan akar.",
+                              "info"
+                            );
+                            router.push({ pathname: "/detail-tanaman", params: { id: tanaman.id } });
+                            return;
+                          }
+
                           // Anti-Spam: Cek apakah tanaman ini baru saja disiram (dalam 1.5 detik terakhir)
                           const lastWatered = recentlyWateredRef.current.get(tanaman.id) || 0;
                           if (Date.now() - lastWatered < 1500) {

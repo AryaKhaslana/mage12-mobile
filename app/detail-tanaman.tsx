@@ -85,7 +85,8 @@ const DetailTanamanSkeleton = () => {
 export default function DetailTanamanModal() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const tanamanId = Number(id);
+  const rawId = Array.isArray(id) ? id[0] : id;
+  const tanamanId = Number(rawId);
 
   const [tanaman, setTanaman] = useState<TanamanDetail | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -602,24 +603,6 @@ export default function DetailTanamanModal() {
     };
   }, [tanaman, currentTimestamp]);
 
-  if (isLoading && !tanaman) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.topBar}>
-          <Pressable style={styles.iconButton} onPress={() => router.back()}>
-            <MaterialIcons name="arrow-back" size={24} color="#123924" />
-          </Pressable>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
-            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
-            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
-          </View>
-        </View>
-        <DetailTanamanSkeleton />
-      </SafeAreaView>
-    );
-  }
-
   const activateDemoHarvest = useCallback(async () => {
     isDemoHarvestRef.current = true;
     try {
@@ -655,6 +638,24 @@ export default function DetailTanamanModal() {
       }, 600);
     }
   }, [activateDemoHarvest]);
+
+  if (isLoading && !tanaman) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.topBar}>
+          <Pressable style={styles.iconButton} onPress={() => router.back()}>
+            <MaterialIcons name="arrow-back" size={24} color="#123924" />
+          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
+            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
+            <View style={[styles.iconButton, { backgroundColor: '#E8E5DA', shadowOpacity: 0, elevation: 0 }]} />
+          </View>
+        </View>
+        <DetailTanamanSkeleton />
+      </SafeAreaView>
+    );
+  }
 
   if (!tanaman) return null;
   const totalDays = tanaman.daysToHarvest || 30;

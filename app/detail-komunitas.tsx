@@ -382,13 +382,21 @@ export default function DetailKomunitasScreen() {
                 )}
               </View>
               <View style={styles.postMeta}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.authorName}>{authorName}</Text>
+                <Text style={styles.authorName} numberOfLines={1}>{authorName}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                  <Text style={styles.timeText}>{getRelativeTime(post.createdAt)}</Text>
                   {post.lokasiNama ? (
-                    <Text style={styles.locationBadge}>#{post.lokasiNama}</Text>
+                    <>
+                      <Text style={{ fontFamily: 'Nunito_700Bold', color: '#A09E91', fontSize: 10 }}>{"\u2022"}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#E8F5E9', paddingHorizontal: 6, paddingVertical: 1.5, borderRadius: 6 }}>
+                        <MaterialIcons name="place" size={10} color="#3FA86B" />
+                        <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#3FA86B' }} numberOfLines={1}>
+                          {post.lokasiNama}
+                        </Text>
+                      </View>
+                    </>
                   ) : null}
                 </View>
-                <Text style={styles.timeText}>{getRelativeTime(post.createdAt)}</Text>
               </View>
             </Pressable>
             {badgeText ? (

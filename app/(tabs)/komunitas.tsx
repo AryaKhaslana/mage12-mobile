@@ -355,6 +355,16 @@ const PostCardItem = memo(
               )}
             </View>
             <View style={{ flex: 1, gap: 2 }}>
+              <Text
+                style={{
+                  fontFamily: "Nunito_800ExtraBold",
+                  color: "#123924",
+                  fontSize: 15,
+                }}
+                numberOfLines={1}
+              >
+                {authorName}
+              </Text>
               <View
                 style={{
                   flexDirection: "row",
@@ -364,40 +374,50 @@ const PostCardItem = memo(
               >
                 <Text
                   style={{
-                    fontFamily: "Nunito_800ExtraBold",
-                    color: "#123924",
-                    fontSize: 16,
+                    fontFamily: "Nunito_500Medium",
+                    color: "#5C5A4F",
+                    fontSize: 12,
                   }}
-                  numberOfLines={1}
                 >
-                  {authorName}
+                  {getRelativeTime(item.createdAt)}
                 </Text>
                 {item.lokasiNama ? (
-                  <Text
-                    style={{
-                      fontFamily: "Nunito_800ExtraBold",
-                      fontSize: 10,
-                      color: "#3FA86B",
-                      backgroundColor: "#E8F5E9",
-                      paddingHorizontal: 6,
-                      paddingVertical: 2,
-                      borderRadius: 6,
-                      overflow: "hidden",
-                    }}
-                  >
-                    #{item.lokasiNama}
-                  </Text>
+                  <>
+                    <Text
+                      style={{
+                        fontFamily: "Nunito_700Bold",
+                        color: "#A09E91",
+                        fontSize: 10,
+                      }}
+                    >
+                      {"\u2022"}
+                    </Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 2,
+                        backgroundColor: "#E8F5E9",
+                        paddingHorizontal: 6,
+                        paddingVertical: 1.5,
+                        borderRadius: 6,
+                      }}
+                    >
+                      <MaterialIcons name="place" size={10} color="#3FA86B" />
+                      <Text
+                        style={{
+                          fontFamily: "Nunito_800ExtraBold",
+                          fontSize: 10,
+                          color: "#3FA86B",
+                        }}
+                        numberOfLines={1}
+                      >
+                        {item.lokasiNama}
+                      </Text>
+                    </View>
+                  </>
                 ) : null}
               </View>
-              <Text
-                style={{
-                  fontFamily: "Nunito_500Medium",
-                  color: "#5C5A4F",
-                  fontSize: 12,
-                }}
-              >
-                {getRelativeTime(item.createdAt)}
-              </Text>
             </View>
           </Pressable>
 

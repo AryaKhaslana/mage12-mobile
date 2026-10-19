@@ -167,6 +167,7 @@ export default function ProfilScreen() {
 
   // Modal Pencapaian Neoclay
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+  const [previewImageUri, setPreviewImageUri] = useState<string | null>(null);
 
   // Stale Closure Prevention & Anti-Spam Refs
   const userDataRef = useRef<any>(null);
@@ -315,12 +316,12 @@ export default function ProfilScreen() {
         if (!userDataRef.current) {
           setIsError(true);
           if (isRefresh) {
-            showNotification("Gagal Memuat Profil", "Gagal memuat data profil kamu.", "error");
+            showNotification("Koneksi Sedang Istirahat", "Kami belum bisa memperbarui profilmu saat ini. Coba muat ulang sebentar lagi ya!", "error");
           }
         } else {
           setIsError(false);
           if (isRefresh) {
-            showNotification("Koneksi Kurang Stabil", "Menampilkan data profil tersimpan.", "info");
+            showNotification("Koneksi Kurang Stabil", "Menampilkan data profil yang tersimpan di ponselmu.", "info");
           }
         }
       }
@@ -346,12 +347,12 @@ export default function ProfilScreen() {
       if (!userDataRef.current) {
         setIsError(true);
         if (isRefresh) {
-          showNotification("Gagal Memuat Profil", "Terjadi kesalahan saat memuat profil.", "error");
+          showNotification("Koneksi Sedang Istirahat", "Kami belum bisa memperbarui profilmu saat ini. Coba muat ulang sebentar lagi ya!", "error");
         }
       } else {
         setIsError(false);
         if (isRefresh) {
-          showNotification("Koneksi Kurang Stabil", "Menampilkan data profil tersimpan.", "info");
+          showNotification("Koneksi Kurang Stabil", "Menampilkan data profil yang tersimpan di ponselmu.", "info");
         }
       }
     } finally {
@@ -417,13 +418,17 @@ export default function ProfilScreen() {
         ...prev,
         [postId]: { liked: result.liked, count: result.jumlahLike },
       }));
-    } catch (e) {
-      console.error("Error toggle like:", e);
-      setLikes((prev) => ({
-        ...prev,
-        [postId]: currentLike,
-      }));
-      showNotification("Gagal", "Gagal menyukai postingan.", "error");
+    } catch (e: any) {
+      if (e?.response?.status === 409) {
+        // Silent handle: status 409 Conflict diabaikan dan jangan me-revert state optimistic UI
+      } else {
+        console.error("Error toggle like:", e);
+        setLikes((prev) => ({
+          ...prev,
+          [postId]: currentLike,
+        }));
+        showNotification("Belum Berhasil", "Tanggapan suka belum tersimpan, silakan coba lagi.", "error");
+      }
     } finally {
       setTimeout(() => {
         likeLockRef.current[postId] = false;
@@ -518,7 +523,12 @@ export default function ProfilScreen() {
       >
         {/* BANNER */}
         {userData?.bannerUrl ? (
-          <Image source={{ uri: userData.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" cachePolicy="memory-disk" />
+          <Pressable 
+            onPress={() => setPreviewImageUri(userData.bannerUrl)}
+            style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+          >
+            <Image source={{ uri: userData.bannerUrl }} style={[styles.banner, shadowCard]} contentFit="cover" cachePolicy="memory-disk" />
+          </Pressable>
         ) : (
           <BotanicBanner />
         )}
@@ -526,15 +536,21 @@ export default function ProfilScreen() {
         {/* AVATAR + RANK BADGE */}
         <View style={styles.avatarRow}>
           <View>
-            <View style={[styles.avatarFrame, shadowCard]}>
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" cachePolicy="memory-disk" />
-              ) : (
-                <View style={[styles.avatarImage, { backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={{ color: "#FFFFFF", fontFamily: F.extra, fontSize: 34 }}>{initial}</Text>
-                </View>
-              )}
-            </View>
+            <Pressable
+              disabled={!avatarUrl}
+              onPress={() => avatarUrl && setPreviewImageUri(avatarUrl)}
+              style={({ pressed }) => [pressed && avatarUrl && { opacity: 0.85 }]}
+            >
+              <View style={[styles.avatarFrame, shadowCard]}>
+                {avatarUrl ? (
+                  <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" cachePolicy="memory-disk" />
+                ) : (
+                  <View style={[styles.avatarImage, { backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }]}>
+                    <Text style={{ color: "#FFFFFF", fontFamily: F.extra, fontSize: 34 }}>{initial}</Text>
+                  </View>
+                )}
+              </View>
+            </Pressable>
             <View style={styles.onlineDot} />
           </View>
           <View style={[styles.rankBadge, shadowSubtle]}>
@@ -1035,6 +1051,39 @@ export default function ProfilScreen() {
         </View>
       </Modal>
 
+      {/* FULL-SCREEN IMAGE LIGHTBOX */}
+      <Modal
+        visible={!!previewImageUri}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => setPreviewImageUri(null)}
+      >
+        <View style={styles.lightboxOverlay}>
+          <SafeAreaView style={styles.lightboxSafeArea} edges={['top']}>
+            <View style={styles.lightboxHeader}>
+              <Pressable
+                onPress={() => setPreviewImageUri(null)}
+                style={styles.lightboxCloseBtn}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <MaterialIcons name="close" size={24} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          </SafeAreaView>
+          <Pressable style={styles.lightboxBackdrop} onPress={() => setPreviewImageUri(null)}>
+            {previewImageUri ? (
+              <Image
+                source={{ uri: previewImageUri }}
+                style={styles.lightboxImage}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+              />
+            ) : null}
+          </Pressable>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -1507,5 +1556,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: F.extra,
     color: "#FFFFFF",
+  },
+  // Lightbox
+  lightboxOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(18, 57, 36, 0.92)",
+  },
+  lightboxSafeArea: {
+    zIndex: 10,
+  },
+  lightboxHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  lightboxCloseBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lightboxBackdrop: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  lightboxImage: {
+    width: "100%",
+    height: "80%",
   },
 });

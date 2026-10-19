@@ -1,20 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const HOME_TUTORIAL_KEY = 'hasSeenHomeTutorial';
+export const TUTORIAL_STORAGE_KEYS = [
+  'hasSeenHomeTutorial',
+  'hasSeenCoachMark',
+  'coachmark_completed',
+];
 
 export const checkTutorialFinished = async (): Promise<boolean> => {
   try {
-    const value = await AsyncStorage.getItem(HOME_TUTORIAL_KEY);
-    return value === 'true';
+    const pairs = await AsyncStorage.multiGet(TUTORIAL_STORAGE_KEYS);
+    return pairs.some(([_, value]) => value === 'true');
   } catch (e) {
     console.error('Error checking tutorial status', e);
-    return false; // Default to false if error
+    return false;
   }
 };
 
 export const markTutorialFinished = async (): Promise<void> => {
   try {
-    await AsyncStorage.setItem(HOME_TUTORIAL_KEY, 'true');
+    const pairs: [string, string][] = TUTORIAL_STORAGE_KEYS.map((key) => [key, 'true']);
+    await AsyncStorage.multiSet(pairs);
   } catch (e) {
     console.error('Error saving tutorial status', e);
   }
@@ -22,9 +27,8 @@ export const markTutorialFinished = async (): Promise<void> => {
 
 export const resetTutorial = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(HOME_TUTORIAL_KEY);
+    await AsyncStorage.multiRemove(TUTORIAL_STORAGE_KEYS);
   } catch (e) {
     console.error('Error resetting tutorial status', e);
   }
 };
-

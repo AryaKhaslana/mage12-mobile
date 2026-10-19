@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   Pressable,
@@ -43,6 +43,8 @@ interface FarmerSceneProps {
   temperature: number;
   farmerState?: 'needsWatering' | 'allClear' | 'raining';
   onProfilePress?: () => void;
+  isDemoRain?: boolean;
+  onToggleDemoRain?: () => void;
 }
 
 const FarmerScene = React.memo(function FarmerScene({
@@ -52,6 +54,8 @@ const FarmerScene = React.memo(function FarmerScene({
   temperature = 28,
   farmerState = 'allClear',
   onProfilePress,
+  isDemoRain,
+  onToggleDemoRain,
 }: FarmerSceneProps) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -112,13 +116,14 @@ const FarmerScene = React.memo(function FarmerScene({
     return words.length > 1 ? `${words[0]} ${words[1]}` : words[0];
   }, [userName]);
 
-  const [demoRain, setDemoRain] = useState<boolean | null>(null);
+  const [internalDemoRain, setInternalDemoRain] = useState<boolean | null>(null);
+  const activeDemoRain = isDemoRain !== undefined ? isDemoRain : internalDemoRain;
 
   const isNight = hour >= 18 || hour < 6;
   const isSunset = !isNight && hour >= 15 && hour < 18;
   const isRaining =
-    demoRain !== null
-      ? demoRain
+    activeDemoRain !== null && activeDemoRain !== undefined
+      ? activeDemoRain
       : weatherCondition?.toLowerCase().includes('hujan') ||
         weatherCondition?.toLowerCase().includes('rain') ||
         weatherCondition?.toLowerCase().includes('gerimis') ||
@@ -275,11 +280,43 @@ const FarmerScene = React.memo(function FarmerScene({
   const soilColor = isSoilMoist ? '#4E342E' : '#8D6E63'; // Gelap subur vs Cokelat kering
   const soilHighlight = isSoilMoist ? '#3E2723' : '#795548';
 
+  const lastTapRef = useRef<number>(0);
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
+
   const toggleDemoRain = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    setDemoRain((prev) => (prev === null ? !isRaining : !prev));
+    if (onToggleDemoRain) {
+      onToggleDemoRain();
+    } else {
+      setInternalDemoRain((prev) => (prev === null ? !isRaining : !prev));
+    }
+  };
+
+  const handleWeatherPress = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 350) {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+      lastTapRef.current = 0;
+      toggleDemoRain();
+    } else {
+      lastTapRef.current = now;
+      clickTimerRef.current = setTimeout(() => {
+        router.push('/cuaca');
+      }, 280);
+    }
   };
 
   const renderWeatherPill = () => {
@@ -294,8 +331,9 @@ const FarmerScene = React.memo(function FarmerScene({
       iconColor = '#64748B';
     }
 
+    const isSimulating = isDemoRain === true || internalDemoRain === true;
     const weatherLabel =
-      demoRain !== null
+      isSimulating
         ? 'Mode Demo'
         : isRaining
         ? 'Hujan'
@@ -311,7 +349,7 @@ const FarmerScene = React.memo(function FarmerScene({
           styles.weatherBox,
           pressed && { transform: [{ scale: 0.96 }], opacity: 0.9 },
         ]}
-        onPress={() => router.push('/cuaca')}
+        onPress={handleWeatherPress}
         onLongPress={toggleDemoRain}
         delayLongPress={400}
       >

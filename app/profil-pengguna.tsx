@@ -6,6 +6,7 @@ import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -197,6 +198,7 @@ export default function ProfilPenggunaScreen() {
   const [isFollowBusy, setIsFollowBusy] = useState(false);
 
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
+  const [previewImageUri, setPreviewImageUri] = useState<string | null>(null);
 
   const followLockRef = useRef(false);
   const likeLockRef = useRef<Set<number>>(new Set());
@@ -394,8 +396,13 @@ export default function ProfilPenggunaScreen() {
     try {
       const res = await toggleCommunityLike(postId);
       setLikes((s) => ({ ...s, [postId]: { liked: res.liked, count: res.jumlahLike } }));
-    } catch {
-      setLikes((s) => ({ ...s, [postId]: prev }));
+    } catch (e: any) {
+      if (e?.response?.status === 409) {
+        // Silent handle: status 409 Conflict diabaikan dan jangan me-revert state optimistic UI
+      } else {
+        setLikes((s) => ({ ...s, [postId]: prev }));
+        showNotification("Belum Berhasil", "Tanggapan suka belum tersimpan, silakan coba lagi.", "error");
+      }
     } finally {
       likeLockRef.current.delete(postId);
     }
@@ -449,19 +456,29 @@ export default function ProfilPenggunaScreen() {
         {/* BANNER */}
         <View style={{ position: "relative" }}>
           {profile?.bannerUrl ? (
-            <Image
-              source={{ uri: profile.bannerUrl }}
-              style={[styles.banner, shadowCard]}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
+            <Pressable
+              onPress={() => setPreviewImageUri(profile.bannerUrl || null)}
+              style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+            >
+              <Image
+                source={{ uri: profile.bannerUrl }}
+                style={[styles.banner, shadowCard]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+            </Pressable>
           ) : params.bannerUrl ? (
-            <Image
-              source={{ uri: params.bannerUrl }}
-              style={[styles.banner, shadowCard]}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
+            <Pressable
+              onPress={() => setPreviewImageUri(params.bannerUrl || null)}
+              style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+            >
+              <Image
+                source={{ uri: params.bannerUrl }}
+                style={[styles.banner, shadowCard]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+            </Pressable>
           ) : (
             <BotanicBanner />
           )}
@@ -477,9 +494,15 @@ export default function ProfilPenggunaScreen() {
         {/* AVATAR + RANK BADGE */}
         <View style={styles.avatarRow}>
           <View>
-            <View style={[styles.avatarFrame, shadowCard]}>
-              <Avatar uri={avatarUrl} name={nama} size={86} radius={14} />
-            </View>
+            <Pressable
+              disabled={!avatarUrl}
+              onPress={() => avatarUrl && setPreviewImageUri(avatarUrl)}
+              style={({ pressed }) => [pressed && avatarUrl && { opacity: 0.85 }]}
+            >
+              <View style={[styles.avatarFrame, shadowCard]}>
+                <Avatar uri={avatarUrl} name={nama} size={86} radius={14} />
+              </View>
+            </Pressable>
             <View style={styles.onlineDot} />
           </View>
           <View style={[styles.rankBadge, shadowSubtle]}>
@@ -694,6 +717,39 @@ export default function ProfilPenggunaScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* FULL-SCREEN IMAGE LIGHTBOX */}
+      <Modal
+        visible={!!previewImageUri}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => setPreviewImageUri(null)}
+      >
+        <View style={styles.lightboxOverlay}>
+          <SafeAreaView style={styles.lightboxSafeArea} edges={['top']}>
+            <View style={styles.lightboxHeader}>
+              <Pressable
+                onPress={() => setPreviewImageUri(null)}
+                style={styles.lightboxCloseBtn}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <MaterialIcons name="close" size={24} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          </SafeAreaView>
+          <Pressable style={styles.lightboxBackdrop} onPress={() => setPreviewImageUri(null)}>
+            {previewImageUri ? (
+              <Image
+                source={{ uri: previewImageUri }}
+                style={styles.lightboxImage}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+              />
+            ) : null}
+          </Pressable>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -909,4 +965,37 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 60, height: 60, borderRadius: 18, backgroundColor: C.primaryLight, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   emptyTitle: { fontSize: 16, fontFamily: F.extra, color: C.ink },
   emptySub: { fontSize: 13, fontFamily: F.medium, color: C.muted, textAlign: "center", marginTop: 4 },
+  // Lightbox
+  lightboxOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(18, 57, 36, 0.92)",
+  },
+  lightboxSafeArea: {
+    zIndex: 10,
+  },
+  lightboxHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  lightboxCloseBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lightboxBackdrop: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  lightboxImage: {
+    width: "100%",
+    height: "80%",
+  },
 });

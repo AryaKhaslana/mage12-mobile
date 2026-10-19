@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNotification } from "../../components/NotificationContext";
-import api, { googleSignIn, setAuthToken, clearAppCache } from "../../services/api";
+import api, { googleSignIn, setAuthToken, clearAppCache, getFriendlyErrorMessage } from "../../services/api";
 import { Image } from 'expo-image';
 import AuthHeader from "../../components/AuthHeader";
 
@@ -93,7 +93,7 @@ export default function LoginScreen() {
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       console.error(error.response?.data || error.message);
-      showNotification("Gagal Masuk", error.response?.data?.message || "Terjadi gangguan koneksi, silakan coba lagi.", "error");
+      showNotification("Gagal Masuk", getFriendlyErrorMessage(error, "Terjadi gangguan koneksi, silakan coba lagi."), "error");
     } finally {
       setIsSubmitting(false);
       authLockRef.current = false;
@@ -115,7 +115,7 @@ export default function LoginScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       const msg = error?.code === "10" || error?.message?.includes("DEVELOPER_ERROR")
         ? "Google Sign-In memerlukan build APK / Client ID (.env) yang sesuai."
-        : error?.message || "Google Sign In bermasalah.";
+        : getFriendlyErrorMessage(error, "Google Sign In bermasalah.");
       showNotification("Gagal", msg, "error");
     } finally {
       setIsGoogleLoading(false);
@@ -126,7 +126,8 @@ export default function LoginScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#DFF3E6" }}>
       <AuthHeader 
-        isPasswordFocused={activeInput === 'password' && !showPassword}
+        isPasswordVisible={showPassword}
+        isPasswordFocused={showPassword}
       />
 
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }} edges={['bottom', 'left', 'right']}>
@@ -157,7 +158,7 @@ export default function LoginScreen() {
                   placeholder="Email"
                   placeholderTextColor="#8F9B94"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => setEmail(text.replace(/\s+/g, ""))}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}

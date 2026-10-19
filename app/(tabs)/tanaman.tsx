@@ -6,6 +6,7 @@ import {
     ActivityIndicator, Animated,
     FlatList,
     Modal,
+    Platform,
     Pressable,
     RefreshControl,
     ScrollView,
@@ -195,6 +196,56 @@ const PlantCardItem = memo(function PlantCardItem({
   );
 });
 
+const PlantTypePickerItem = memo(function PlantTypePickerItem({
+  jenis,
+  isSelected,
+  onSelect,
+}: {
+  jenis: string;
+  isSelected: boolean;
+  onSelect: (jenis: string) => void;
+}) {
+  const handlePress = useCallback(() => {
+    onSelect(jenis);
+  }, [jenis, onSelect]);
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.pickerItem,
+        isSelected && styles.pickerItemActive,
+        pressed && { opacity: 0.75 },
+      ]}
+      onPress={handlePress}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Image
+          source={getPlantImage(jenis)}
+          style={{ width: 28, height: 28, borderRadius: 14 }}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={150}
+        />
+        <Text
+          style={[
+            styles.pickerItemText,
+            isSelected && styles.pickerItemTextActive,
+          ]}
+        >
+          {jenis}
+        </Text>
+      </View>
+      {isSelected && (
+        <MaterialIcons
+          name="check-circle"
+          size={20}
+          color="#FFFFFF"
+        />
+      )}
+    </Pressable>
+  );
+});
+
 export default function TanamanScreen() {
   const { showNotification } = useNotification();
   const [activeFilter, setActiveFilter] = useState("Semua");
@@ -210,6 +261,7 @@ export default function TanamanScreen() {
   const [selectedTanaman, setSelectedTanaman] = useState(JENIS_TANAMAN_ENUM[0]);
   const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleSelectJenis = useCallback((jenis: string) => setSelectedTanaman(jenis), []);
   const params = useLocalSearchParams();
 
   // 0ms instant render from cache
@@ -268,8 +320,8 @@ export default function TanamanScreen() {
         setIsError(true);
         if (isManualRefresh) {
           showNotification(
-            "Gagal Memuat Tanaman",
-            error.response?.data?.message || "Terjadi kesalahan koneksi saat memuat data tanaman.",
+            "Koneksi Sedang Istirahat",
+            error.response?.data?.message || "Kami belum bisa menjangkau data tanamanmu. Pastikan internetmu aktif lalu coba lagi ya!",
             "error"
           );
         }
@@ -278,7 +330,7 @@ export default function TanamanScreen() {
         if (isManualRefresh) {
           showNotification(
             "Koneksi Kurang Stabil",
-            "Menampilkan data tanaman tersimpan.",
+            "Menampilkan data tanaman yang tersimpan di ponselmu.",
             "info"
           );
         }
@@ -328,11 +380,13 @@ export default function TanamanScreen() {
         
         // Instant state & cache prepend: tidak perlu nunggu GET /tanaman ulang
         if (newTanaman) {
-          const updated = [newTanaman, ...tanamanListRef.current];
-          memoryTanamanCache = updated;
-          setTanamanList(updated);
-          tanamanListRef.current = updated;
-          AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated)).catch(() => {});
+          setTanamanList((prev) => {
+            const updated = [newTanaman, ...prev.filter(t => t.id !== newTanaman.id)];
+            memoryTanamanCache = updated;
+            tanamanListRef.current = updated;
+            AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated)).catch(() => {});
+            return updated;
+          });
         } else {
           fetchTanaman();
         }
@@ -340,8 +394,8 @@ export default function TanamanScreen() {
     } catch (error: any) {
       console.error("Error tambah tanaman:", error);
       showNotification(
-        "Gagal Menambahkan",
-        error.response?.data?.message || "Terjadi kesalahan saat menambahkan tanaman, silakan coba lagi.",
+        "Koneksi Kurang Stabil",
+        error.response?.data?.message || "Koneksi sedang kurang stabil. Tenang, coba simpan tanaman sekali lagi ya!",
         "error"
       );
     } finally {
@@ -441,6 +495,10 @@ export default function TanamanScreen() {
           columnWrapperStyle={styles.gridContainer}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={Platform.OS === 'android'}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={5}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
           refreshControl={
@@ -493,39 +551,12 @@ export default function TanamanScreen() {
               <Text style={styles.modalLabel}>Pilih Jenis Tanaman</Text>
               <ScrollView style={styles.pickerContainer}>
                 {JENIS_TANAMAN_ENUM.map((jenis) => (
-                  <Pressable
+                  <PlantTypePickerItem
                     key={jenis}
-                    style={({ pressed }) => [
-                      styles.pickerItem,
-                      selectedTanaman === jenis && styles.pickerItemActive,
-                      pressed && { opacity: 0.75 },
-                    ]}
-                    onPress={() => setSelectedTanaman(jenis)}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <Image
-                        source={getPlantImage(jenis)}
-                        style={{ width: 28, height: 28, borderRadius: 14 }}
-                        contentFit="cover"
-                      />
-                      <Text
-                        style={[
-                          styles.pickerItemText,
-                          selectedTanaman === jenis &&
-                            styles.pickerItemTextActive,
-                        ]}
-                      >
-                        {jenis}
-                      </Text>
-                    </View>
-                    {selectedTanaman === jenis && (
-                      <MaterialIcons
-                        name="check-circle"
-                        size={20}
-                        color="#FFFFFF"
-                      />
-                    )}
-                  </Pressable>
+                    jenis={jenis}
+                    isSelected={selectedTanaman === jenis}
+                    onSelect={handleSelectJenis}
+                  />
                 ))}
               </ScrollView>
               <Pressable

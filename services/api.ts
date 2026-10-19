@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 declare module "axios" {
   export interface AxiosRequestConfig {
     bypassDedupe?: boolean;
+    _retryCount?: number;
   }
 }
 
@@ -62,7 +63,18 @@ export const registerOnLogout = (cb: LogoutCallback) => {
 export const clearAppCache = async () => {
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const keysToRemove = keys.filter((k) => k !== "hasSeenOnboarding");
+    const keysToRemove = keys.filter((k) => {
+      // JANGAN menghapus key onboarding maupun key tutorial/coachmark
+      if (k === "hasSeenOnboarding") return false;
+      if (k === "hasSeenHomeTutorial") return false;
+      if (k === "hasSeenCoachMark") return false;
+      if (k === "coachmark_completed") return false;
+      const lower = k.toLowerCase();
+      if (lower.startsWith("hasseen")) return false;
+      if (lower.includes("coachmark")) return false;
+      if (lower.includes("tutorial")) return false;
+      return true;
+    });
     if (keysToRemove.length > 0) {
       await AsyncStorage.multiRemove(keysToRemove);
     }
@@ -218,6 +230,80 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+export const getFriendlyErrorMessage = (
+  error: any,
+  fallbackText: string = "Koneksi sedang menyesuaikan, silakan coba sesaat lagi ya."
+): string => {
+  if (!error) return fallbackText;
+
+  const isTechnicalText = (text: string): boolean => {
+    return /internal server|bad gateway|gateway timeout|syntaxerror|unhandled|prisma|database|exception|sql|connect econnrefused|econnreset|etimedout|status code (?:500|502|503|504)|axioserror/i.test(
+      text
+    );
+  };
+
+  if (typeof error === "string") {
+    if (/network|koneksi|timeout|econnrefused|err_network/i.test(error) || isTechnicalText(error)) {
+      return fallbackText;
+    }
+    return error;
+  }
+
+  if (error.userMessage && typeof error.userMessage === "string") {
+    return error.userMessage;
+  }
+
+  const status = error.response?.status;
+  const serverMsg = error.response?.data?.message;
+
+  const isTechnicalServerMsg =
+    typeof serverMsg === "string" && isTechnicalText(serverMsg);
+
+  if (serverMsg && typeof serverMsg === "string" && !isTechnicalServerMsg) {
+    if (status !== 500 && status !== 502 && status !== 503 && status !== 504) {
+      return serverMsg;
+    }
+  }
+
+  const isTimeout =
+    error.code === "ECONNABORTED" ||
+    error.code === "ETIMEDOUT" ||
+    Boolean(error.message && /timeout/i.test(error.message));
+
+  const isNetworkError =
+    !error.response ||
+    isTimeout ||
+    error.code === "ERR_NETWORK" ||
+    error.message === "Network Error" ||
+    (error.message && /network/i.test(error.message));
+
+  if (isTimeout) {
+    return "Koneksi ke server membutuhkan waktu lebih lama. Silakan coba sesaat lagi ya.";
+  }
+
+  if (isNetworkError) {
+    return "Koneksi sedang menyesuaikan, silakan periksa sambungan internet dan coba sesaat lagi ya.";
+  }
+
+  if (status === 500 || status === 502 || status === 503 || status === 504) {
+    return fallbackText;
+  }
+
+  if (status === 404) {
+    return "Data yang diminta tidak ditemukan atau sedang diperbarui.";
+  }
+
+  if (status === 401 || status === 403) {
+    return "Sesi kamu telah berakhir atau akses tidak diizinkan. Silakan masuk kembali.";
+  }
+
+  if (serverMsg && typeof serverMsg === "string" && !isTechnicalServerMsg) {
+    return serverMsg;
+  }
+
+  return fallbackText;
+};
+
 // Response Interceptor
 api.interceptors.response.use(
   (response) => {
@@ -236,26 +322,46 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (
-      error.response?.status === 401 &&
-      !error.config?.url?.includes("/auth/")
-    ) {
-      await logoutUser();
-    }
+    const config = error.config;
+    const status = error.response?.status;
 
     // Normalisasi error jaringan dan timeout
     const isTimeout =
       error.code === "ECONNABORTED" ||
       error.code === "ETIMEDOUT" ||
       Boolean(error.message && /timeout/i.test(error.message));
+
+    // Automatic Silent Retry maksimal 2 kali (dengan jeda 700ms) untuk HTTP 500, 502, 503, 504, atau network timeout
+    const isRetryable =
+      (typeof status === "number" && [500, 502, 503, 504].includes(status)) ||
+      isTimeout;
+
+    if (config && isRetryable) {
+      config._retryCount = config._retryCount ?? 0;
+      if (config._retryCount < 2) {
+        config._retryCount += 1;
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        return api(config);
+      }
+    }
+
+    if (
+      status === 401 &&
+      !config?.url?.includes("/auth/")
+    ) {
+      await logoutUser();
+    }
+
     const isNetworkError =
       !error.response ||
       isTimeout ||
       error.code === "ERR_NETWORK" ||
       error.message === "Network Error";
 
-    const friendlyMessage =
-      "Koneksi ke server sedang lambat atau terputus. Silakan coba sesaat lagi.";
+    const friendlyMessage = getFriendlyErrorMessage(
+      error,
+      "Koneksi sedang menyesuaikan, silakan coba sesaat lagi ya."
+    );
 
     if (isNetworkError) {
       if (!error.response) {
@@ -279,13 +385,24 @@ api.interceptors.response.use(
       error.userMessage = friendlyMessage;
     } else if (
       error.response &&
-      error.response.status >= 500 &&
-      (!error.response.data?.message || typeof error.response.data !== "object")
+      (error.response.status >= 500 || [500, 502, 503, 504].includes(error.response.status))
     ) {
-      error.response.data = {
-        message: friendlyMessage,
-        status: "error",
-      };
+      if (
+        !error.response.data?.message ||
+        typeof error.response.data !== "object" ||
+        /internal server|bad gateway|gateway timeout|syntaxerror|unhandled|prisma/i.test(
+          String(error.response.data?.message)
+        )
+      ) {
+        if (typeof error.response.data !== "object" || error.response.data === null) {
+          error.response.data = {
+            message: friendlyMessage,
+            status: "error",
+          };
+        } else {
+          error.response.data.message = friendlyMessage;
+        }
+      }
       error.userMessage = friendlyMessage;
     }
     

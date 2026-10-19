@@ -163,10 +163,10 @@ const generateLocalBotResponse = (prompt: string): string => {
     query.includes("belalang")
   ) {
     return (
-      "Berdasarkan analisis botani TaniBot, serangan hama umum pada tanaman urban (seperti kutu putih, ulat grayak, atau kutu daun) dapat ditangani dengan langkah berikut:\n\n" +
-      "• **Semprotan Pestisida Nabati:** Campurkan 1 liter air dengan 5 ml minyak nimba (neem oil) atau ekstrak bawang putih serta 2 tetes sabun cuci piring lembut sebagai perekat. Semprotkan merata ke balik daun pada pagi hari.\n" +
-      "• **Isolasi Tanaman:** Jauhkan tanaman yang terinfeksi dari tanaman sehat lain agar kutu atau ulat tidak menyebar.\n" +
-      "• **Pembersihan Manual:** Bersihkan daun yang terkena koloni kutu dengan kapas yang dibasahi air sabun hangat atau pangkas daun yang rusak parah."
+      "Berikut panduan ringkas mengatasi hama kebun:\n\n" +
+      "• Semprotan Nabati: Campur 1 liter air dengan 5 ml minyak nimba atau ekstrak bawang putih, semprot ke balik daun pagi hari.\n" +
+      "• Isolasi Tanaman: Pisahkan tanaman yang terinfeksi agar tidak menular ke tanaman sehat.\n" +
+      "• Pembersihan: Bersihkan kutu atau ulat dengan kapas air sabun lembut, atau pangkas daun yang rusak."
     );
   }
 
@@ -178,10 +178,10 @@ const generateLocalBotResponse = (prompt: string): string => {
     query.includes("frekuensi")
   ) {
     return (
-      "Mengenai panduan pengaturan penyiraman tanaman di kebun Anda:\n\n" +
-      "• **Metode Uji Jari:** Masukkan jari sedalam 2-3 cm ke dalam media tanam. Siram hanya jika tanah terasa kering di kedalaman tersebut.\n" +
-      "• **Waktu Terbaik:** Lakukan penyiraman pada pagi hari (pukul 06.00-08.00) agar daun lekas mengering saat matahari naik dan mencegah timbulnya jamur akar.\n" +
-      "• **Drainase:** Pastikan lubang pot lancar dan air tidak menggenang di piringan pot untuk menghindari busuk akar (root rot)."
+      "Panduan praktis penyiraman tanaman:\n\n" +
+      "• Cek Media Tanam: Masukkan jari 2-3 cm ke tanah, siram hanya jika terasa kering.\n" +
+      "• Waktu Terbaik: Siram di pagi hari (pukul 06.00-08.00) agar daun lekas kering.\n" +
+      "• Saluran Air: Pastikan pot memiliki lubang drainase baik agar akar tidak membusuk."
     );
   }
 
@@ -193,10 +193,10 @@ const generateLocalBotResponse = (prompt: string): string => {
     query.includes("kompos")
   ) {
     return (
-      "Panduan pemupukan dan nutrisi tanaman:\n\n" +
-      "• **Fase Vegetatif (Daun & Tunas):** Berikan pupuk berkadar Nitrogen (N) tinggi seperti NPK 16-16-16 dosis ringan (1/2 sendok teh per liter air) setiap 1-2 minggu sekali atau kompos matang di permukaan media.\n" +
-      "• **Sistem Hidroponik:** Jaga kepekatan larutan AB Mix pada rentang 800-1200 PPM sesuai jenis tanaman sayur (seperti selada atau pakcoy) dan periksa pH larutan di kisaran 5.5 - 6.5.\n" +
-      "• **Fase Generatif (Bunga & Buah):** Tingkatkan unsur Fosfor (P) dan Kalium (K) saat tanaman mulai membentuk kuncup bunga."
+      "Panduan ringkas nutrisi tanaman:\n\n" +
+      "• Pertumbuhan Daun: Berikan pupuk NPK seimbang dosis ringan setiap 1-2 minggu.\n" +
+      "• Hidroponik: Jaga kepekatan nutrisi AB Mix 800-1200 PPM dengan pH 5.5-6.5.\n" +
+      "• Bunga dan Buah: Tambahkan pupuk tinggi Fosfor dan Kalium saat mulai berbunga."
     );
   }
 
@@ -208,10 +208,10 @@ const generateLocalBotResponse = (prompt: string): string => {
     query.includes("klorosis")
   ) {
     return (
-      "Penyebab dan penanganan daun kuning atau layu:\n\n" +
-      "• **Kelebihan Air (Overwatering):** Daun menguning merata dan terasa lembek biasanya menandakan tanah terlalu basah atau drainase mampet. Kurangi frekuensi siram dan longgarkan media tanam.\n" +
-      "• **Defisiensi Nutrisi:** Daun bawah menguning dengan tulang daun tetap hijau umumnya tanda kekurangan Nitrogen atau Zat Besi. Berikan pupuk organik cair atau NPK seimbang.\n" +
-      "• **Kurang Sinar Matahari:** Tanaman terlihat kurus meninggi (etiolasi) dan daun pucat. Pindahkan pot ke area yang terkena sinar matahari minimal 4-6 jam sehari."
+      "Penyebab dan solusi daun kuning atau layu:\n\n" +
+      "• Terlalu Banyak Air: Kurangi frekuensi siram jika tanah basah dan daun lembek.\n" +
+      "• Kurang Nutrisi: Beri pupuk organik cair bila daun bawah menguning.\n" +
+      "• Kurang Cahaya: Pindahkan ke tempat yang terkena sinar matahari minimal 4-6 jam."
     );
   }
 
@@ -221,10 +221,10 @@ const generateLocalBotResponse = (prompt: string): string => {
     query.includes("kematangan")
   ) {
     return (
-      "Panduan waktu dan teknik panen tanaman:\n\n" +
-      "• **Sayuran Daun (Bayam, Kangkung, Selada):** Panen dapat dilakukan pada umur 25-35 hari setelah tanam. Cabut bersama akar atau potong pangkal batang 2-3 cm dari tanah agar bisa tumbuh kembali (regrowth).\n" +
-      "• **Sayuran Buah (Cabai, Tomat):** Petik saat buah sudah 80-90% matang berwarna cerah beserta tangkainya di pagi hari agar kesegaran bertahan lama.\n" +
-      "• **Catatan Perawatan:** Setelah panen, segera berikan nutrisi atau gemburkan kembali media tanam untuk siklus tanam berikutnya."
+      "Tips praktis waktu dan cara panen:\n\n" +
+      "• Sayur Daun: Panen pada umur 25-35 hari dengan memotong 2-3 cm di atas tanah.\n" +
+      "• Sayur Buah: Petik cabai atau tomat saat warna 80-90% matang di pagi hari.\n" +
+      "• Perawatan Pasca-Panen: Gemburkan media dan beri sedikit kompos untuk tanam lagi."
     );
   }
 
@@ -235,20 +235,37 @@ const generateLocalBotResponse = (prompt: string): string => {
     query.includes("wick")
   ) {
     return (
-      "Panduan instalasi dan pemeliharaan hidroponik:\n\n" +
-      "• **Kontrol Suhu Air:** Pastikan suhu tandon air nutrisi tidak melebihi 28 derajat Celcius agar penyerapan oksigen akar tetap maksimal.\n" +
-      "• **Kebersihan Tandon:** Kuras dan bersihkan tandon nutrisi setiap 10-14 hari sekali guna menghindari lumut dan penumpukan garam mineral.\n" +
-      "• **Sirkulasi Oksigen:** Pastikan aerator atau pompa mengalirkan air dengan lancar agar akar tidak mengalami hipoksia."
+      "Panduan praktis berkebun hidroponik:\n\n" +
+      "• Suhu Air: Jaga tandon nutrisi tetap sejuk di bawah 28 derajat Celcius.\n" +
+      "• Kuras Tandon: Ganti larutan nutrisi setiap 10-14 hari agar bebas lumut.\n" +
+      "• Cek Oksigen: Pastikan pompa atau aerator berjalan lancar agar akar sehat."
+    );
+  }
+
+  if (query.includes("tomat")) {
+    return (
+      "Tips praktis merawat tanaman tomat:\n\n" +
+      "• Sinar Matahari: Berikan paparan sinar matahari langsung minimal 6-8 jam sehari.\n" +
+      "• Siram Teratur: Siram pangkal tanah di pagi hari, hindari membasahi daun agar bebas jamur.\n" +
+      "• Penyangga: Pasang tiang ajir penopang sejak dini agar batang kuat menopang buah."
+    );
+  }
+
+  if (query.includes("rawat") || query.includes("perawatan") || query.includes("tips")) {
+    return (
+      "Panduan praktis perawatan tanaman:\n\n" +
+      "• Cek Media: Siram saat 2-3 cm lapisan tanah atas terasa mulai mengering.\n" +
+      "• Cukup Sinar: Pastikan tanaman mendapat cahaya matahari minimal 4-6 jam setiap hari.\n" +
+      "• Kebersihan Daun: Pangkas ranting atau daun kering secara berkala agar sirkulasi udara baik."
     );
   }
 
   return (
-    "Halo! Saya TaniBot siap membantu kebun urban Anda.\n\n" +
-    "Berikut adalah prinsip utama perawatan kebun sehat:\n" +
-    "• **Pencahayaan:** Pastikan tanaman mendapatkan sinar matahari langsung atau tidak langsung minimal 4-6 jam setiap hari.\n" +
-    "• **Kelembapan Tanah:** Siram tanaman secukupnya ketika lapisan atas tanah mulai mengering, hindari genangan air berlebih.\n" +
-    "• **Sirkulasi Udara:** Berikan jarak antar-pot agar sirkulasi udara baik dan mencegah kelembapan tinggi pemicu jamur.\n\n" +
-    "Silakan tanyakan hal spesifik seputar hama, nutrisi pupuk, teknik hidroponik, atau panduan panen tanaman Anda!"
+    "Halo! Saya TaniBot siap membantu kebunmu.\n\n" +
+    "• Sinar Matahari: Pastikan tanaman mendapat cahaya cukup 4-6 jam sehari.\n" +
+    "• Penyiraman: Siram saat lapisan atas tanah mulai kering, hindari becek.\n" +
+    "• Sirkulasi: Beri jarak antar pot agar daun leluasa bernapas.\n\n" +
+    "Tanyakan hal lain seputar hama, nutrisi, atau panen ya!"
   );
 };
 
@@ -347,7 +364,7 @@ export default function TanibotScreen() {
     }
   };
 
-  const handleSend = async (customText?: string) => {
+  const handleSend = async (customText?: string, isQuickPrompt: boolean = false) => {
     const rawText = typeof customText === 'string' ? customText : inputText;
     if (!rawText.trim() || sendingLockRef.current || isSending) return;
     
@@ -377,7 +394,10 @@ export default function TanibotScreen() {
 
     try {
       const { lat, lng } = coordsRef.current;
-      const replyText = await sendTanibotMessage(textToSend, lat, lng);
+      const apiMessage = isQuickPrompt
+        ? `${textToSend}\n\n(Catatan: Jawab dengan bahasa yang ramah, ringkas, padat, dan praktis (maksimal 3-4 poin pendek) agar nyaman dibaca di layar HP.)`
+        : textToSend;
+      const replyText = await sendTanibotMessage(apiMessage, lat, lng);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       const botMsg: ChatMessage = {
@@ -491,7 +511,7 @@ export default function TanibotScreen() {
                       ].map((q, i) => (
                         <Pressable 
                           key={i}
-                          onPress={() => handleSend(q)}
+                          onPress={() => handleSend(q, true)}
                           style={({ pressed }) => [
                             styles.quickPromptChip,
                             pressed && { opacity: 0.75, backgroundColor: '#D4EED8' }

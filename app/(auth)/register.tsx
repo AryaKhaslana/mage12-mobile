@@ -1,9 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import * as Location from "expo-location";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as Haptics from "expo-haptics";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -19,7 +18,7 @@ import {
     Keyboard
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api, { googleSignIn, setAuthToken, clearAppCache } from "../../services/api";
+import api, { googleSignIn, setAuthToken, clearAppCache, getFriendlyErrorMessage } from "../../services/api";
 import { useNotification } from "../../components/NotificationContext";
 import { Image } from 'expo-image';
 import AuthHeader from "../../components/AuthHeader";
@@ -39,12 +38,6 @@ export default function RegisterScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const authLockRef = useRef(false);
 
-  // GPS preload coords
-  const coordsRef = useRef<{ latitude: number | null; longitude: number | null }>({
-    latitude: null,
-    longitude: null,
-  });
-
   // TextInput refs for chained navigation
   const namaInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
@@ -54,57 +47,6 @@ export default function RegisterScreen() {
 
   // Interaction state for active input and mascot
   const [activeInput, setActiveInput] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const preloadLocation = async () => {
-      try {
-        const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
-        let status = existingStatus;
-        if (status !== "granted") {
-          const permRes = await Location.requestForegroundPermissionsAsync();
-          status = permRes.status;
-        }
-        if (status !== "granted" || !isMounted) return;
-
-        // Ambil posisi terakhir yang tersimpan terlebih dahulu (instan 0ms)
-        const lastKnown = await Location.getLastKnownPositionAsync();
-        if (lastKnown?.coords && isMounted) {
-          coordsRef.current = {
-            latitude: lastKnown.coords.latitude,
-            longitude: lastKnown.coords.longitude,
-          };
-        }
-
-        // Ambil posisi presisi di background tanpa memblokir form dengan batas timeout 3.5s
-        const locationTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500));
-        Promise.race([
-          Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          }),
-          locationTimeout,
-        ])
-          .then((loc) => {
-            if (loc?.coords && isMounted) {
-              coordsRef.current = {
-                latitude: loc.coords.latitude,
-                longitude: loc.coords.longitude,
-              };
-            }
-          })
-          .catch(() => {});
-      } catch (locErr) {
-        console.warn("GPS preload silent error:", locErr);
-      }
-    };
-
-    preloadLocation();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const handleRegister = async () => {
     Keyboard.dismiss();
@@ -138,8 +80,8 @@ export default function RegisterScreen() {
         email: cleanEmail,
         username: cleanUsername,
         password,
-        latitude: coordsRef.current.latitude,
-        longitude: coordsRef.current.longitude,
+        latitude: null,
+        longitude: null,
       };
 
       const res = await api.post("/auth/register", payload);
@@ -192,7 +134,7 @@ export default function RegisterScreen() {
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       console.error(error.response?.data || error.message);
-      showNotification("Gagal Mendaftar", error.response?.data?.message || "Terjadi kesalahan saat pendaftaran, silakan coba lagi.", "error");
+      showNotification("Gagal Mendaftar", getFriendlyErrorMessage(error, "Terjadi kesalahan saat pendaftaran, silakan coba lagi."), "error");
     } finally {
       setIsSubmitting(false);
       authLockRef.current = false;
@@ -214,7 +156,7 @@ export default function RegisterScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       const msg = error?.code === "10" || error?.message?.includes("DEVELOPER_ERROR")
         ? "Google Sign-In memerlukan build APK / Client ID (.env) yang sesuai."
-        : error?.message || "Google Sign In bermasalah.";
+        : getFriendlyErrorMessage(error, "Google Sign In bermasalah.");
       showNotification("Gagal", msg, "error");
     } finally {
       setIsGoogleLoading(false);
@@ -225,10 +167,8 @@ export default function RegisterScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#DFF3E6" }}>
       <AuthHeader 
-        isPasswordFocused={
-          (activeInput === 'password' && !showPassword) ||
-          (activeInput === 'confirmPassword' && !showConfirmPassword)
-        }
+        isPasswordVisible={showPassword || showConfirmPassword}
+        isPasswordFocused={showPassword || showConfirmPassword}
       />
 
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FBF8F1', zIndex: 2 }} edges={['bottom', 'left', 'right']}>
@@ -277,7 +217,7 @@ export default function RegisterScreen() {
                   placeholder="Email"
                   placeholderTextColor="#8F9B94"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => setEmail(text.replace(/\s+/g, ""))}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}

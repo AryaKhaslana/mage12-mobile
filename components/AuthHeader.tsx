@@ -16,12 +16,17 @@ import { Image } from 'expo-image';
 const { width } = Dimensions.get('window');
 
 interface AuthHeaderProps {
-  isPasswordFocused: boolean;
+  isPasswordFocused?: boolean;
+  isPasswordVisible?: boolean;
 }
 
-function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
+function AuthHeader({ isPasswordFocused, isPasswordVisible }: AuthHeaderProps) {
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
+
+  const shouldHideMascot = isPasswordVisible !== undefined
+    ? isPasswordVisible
+    : Boolean(isPasswordFocused);
 
   useEffect(() => {
     scale.value = withRepeat(
@@ -40,12 +45,12 @@ function AuthHeader({ isPasswordFocused }: AuthHeaderProps) {
   }, []);
 
   useEffect(() => {
-    if (isPasswordFocused) {
+    if (shouldHideMascot) {
       translateY.value = withSpring(85, { damping: 15, stiffness: 120 });
     } else {
       translateY.value = withSpring(0, { damping: 15, stiffness: 120 });
     }
-  }, [isPasswordFocused]);
+  }, [shouldHideMascot]);
 
   const mascotStyle = useAnimatedStyle(() => {
     return {

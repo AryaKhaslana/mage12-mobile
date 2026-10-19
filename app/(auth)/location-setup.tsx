@@ -6,6 +6,8 @@ import * as Haptics from "expo-haptics";
 import React, { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
+  Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,7 +23,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api from "../../services/api";
+import api, { getFriendlyErrorMessage } from "../../services/api";
 import { Image } from "expo-image";
 import { useNotification } from "../../components/NotificationContext";
 
@@ -36,6 +38,7 @@ const DEFAULT_COORDS = {
 export default function LocationSetupScreen() {
   const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeniedModal, setShowDeniedModal] = useState(false);
   const [locationStr, setLocationStr] = useState<string | null>(null);
   const [locationData, setLocationData] = useState<{ lat: string; lon: string } | null>(null);
 
@@ -86,14 +89,18 @@ export default function LocationSetupScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      const permRes = await Location.requestForegroundPermissionsAsync();
+      if (permRes.status !== "granted") {
+        // Fallback ramah: terapkan lokasi default otomatis
+        setLocationStr(`${DEFAULT_COORDS.lat}, ${DEFAULT_COORDS.lon} (${DEFAULT_COORDS.label})`);
+        setLocationData({ lat: DEFAULT_COORDS.lat, lon: DEFAULT_COORDS.lon });
         showNotification(
-          "Izin Lokasi Ditolak",
-          "Untuk menggunakan fitur cuaca dan komunitas, silakan izinkan akses lokasi melalui menu pengaturan perangkat kamu.",
+          "Lokasi Default Diterapkan",
+          "Izin lokasi belum diberikan. Lokasi default (Sidoarjo, Jawa Timur) telah diterapkan agar kamu tetap dapat menikmati fitur cuaca.",
           "info"
         );
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        setShowDeniedModal(true);
         setIsLoading(false);
         isRequestingRef.current = false;
         return;
@@ -125,12 +132,14 @@ export default function LocationSetupScreen() {
       }
     } catch (error) {
       console.error("Gagal mendeteksi lokasi:", error);
+      setLocationStr(`${DEFAULT_COORDS.lat}, ${DEFAULT_COORDS.lon} (${DEFAULT_COORDS.label})`);
+      setLocationData({ lat: DEFAULT_COORDS.lat, lon: DEFAULT_COORDS.lon });
       showNotification(
         "Gagal Mendeteksi Lokasi",
-        "Koneksi GPS lemah atau tidak merespons. Kamu dapat menggunakan lokasi default.",
-        "error"
+        "Koneksi GPS lemah atau tidak merespons. Lokasi default Sidoarjo telah diterapkan.",
+        "info"
       );
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } finally {
       setIsLoading(false);
       isRequestingRef.current = false;
@@ -139,7 +148,7 @@ export default function LocationSetupScreen() {
 
   const handleUseDefaultLocation = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLocationStr(`${DEFAULT_COORDS.lat}, ${DEFAULT_COORDS.lon}`);
+    setLocationStr(`${DEFAULT_COORDS.lat}, ${DEFAULT_COORDS.lon} (${DEFAULT_COORDS.label})`);
     setLocationData({ lat: DEFAULT_COORDS.lat, lon: DEFAULT_COORDS.lon });
     showNotification("Lokasi Default Dipilih", "Menggunakan koordinat default Sidoarjo.", "info");
   };
@@ -149,8 +158,9 @@ export default function LocationSetupScreen() {
     router.replace("/(tabs)");
   };
 
-  const handleSaveLocation = async () => {
-    if (!locationData) return;
+  const handleSaveLocation = async (coordsOverride?: { lat: string; lon: string }) => {
+    const targetCoords = coordsOverride || locationData || { lat: DEFAULT_COORDS.lat, lon: DEFAULT_COORDS.lon };
+    if (!targetCoords) return;
     if (isSavingRef.current || isLoading) return;
     isSavingRef.current = true;
     setIsLoading(true);
@@ -159,8 +169,8 @@ export default function LocationSetupScreen() {
     try {
       // Contract: FormData dengan KEDUA latitude & longitude sebagai STRING
       const formData = new FormData();
-      formData.append("latitude", locationData.lat);
-      formData.append("longitude", locationData.lon);
+      formData.append("latitude", targetCoords.lat);
+      formData.append("longitude", targetCoords.lon);
 
       // Using PUT /api/user/me
       const response = await api.put("/user/me", formData);
@@ -172,8 +182,8 @@ export default function LocationSetupScreen() {
       const merged = {
         ...parsed,
         ...serverUser,
-        latitude: locationData.lat,
-        longitude: locationData.lon,
+        latitude: targetCoords.lat,
+        longitude: targetCoords.lon,
       };
       await SecureStore.setItemAsync("userData", JSON.stringify(merged));
 
@@ -182,7 +192,7 @@ export default function LocationSetupScreen() {
       router.replace("/(tabs)");
     } catch (error: any) {
       console.error("Gagal simpan lokasi:", error);
-      const msg = error.response?.data?.message || "Gagal menyimpan lokasi ke server.";
+      const msg = getFriendlyErrorMessage(error, "Gagal menyimpan lokasi ke server.");
       showNotification("Error", msg, "error");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
@@ -269,7 +279,7 @@ export default function LocationSetupScreen() {
                   pressed && { transform: [{ scale: 0.98 }] },
                   isLoading && styles.buttonDisabled,
                 ]}
-                onPress={handleSaveLocation}
+                onPress={() => handleSaveLocation()}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -309,6 +319,52 @@ export default function LocationSetupScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* MODAL FALLBACK IZIN LOKASI DITOLAK */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showDeniedModal}
+        onRequestClose={() => setShowDeniedModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconBox}>
+              <MaterialIcons name="location-off" size={32} color="#123924" />
+            </View>
+            <Text style={styles.modalTitle}>Lokasi Default Diterapkan</Text>
+            <Text style={styles.modalSubtitle}>
+              Izin lokasi belum aktif di perangkatmu. Kami telah menetapkan lokasi default (Sidoarjo, Jawa Timur) agar informasi cuaca dan kalender tanam tetap berfungsi optimal.
+            </Text>
+            <View style={styles.modalActionGroup}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalPrimaryBtn,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={() => {
+                  setShowDeniedModal(false);
+                  handleSaveLocation(DEFAULT_COORDS);
+                }}
+              >
+                <Text style={styles.modalPrimaryBtnText}>Lanjutkan dengan Default</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalSecondaryBtn,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={() => {
+                  setShowDeniedModal(false);
+                  Linking.openSettings();
+                }}
+              >
+                <Text style={styles.modalSecondaryBtnText}>Buka Pengaturan</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -411,5 +467,82 @@ const styles = StyleSheet.create({
     color: "#5C5A4F",
     fontSize: 14,
     fontFamily: "Nunito_700Bold",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(18, 57, 36, 0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#FBF8F0",
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(18, 57, 36, 0.1)",
+    alignItems: "center",
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#E8F5E9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: "Nunito_800ExtraBold",
+    color: "#123924",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontFamily: "Nunito_500Medium",
+    color: "#5C5A4F",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalActionGroup: {
+    width: "100%",
+    gap: 10,
+  },
+  modalPrimaryBtn: {
+    backgroundColor: "#3FA86B",
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalPrimaryBtnText: {
+    color: "#FFFFFF",
+    fontFamily: "Nunito_700Bold",
+    fontSize: 15,
+  },
+  modalSecondaryBtn: {
+    backgroundColor: "#F1EEE6",
+    width: "100%",
+    paddingVertical: 12,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(18, 57, 36, 0.12)",
+  },
+  modalSecondaryBtnText: {
+    color: "#123924",
+    fontFamily: "Nunito_700Bold",
+    fontSize: 14,
   },
 });

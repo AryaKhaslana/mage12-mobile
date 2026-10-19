@@ -2,8 +2,10 @@ import React, {
   memo,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
+import * as Location from "expo-location";
 import {
   KeyboardAvoidingView,
   ScrollView, Platform,
@@ -572,6 +574,8 @@ export default function KomunitasScreen() {
 
   const [posts, setPosts] = useState<any[]>(() => memoryCommunityCache ? memoryCommunityCache.posts : []);
   const [likes, setLikes] = useState<Record<number, { liked: boolean; count: number }>>(() => memoryCommunityCache ? memoryCommunityCache.likes : {});
+  const postsRef = useRef<any[]>(memoryCommunityCache ? memoryCommunityCache.posts : []);
+  const likesRef = useRef<Record<number, { liked: boolean; count: number }>>(memoryCommunityCache ? memoryCommunityCache.likes : {});
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -579,7 +583,10 @@ export default function KomunitasScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isError, setIsError] = useState(false);
   const [activeTab, setActiveTab] = useState<"terbaru" | "terdekat">("terbaru");
+  const [isGpsFallback, setIsGpsFallback] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalErrorText, setModalErrorText] = useState<string | null>(null);
+  const likingPostIdsRef = useRef<Set<number>>(new Set());
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [userFilter, setUserFilter] = useState<"semua" | "saya">("semua");
 
@@ -592,6 +599,7 @@ export default function KomunitasScreen() {
               const parsed: CommunityMemoryCache = JSON.parse(cachedStr);
               if (parsed?.posts?.length) {
                 memoryCommunityCache = parsed;
+                postsRef.current = parsed.posts;
                 setPosts(parsed.posts);
                 setLikes(parsed.likes || {});
                 setIsLoading(false);
@@ -654,7 +662,7 @@ export default function KomunitasScreen() {
       if (shouldRefresh) {
         clearInFlightRequests();
         setIsRefreshing(true);
-      } else if (pageNum === 1 && posts.length === 0) {
+      } else if (pageNum === 1 && postsRef.current.length === 0) {
         setIsLoading(true);
       }
       const userDataStr = await SecureStore.getItemAsync("userData");
@@ -664,21 +672,71 @@ export default function KomunitasScreen() {
       let lat = undefined;
       let lng = undefined;
 
-      if (activeTab === "terdekat" && userDataStr) {
-        const user = JSON.parse(userDataStr);
-        if (user.latitude && user.longitude) {
-          lat = user.latitude;
-          lng = user.longitude;
-        } else {
+      if (activeTab === "terdekat") {
+        let gpsActive = false;
+        try {
+          const servicesEnabled = await Location.hasServicesEnabledAsync();
+          if (servicesEnabled) {
+            const perm = await Location.getForegroundPermissionsAsync();
+            if (perm.status === "granted") {
+              try {
+                const curPos = await Location.getCurrentPositionAsync({
+                  accuracy: Location.Accuracy.Balanced,
+                });
+                if (curPos?.coords) {
+                  lat = curPos.coords.latitude;
+                  lng = curPos.coords.longitude;
+                  gpsActive = true;
+                }
+              } catch {
+                // Gunakan koordinat kebun tersimpan jika pembacaan posisi terkendala
+              }
+            }
+          }
+        } catch {}
+
+        if (userDataStr) {
+          const user = JSON.parse(userDataStr);
+          if (!lat || !lng) {
+            if (user.latitude && user.longitude) {
+              lat = user.latitude;
+              lng = user.longitude;
+            } else {
+              showNotification(
+                "Lokasi Belum Diatur",
+                "Silakan lengkapi data lokasi pada profil kamu terlebih dahulu.",
+                "info",
+              );
+              setIsLoading(false);
+              setIsRefreshing(false);
+              return;
+            }
+          }
+        } else if (!lat || !lng) {
           showNotification(
             "Lokasi Belum Diatur",
             "Silakan lengkapi data lokasi pada profil kamu terlebih dahulu.",
-            "error",
+            "info",
           );
           setIsLoading(false);
           setIsRefreshing(false);
           return;
         }
+
+        if (!gpsActive) {
+          setIsGpsFallback(true);
+          if (pageNum === 1 || shouldRefresh) {
+            showNotification(
+              "Info Lokasi",
+              "GPS perangkat sedang tidak aktif. Menampilkan komunitas di sekitar lokasi kebun tersimpanmu.",
+              "info"
+            );
+          }
+        } else {
+          setIsGpsFallback(false);
+        }
+      } else {
+        setIsGpsFallback(false);
       }
 
       let response;
@@ -690,11 +748,13 @@ export default function KomunitasScreen() {
 
       const newPosts = response.data;
       if (shouldRefresh || pageNum === 1) {
+        postsRef.current = newPosts;
         setPosts(newPosts);
         const newLikes: Record<number, { liked: boolean; count: number }> = {};
         newPosts.forEach((p: any) => {
           newLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
         });
+        likesRef.current = newLikes;
         setLikes(newLikes);
         if (activeTab === "terbaru" && userFilter === "semua" && !debouncedSearch) {
           memoryCommunityCache = {
@@ -705,14 +765,15 @@ export default function KomunitasScreen() {
           AsyncStorage.setItem("community_feed_cache_v1", JSON.stringify(memoryCommunityCache)).catch(() => {});
         }
       } else {
-        setPosts((prev) => [...prev, ...newPosts]);
-        setLikes((prev) => {
-          const next = { ...prev };
-          newPosts.forEach((p: any) => {
-            next[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
-          });
-          return next;
+        const combined = [...postsRef.current, ...newPosts];
+        postsRef.current = combined;
+        setPosts(combined);
+        const nextLikes = { ...likesRef.current };
+        newPosts.forEach((p: any) => {
+          nextLikes[p.id] = { liked: !!p.isLiked, count: p.jumlahLike ?? 0 };
         });
+        likesRef.current = nextLikes;
+        setLikes(nextLikes);
       }
 
       setHasMore(response.meta.halamanSekarang < response.meta.totalHalaman);
@@ -720,22 +781,22 @@ export default function KomunitasScreen() {
       setIsError(false);
     } catch (error) {
       console.error(error);
-      if (posts.length === 0) {
+      if (postsRef.current.length === 0) {
         setIsError(true);
         if (shouldRefresh) {
-          showNotification("Gagal Memuat Komunitas", "Terjadi kesalahan koneksi saat memuat feed.", "error");
+          showNotification("Koneksi Sedang Istirahat", "Belum bisa memuat kabar komunitas saat ini. Pastikan koneksimu aktif lalu coba lagi ya!", "error");
         }
       } else {
         setIsError(false);
         if (shouldRefresh) {
-          showNotification("Koneksi Kurang Stabil", "Menampilkan postingan tersimpan.", "info");
+          showNotification("Koneksi Kurang Stabil", "Menampilkan postingan komunitas tersimpan.", "info");
         }
       }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [activeTab, debouncedSearch, userFilter, showNotification, posts.length]);
+  }, [activeTab, debouncedSearch, userFilter, showNotification]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -759,13 +820,16 @@ export default function KomunitasScreen() {
 
     // Optimistic UI: remove immediately from list with haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const previousPosts = [...posts];
-    setPosts((prev) => prev.filter((p) => p.id !== idToDelete));
+    const previousPosts = [...postsRef.current];
+    const filtered = previousPosts.filter((p) => p.id !== idToDelete);
+    postsRef.current = filtered;
+    setPosts(filtered);
 
     try {
       await deleteCommunityPost(idToDelete);
       showNotification("Berhasil", "Postingan berhasil dihapus.", "success");
     } catch (err: any) {
+      postsRef.current = previousPosts;
       setPosts(previousPosts);
       showNotification(
         "Gagal",
@@ -778,24 +842,43 @@ export default function KomunitasScreen() {
   };
 
   const handleLike = useCallback(async (postId: number) => {
-    setLikes((prev) => {
-      const curr = prev[postId] || { liked: false, count: 0 };
-      return {
-        ...prev,
-        [postId]: {
-          liked: !curr.liked,
-          count: curr.liked ? Math.max(0, curr.count - 1) : curr.count + 1,
-        },
-      };
-    });
+    if (likingPostIdsRef.current.has(postId)) {
+      return;
+    }
+    likingPostIdsRef.current.add(postId);
+
+    const current = likesRef.current[postId] || { liked: false, count: 0 };
+    const optimisticLiked = !current.liked;
+    const optimisticCount = current.liked ? Math.max(0, current.count - 1) : current.count + 1;
+    const optimisticState = { liked: optimisticLiked, count: optimisticCount };
+
+    likesRef.current[postId] = optimisticState;
+    setLikes((prev) => ({
+      ...prev,
+      [postId]: optimisticState,
+    }));
+
     try {
       const result = await toggleCommunityLike(postId);
+      const resolvedState = { liked: result.liked, count: result.jumlahLike };
+      likesRef.current[postId] = resolvedState;
       setLikes((prev) => ({
         ...prev,
-        [postId]: { liked: result.liked, count: result.jumlahLike },
+        [postId]: resolvedState,
       }));
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      if (e?.response?.status === 409) {
+        // Silent handle: status 409 Conflict diabaikan dan jangan me-revert state optimistic UI
+      } else {
+        console.error("Like toggle error:", e);
+        likesRef.current[postId] = current;
+        setLikes((prev) => ({
+          ...prev,
+          [postId]: current,
+        }));
+      }
+    } finally {
+      likingPostIdsRef.current.delete(postId);
     }
   }, []);
 
@@ -833,6 +916,7 @@ export default function KomunitasScreen() {
     });
     if (!result.canceled) {
       setFoto(result.assets[0]);
+      if (modalErrorText) setModalErrorText(null);
     }
   };
 
@@ -844,9 +928,10 @@ export default function KomunitasScreen() {
     const cleanLokasi = lokasiNama.trim();
 
     if (!cleanDeskripsi) {
-      showNotification("Perhatian", "Konten postingan tidak boleh kosong.", "error");
+      setModalErrorText("Konten postingan tidak boleh kosong.");
       return;
     }
+    setModalErrorText(null);
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -869,6 +954,7 @@ export default function KomunitasScreen() {
       await createCommunityPost(formData);
       showNotification("Berhasil!", "Postingan kamu berhasil dibagikan!", "success");
       setIsModalVisible(false);
+      setModalErrorText(null);
       setJudul("");
       setLokasiNama("");
       setLokasiLat(null);
@@ -879,9 +965,11 @@ export default function KomunitasScreen() {
       fetchPosts(1, true); // Refresh feed
     } catch (e: any) {
       console.error(e);
+      const errMsg = e.response?.data?.message || "Gagal mengunggah postingan, silakan coba lagi.";
+      setModalErrorText(errMsg);
       showNotification(
         "Gagal Mengunggah",
-        e.response?.data?.message || "Gagal mengunggah postingan, silakan coba lagi.",
+        errMsg,
         "error",
       );
     } finally {
@@ -900,6 +988,19 @@ export default function KomunitasScreen() {
       fetchPosts(page + 1, false);
     }
   };
+
+  const renderPostItem = useCallback(({ item }: { item: any }) => (
+    <PostCardItem
+      item={item}
+      currentUser={currentUser}
+      isLiked={!!likes[item.id]?.liked}
+      likeCount={likes[item.id]?.count ?? 0}
+      onLike={handleLike}
+      onDelete={handleDeletePost}
+      onOpenDetail={handleOpenDetail}
+      onOpenProfile={handleOpenProfile}
+    />
+  ), [currentUser, likes, handleLike, handleDeletePost, handleOpenDetail, handleOpenProfile]);
 
   if (isError && posts.length === 0) {
     return (
@@ -933,6 +1034,7 @@ export default function KomunitasScreen() {
             <Pressable
               onPress={() => {
                 if (activeTab !== "terbaru") {
+                  setIsGpsFallback(false);
                   setActiveTab("terbaru");
                 }
               }}
@@ -986,6 +1088,15 @@ export default function KomunitasScreen() {
           </View>
         </View>
 
+        {activeTab === "terdekat" && isGpsFallback && (
+          <View style={styles.gpsBanner}>
+            <MaterialIcons name="location-off" size={18} color="#2D5A27" style={{ marginRight: 8 }} />
+            <Text style={styles.gpsBannerText}>
+              GPS perangkat sedang tidak aktif. Menampilkan komunitas di sekitar lokasi kebun tersimpanmu.
+            </Text>
+          </View>
+        )}
+
         <FlatList
           data={posts}
           keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
@@ -1018,24 +1129,16 @@ export default function KomunitasScreen() {
               />
             )
           }
-          renderItem={({ item }) => (
-            <PostCardItem
-              item={item}
-              currentUser={currentUser}
-              isLiked={!!likes[item.id]?.liked}
-              likeCount={likes[item.id]?.count ?? 0}
-              onLike={handleLike}
-              onDelete={handleDeletePost}
-              onOpenDetail={handleOpenDetail}
-              onOpenProfile={handleOpenProfile}
-            />
-          )}
+          renderItem={renderPostItem}
         />
       </View>
 
       <Pressable
         style={({ pressed }) => [styles.fab, pressed && { opacity: 0.8 }]}
-        onPress={() => setIsModalVisible(true)}
+        onPress={() => {
+          setModalErrorText(null);
+          setIsModalVisible(true);
+        }}
       >
         <MaterialIcons name="add" size={28} color="#FFFFFF" />
       </Pressable>
@@ -1044,7 +1147,13 @@ export default function KomunitasScreen() {
         visible={isModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => !isSubmitting && setIsModalVisible(false)}
+        statusBarTranslucent={true}
+        onRequestClose={() => {
+          if (!isSubmitting) {
+            setModalErrorText(null);
+            setIsModalVisible(false);
+          }
+        }}
       >
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={styles.modalOverlay}>
@@ -1064,11 +1173,24 @@ export default function KomunitasScreen() {
                   styles.clayCloseButton,
                   pressed && styles.clayPressed,
                 ]}
-                onPress={() => !isSubmitting && setIsModalVisible(false)}
+                onPress={() => {
+                  if (!isSubmitting) {
+                    setModalErrorText(null);
+                    setIsModalVisible(false);
+                  }
+                }}
               >
                 <MaterialIcons name="close" size={20} color="#123924" />
               </Pressable>
             </View>
+
+            {/* Inline Alert Banner Neoclay */}
+            {!!modalErrorText && (
+              <View style={styles.modalInlineAlert}>
+                <MaterialIcons name="error-outline" size={18} color="#D32F2F" style={{ marginRight: 8 }} />
+                <Text style={styles.modalInlineAlertText}>{modalErrorText}</Text>
+              </View>
+            )}
 
             {/* 2. FOTO UPLOAD AREA */}
             {!foto ? (
@@ -1144,7 +1266,10 @@ export default function KomunitasScreen() {
                 placeholder="Ceritakan progres panenmu, atau ketik # untuk tagar..."
                 placeholderTextColor="#5C5A4F"
                 value={deskripsi}
-                onChangeText={setDeskripsi}
+                onChangeText={(text) => {
+                  setDeskripsi(text);
+                  if (modalErrorText) setModalErrorText(null);
+                }}
                 onSelectionChange={(e) => setCursorPos(e.nativeEvent.selection)}
                 maxLength={500}
               />
@@ -1633,5 +1758,42 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_800ExtraBold",
     fontSize: 16,
     color: "#FFFFFF",
+  },
+  modalInlineAlert: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFECEB",
+    borderWidth: 1,
+    borderColor: "#FF6B5C",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  modalInlineAlertText: {
+    flex: 1,
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 13,
+    color: "#D32F2F",
+    lineHeight: 18,
+  },
+  gpsBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F5E9",
+    borderWidth: 1,
+    borderColor: "#C8E6C9",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  gpsBannerText: {
+    flex: 1,
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 12,
+    color: "#2D5A27",
+    lineHeight: 18,
   },
 });

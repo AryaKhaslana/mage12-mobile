@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
+  Modal,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +19,7 @@ import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import { updateProfile, logoutUser } from '../../services/api';
+import { updateProfile, logoutUser, getFriendlyErrorMessage } from '../../services/api';
 import { useNotification } from '../../components/NotificationContext';
 
 const { width } = Dimensions.get('window');
@@ -54,6 +54,7 @@ export default function ProfileSetupScreen() {
   const [activeInput, setActiveInput] = useState<'nama' | 'username' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
 
   const submitLockRef = useRef(false);
   const initialUserRef = useRef<{ nama: string; username: string }>({ nama: '', username: '' });
@@ -181,7 +182,7 @@ export default function ProfileSetupScreen() {
         setErrorMsg(`Username @${cleanUsername} sudah digunakan. Silakan pilih username lain.`);
       } else {
         setErrorMsg(
-          error.response?.data?.message || 'Terjadi kesalahan saat menyimpan identitas akun. Silakan coba lagi.'
+          getFriendlyErrorMessage(error, 'Terjadi kesalahan saat menyimpan identitas akun. Silakan coba lagi.')
         );
       }
     } finally {
@@ -192,20 +193,7 @@ export default function ProfileSetupScreen() {
 
   const handleSwitchAccount = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert(
-      'Ganti Akun',
-      'Apakah kamu ingin keluar dan masuk menggunakan akun Google atau email yang lain?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Keluar',
-          style: 'destructive',
-          onPress: async () => {
-            await logoutUser();
-          },
-        },
-      ]
-    );
+    setShowSwitchModal(true);
   };
 
   const isFormValid = nama.trim().length >= 2 && username.trim().length >= 3;
@@ -415,6 +403,49 @@ export default function ProfileSetupScreen() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* MODAL KONFIRMASI GANTI AKUN NEOCLAY */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showSwitchModal}
+        onRequestClose={() => setShowSwitchModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconBox}>
+              <MaterialIcons name="swap-horiz" size={32} color="#123924" />
+            </View>
+            <Text style={styles.modalTitle}>Ganti Akun</Text>
+            <Text style={styles.modalSubtitle}>
+              Apakah kamu ingin keluar dan masuk menggunakan akun Google atau email yang lain?
+            </Text>
+            <View style={styles.modalActionGroup}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalSwitchBtn,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={async () => {
+                  setShowSwitchModal(false);
+                  await logoutUser();
+                }}
+              >
+                <Text style={styles.modalSwitchBtnText}>Ganti Akun</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalCancelBtn,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={() => setShowSwitchModal(false)}
+              >
+                <Text style={styles.modalCancelBtnText}>Batal</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -642,5 +673,89 @@ const styles = StyleSheet.create({
   switchAccountTextBold: {
     fontFamily: F.bold,
     color: C.primaryDark,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(18, 57, 36, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FBF8F0',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(18, 57, 36, 0.12)',
+    alignItems: 'center',
+    shadowColor: '#123924',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#E8F5E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: F.extra,
+    color: '#123924',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontFamily: F.medium,
+    color: '#5C5A4F',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalActionGroup: {
+    width: '100%',
+    gap: 10,
+  },
+  modalSwitchBtn: {
+    backgroundColor: '#3FA86B',
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#123924',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  modalSwitchBtnText: {
+    color: '#FFFFFF',
+    fontFamily: F.bold,
+    fontSize: 15,
+  },
+  modalCancelBtn: {
+    backgroundColor: '#F1EEE6',
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(18, 57, 36, 0.12)',
+  },
+  modalCancelBtnText: {
+    color: '#5C5A4F',
+    fontFamily: F.bold,
+    fontSize: 14,
   },
 });

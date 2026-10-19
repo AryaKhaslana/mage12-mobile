@@ -7,13 +7,16 @@ import { useCallback, useEffect, useRef, useState , forwardRef } from "react";
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Dimensions,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View
 } from "react-native";
@@ -235,11 +238,13 @@ export default function DashboardScreen() {
   const processingWateringRef = useRef<Set<number>>(new Set());
   const recentlyWateredRef = useRef<Map<number, number>>(new Map());
   const isFetchingDashboardRef = useRef<boolean>(false);
+  const lastBackPressRef = useRef<number>(0);
   
   const insets = useSafeAreaInsets();
   
   const [tanamanList, setTanamanList] = useState<any[]>(() => memoryHomeTanaman || []);
   const [weather, setWeather] = useState<any>(() => memoryHomeWeather);
+  const [isSimulasiHujan, setIsSimulasiHujan] = useState(false);
   const [isLoading, setIsLoading] = useState(() => !memoryHomeUser && !memoryHomeTanaman);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -251,17 +256,22 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     if (userData && !isLoading) {
+      // JANGAN PERNAH memicu tutorial secara otomatis jika akun yang login sudah memiliki data aktivitas:
+      // tanamanList.length > 0 ATAU (user?.exp ?? 0) > 0 ATAU (user?.level ?? 1) > 1
+      const hasActivity =
+        tanamanList.length > 0 ||
+        (userData?.exp ?? 0) > 0 ||
+        (userData?.level ?? 1) > 1;
+
+      if (hasActivity) {
+        setNeedsTutorial(false);
+        markTutorialFinished();
+        return;
+      }
+
       checkTutorialFinished().then((finished) => {
         if (!finished) {
-          // Jika user sudah punya EXP atau tanaman, berarti ini user lama (existing user)
-          // Kita anggap mereka sudah mengerti dan lewati tutorial
-          const isNewUser = (userData.exp || 0) === 0 && tanamanList.length === 0;
-          
-          if (isNewUser) {
-            setNeedsTutorial(true);
-          } else {
-            markTutorialFinished();
-          }
+          setNeedsTutorial(true);
         }
       });
     }
@@ -269,6 +279,9 @@ export default function DashboardScreen() {
 
   const startTutorialGuide = useCallback(() => {
     if (isLoading) return;
+
+    // Reset tutorial state
+    setShowTutorial(false);
 
     // 1. Reset posisi scroll ke paling atas terlebih dahulu agar pengukuran elemen akurat
     mainScrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -355,6 +368,18 @@ export default function DashboardScreen() {
           return;
         }
 
+        const currentActivity =
+          tanamanList.length > 0 ||
+          (userData?.exp ?? 0) > 0 ||
+          (userData?.level ?? 1) > 1;
+
+        if (currentActivity) {
+          clearInterval(interval);
+          setNeedsTutorial(false);
+          markTutorialFinished();
+          return;
+        }
+
         if (step1Ref.current && step2Ref.current) {
           clearInterval(interval);
           startTutorialGuide();
@@ -364,7 +389,7 @@ export default function DashboardScreen() {
 
       return () => clearInterval(interval);
     }
-  }, [needsTutorial, isLoading, startTutorialGuide]);
+  }, [needsTutorial, isLoading, startTutorialGuide, tanamanList.length, userData]);
 
   const handleBeforeTutorialStepChange = async (_currentIndex: number, nextIndex: number) => {
     const nextStep = tutorialSteps[nextIndex];
@@ -380,7 +405,9 @@ export default function DashboardScreen() {
       // 3. Ukur ulang posisi riil step4Ref di layar agar highlight coach mark presisi
       await new Promise<void>((resolve) => {
         if (!step4Ref.current) return resolve();
+        const timeout = setTimeout(() => resolve(), 250);
         step4Ref.current.measureInWindow((x, y, w, h) => {
+          clearTimeout(timeout);
           if (w > 0 && h > 0) {
             setTutorialSteps((prev) =>
               prev.map((s, idx) =>
@@ -427,11 +454,17 @@ export default function DashboardScreen() {
     try {
       const response = await api.post("/user/restore-streak");
       if (response.data) {
-        const resultData = response.data.data || response.data;
-        const { pelindung_streak, streak } = resultData;
+        const resultData = response.data?.data || response.data;
+        const pelindung_streak = resultData?.pelindung_streak !== undefined
+          ? resultData.pelindung_streak
+          : Math.max(0, (userData?.pelindung_streak || 1) - 1);
+        const streak = resultData?.streak !== undefined
+          ? resultData.streak
+          : ((userData?.streak || 0) > 0 ? userData.streak : 1);
         setUserData((prev: any) => {
           if (!prev) return prev;
           const updated = { ...prev, pelindung_streak, streak };
+          memoryHomeUser = updated;
           SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
           return updated;
         });
@@ -444,8 +477,8 @@ export default function DashboardScreen() {
         showNotification("Streak Dipulihkan!", "Jangan lupa menyiram tanaman kamu hari ini ya!", "success");
       }
     } catch (e: any) {
-      const msg = e.response?.data?.message || "Gagal memulihkan streak, coba lagi nanti.";
-      showNotification("Error", msg, "error");
+      const msg = e.response?.data?.message || "Koneksi sedang terganggu saat memulihkan streak, silakan coba lagi ya.";
+      showNotification("Belum Berhasil", msg, "error");
     } finally {
       setIsRestoring(false);
     }
@@ -509,6 +542,7 @@ export default function DashboardScreen() {
       clearInFlightRequests();
       setIsRefreshing(true);
       setIsError(false);
+      setIsSimulasiHujan(false);
     } else if (!hasLoadedDataRef.current && tanamanList.length === 0) {
       setIsLoading(true);
       setIsError(false);
@@ -608,9 +642,9 @@ export default function DashboardScreen() {
         setIsError(true);
         if (isManualRefresh) {
           showNotification(
-            "Gagal Memuat Data",
+            "Koneksi Sedang Istirahat",
             error.response?.data?.message ||
-              "Terjadi kesalahan koneksi saat memuat dashboard.",
+              "Kami belum bisa memperbarui kebunmu saat ini. Periksa koneksi internet lalu coba lagi ya!",
             "error"
           );
         }
@@ -619,7 +653,7 @@ export default function DashboardScreen() {
         if (isManualRefresh) {
           showNotification(
             "Koneksi Kurang Stabil",
-            "Menampilkan data lokal kebun tersimpan.",
+            "Menampilkan data kebun tersimpan agar kamu tetap bisa merawat tanaman.",
             "info"
           );
         }
@@ -667,6 +701,55 @@ export default function DashboardScreen() {
     }, [fetchDashboardData])
   );
 
+  // Hardware BackHandler: Double-back to exit on Beranda
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Jika ada modal yang sedang terbuka, tutup modal tersebut terlebih dahulu
+        if (showGamification) {
+          setShowGamification(false);
+          return true;
+        }
+        if (showTutorial) {
+          setShowTutorial(false);
+          markTutorialFinished();
+          return true;
+        }
+        if (showBadgeInfo) {
+          setShowBadgeInfo(false);
+          return true;
+        }
+        if (showRestorePopup) {
+          setShowRestorePopup(false);
+          return true;
+        }
+        if (showProfilePopup) {
+          setShowProfilePopup(false);
+          return true;
+        }
+
+        const now = Date.now();
+        if (now - lastBackPressRef.current < 2000) {
+          lastBackPressRef.current = 0;
+          BackHandler.exitApp();
+          return true;
+        }
+
+        lastBackPressRef.current = now;
+        if (Platform.OS === "android") {
+          ToastAndroid.show("Tekan sekali lagi untuk keluar dari TaniSync", ToastAndroid.SHORT);
+        }
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => {
+        subscription.remove();
+        lastBackPressRef.current = 0;
+      };
+    }, [showGamification, showTutorial, showBadgeInfo, showRestorePopup, showProfilePopup])
+  );
+
   const handleLogAktivitas = async (tanamanId: number, plantName?: string) => {
     // 1. Guard Mutex: Jika sedang diproses, abaikan spam klik
     if (processingWateringRef.current.has(tanamanId)) return;
@@ -678,8 +761,9 @@ export default function DashboardScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
 
-    // Simpan snapshot tanaman lama untuk rollback jika jaringan mati total
+    // Simpan snapshot tanaman & user lama untuk rollback jika jaringan mati total
     let previousPlantState: any = null;
+    let previousUserState: any = null;
 
     // 3. Optimistic UI Update: Centang hijau seketika di frontend & simpan ke cache 0ms
     setTanamanList(prev => {
@@ -701,6 +785,7 @@ export default function DashboardScreen() {
     // 4. Optimistic EXP & Streak Update: Langsung nambah di UI tanpa tunggu server
     setUserData((prev: any) => {
       if (!prev) return prev;
+      previousUserState = { ...prev };
       const updated = { 
         ...prev, 
         exp: (prev.exp || 0) + 1, 
@@ -768,9 +853,14 @@ export default function DashboardScreen() {
           return rolledBack;
         });
       }
+      if (previousUserState) {
+        setUserData(previousUserState);
+        memoryHomeUser = previousUserState;
+        SecureStore.setItemAsync("userData", JSON.stringify(previousUserState)).catch(console.error);
+      }
       showNotification(
-        "Gagal Menyimpan",
-        errMsg || "Koneksi terputus saat mencatat penyiraman.",
+        "Koneksi Kurang Stabil",
+        "Koneksi sedang kurang stabil. Tenang, coba ketuk siram sekali lagi dalam beberapa detik ya!",
         "error"
       );
     } finally {
@@ -796,11 +886,11 @@ export default function DashboardScreen() {
   const upcomingHarvests = [...tanamanList].sort((a, b) => (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999));
   
   const hasWateringTask = reminders.some(t => {
-      const sudahValidasiHariIni = t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString();
-      return t.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
+      const sudahValidasiHariIni = (t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || t.statusPenyiraman === "SUDAH_DISIRAM";
+      return (isSimulasiHujan ? false : t.statusPenyiraman !== "DITUNDA_HUJAN") && !sudahValidasiHariIni;
   });
   const currentCond = (weather?.kondisi || '').toUpperCase();
-  const isRaining = currentCond.includes('HUJAN') || currentCond.includes('RAIN') || currentCond.includes('GERIMIS') || currentCond.includes('DRIZZLE') || currentCond.includes('THUNDER') || weather?.prediksiHujanHariIni;
+  const isRaining = isSimulasiHujan || currentCond.includes('HUJAN') || currentCond.includes('RAIN') || currentCond.includes('GERIMIS') || currentCond.includes('DRIZZLE') || currentCond.includes('THUNDER') || weather?.prediksiHujanHariIni;
   const farmerState = isRaining ? 'raining' : (hasWateringTask ? 'needsWatering' : 'allClear');
 
   if (isError && tanamanList.length === 0) {
@@ -818,7 +908,7 @@ export default function DashboardScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }, { paddingBottom: 140 }]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchDashboardData(true)} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsSimulasiHujan(false); fetchDashboardData(true); }} />}
       >
         {isLoading ? (
           <View style={{ padding: 24 }}><HomeSkeleton /></View>
@@ -828,10 +918,12 @@ export default function DashboardScreen() {
             <FarmerScene 
               userName={userData?.nama || "Petani"}
               avatarUrl={userData?.avatarUrl}
-              weatherCondition={weather?.kondisi || 'CERAH'}
+              weatherCondition={isSimulasiHujan ? 'HUJAN' : (weather?.kondisi || 'CERAH')}
               temperature={weather?.suhu ? Math.round(weather.suhu) : 28}
               farmerState={farmerState}
               onProfilePress={() => router.push('/(tabs)/profil')}
+              isDemoRain={isSimulasiHujan}
+              onToggleDemoRain={() => setIsSimulasiHujan(prev => !prev)}
             />
 
             <View style={{ zIndex: 10 }}>
@@ -893,13 +985,14 @@ export default function DashboardScreen() {
               ) : (
                 reminders.map((tanaman, index) => {
                   const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
+                  const effectiveStatusPenyiraman = isSimulasiHujan && !sudahValidasiHariIni ? "DITUNDA_HUJAN" : tanaman.statusPenyiraman;
                   // Task penyiraman aktif tiap hari, kecuali kalau ditunda hujan
-                  const isWateringTask = tanaman.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni;
+                  const isWateringTask = effectiveStatusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni;
 
                   return (
                     <View key={tanaman.id} ref={index === 0 ? step3Ref : undefined}>
                       <TaskCard 
-                        task={tanaman}
+                        task={{ ...tanaman, statusPenyiraman: effectiveStatusPenyiraman }}
                         isWateringTask={isWateringTask}
                         isWateredToday={sudahValidasiHariIni}
                         onTaskPress={() => {
@@ -940,7 +1033,12 @@ export default function DashboardScreen() {
         )}
       </ScrollView>
 
-            <Modal visible={showGamification} animationType="slide" transparent={false}>
+      <Modal
+        visible={showGamification}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowGamification(false)}
+      >
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top,  backgroundColor: '#FFB627' }}>
@@ -973,7 +1071,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* HEATMAP STREAK */}
-            <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, marginBottom: 32 }}>
+            <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, marginBottom: 24 }}>
               <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924', marginBottom: 12 }}>Aktivitas 28 Hari Terakhir</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                 {Array.from({ length: 28 }).map((_, i) => {
@@ -989,6 +1087,53 @@ export default function DashboardScreen() {
                   );
                 })}
               </View>
+            </View>
+
+            {/* PELINDUNG STREAK */}
+            <View style={{ backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 32, borderWidth: 1, borderColor: '#E8E5DA' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: (userData?.streak === 0 && (userData?.exp || 0) > 0 && (userData?.pelindung_streak || 0) > 0) ? 12 : 0 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="shield" size={20} color="#3FA86B" />
+                  </View>
+                  <View>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Pelindung Streak</Text>
+                    <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 12, color: '#5C5A4F' }}>
+                      {userData?.pelindung_streak || 0} Pelindung Aktif
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 11, color: '#1B5E20' }}>
+                    {(userData?.pelindung_streak || 0) > 0 ? "Aktif" : "Kosong"}
+                  </Text>
+                </View>
+              </View>
+
+              {userData?.streak === 0 && (userData?.exp || 0) > 0 && (userData?.pelindung_streak || 0) > 0 && (
+                <Pressable
+                  onPress={handleRestoreStreak}
+                  disabled={isRestoring}
+                  style={({ pressed }) => [{
+                    backgroundColor: '#3FA86B',
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    marginTop: 4,
+                  }, pressed && { opacity: 0.9 }, isRestoring && { opacity: 0.7 }]}
+                >
+                  {isRestoring ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <MaterialIcons name="local-fire-department" size={16} color="#FFFFFF" />
+                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 13, color: '#FFFFFF' }}>
+                        Pulihkan Streak (Pakai 1 Pelindung)
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              )}
             </View>
 
             <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 18, color: '#123924', marginBottom: 16 }}>
@@ -1073,7 +1218,12 @@ export default function DashboardScreen() {
         }}
       />
 
-      <Modal transparent visible={showBadgeInfo} animationType="fade">
+      <Modal
+        transparent
+        visible={showBadgeInfo}
+        animationType="fade"
+        onRequestClose={() => setShowBadgeInfo(false)}
+      >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
@@ -1097,7 +1247,12 @@ export default function DashboardScreen() {
         </View>
       </Modal>
 
-      <Modal transparent visible={showRestorePopup} animationType="fade">
+      <Modal
+        transparent
+        visible={showRestorePopup}
+        animationType="fade"
+        onRequestClose={handleIgnoreRestore}
+      >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 0, shadowColor: '#123924', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.15, shadowRadius: 32, elevation: 10, padding: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>

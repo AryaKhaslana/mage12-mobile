@@ -104,6 +104,7 @@ const STATIC_MAP_HTML = `
       border-radius: 50%;
       background-color: rgba(16, 185, 129, 0.35);
       animation: pulseRadar 2.2s infinite ease-out;
+      will-change: transform, opacity;
     }
     .pulse-dot {
       position: absolute;
@@ -133,9 +134,7 @@ const STATIC_MAP_HTML = `
 
     /* Neoclay Glassmorphic Legend */
     .legend {
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.96);
       padding: 10px 14px;
       border-radius: 16px;
       box-shadow: 0 6px 20px rgba(18, 57, 36, 0.12);

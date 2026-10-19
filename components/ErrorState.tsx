@@ -15,8 +15,8 @@ interface ErrorStateProps {
 
 export default function ErrorState({ 
   onRetry, 
-  title = "Koneksi Internet Terputus", 
-  subtitle = "Kami tidak dapat terhubung ke server. Silakan periksa koneksi data atau Wi-Fi kamu, lalu coba lagi.",
+  title = "Koneksi Sedang Istirahat Sejenak", 
+  subtitle = "Kami belum bisa menjangkau kebun digitalmu saat ini. Pastikan internetmu aktif lalu coba muat ulang ya!",
   icon = "wifi-off",
   isRetrying = false
 }: ErrorStateProps) {

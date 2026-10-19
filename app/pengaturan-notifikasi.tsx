@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, ActivityIndicator, Modal, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
 import api, { registerOnLogout } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 import { registerForPushNotificationsAsync, scheduleDailyPlantReminder, cancelAllPlantReminders } from '../services/notificationService';
@@ -27,6 +28,7 @@ export default function PengaturanNotifikasiScreen() {
   const [isEnabled, setIsEnabled] = useState(() => memoryNotifSettings ? memoryNotifSettings.isEnabled : false);
   const [selectedTime, setSelectedTime] = useState(() => memoryNotifSettings ? memoryNotifSettings.selectedTime : TIME_OPTIONS[1]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   
   const { showNotification } = useNotification();
 
@@ -65,11 +67,11 @@ export default function PengaturanNotifikasiScreen() {
         const targetTime = matchedTime || selectedTime;
         memoryNotifSettings = { isEnabled: shouldEnable, selectedTime: targetTime };
 
-        // Run permission verification and schedule refresh in the background non-blocking
+        // Verifikasi izin yang sudah ada tanpa memunculkan pop-up izin mendadak di mount
         if (shouldEnable) {
           const targetTime = matchedTime || selectedTime;
-          registerForPushNotificationsAsync().then((granted) => {
-            if (granted) {
+          Notifications.getPermissionsAsync().then(({ status }) => {
+            if (status === 'granted') {
               scheduleDailyPlantReminder(targetTime.hour, targetTime.minute).catch(() => {});
             } else {
               setIsEnabled(false);
@@ -96,8 +98,16 @@ export default function PengaturanNotifikasiScreen() {
       await SecureStore.setItemAsync('notifEnabled', value ? 'true' : 'false');
       
       if (value) {
-        const granted = await registerForPushNotificationsAsync();
-        if (granted) {
+        const { status: existingStatus, canAskAgain } = await Notifications.getPermissionsAsync().catch(() => ({ status: 'undetermined' as Notifications.PermissionStatus, canAskAgain: true }));
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          if (canAskAgain) {
+            const perm = await Notifications.requestPermissionsAsync().catch(() => ({ status: 'denied' as Notifications.PermissionStatus, canAskAgain: false }));
+            finalStatus = perm.status;
+          }
+        }
+
+        if (finalStatus === 'granted') {
           await scheduleDailyPlantReminder(selectedTime.hour, selectedTime.minute);
           await api.put('/user/setting-notif', { jamNotif: selectedTime.label });
           const storedUser = await SecureStore.getItemAsync('userData');
@@ -108,14 +118,23 @@ export default function PengaturanNotifikasiScreen() {
               await SecureStore.setItemAsync('userData', JSON.stringify(u));
             } catch {}
           }
-          showNotification("Berhasil", "Pengingat harian berhasil diaktifkan!", "success");
+          showNotification("Pengingat Aktif", `Pengingat harian berhasil diaktifkan untuk pukul ${selectedTime.label}.`, "success");
         } else {
-          showNotification("Izin Notifikasi Ditolak", "Silakan aktifkan izin notifikasi melalui pengaturan perangkat kamu untuk menerima pengingat harian.", "error");
           setIsEnabled(false);
           if (memoryNotifSettings) {
             memoryNotifSettings.isEnabled = false;
           }
           await SecureStore.setItemAsync('notifEnabled', 'false');
+
+          if (!canAskAgain) {
+            setShowPermissionModal(true);
+          } else {
+            showNotification(
+              "Izin Notifikasi Ditolak",
+              "Silakan aktifkan izin notifikasi melalui pengaturan perangkat kamu untuk menerima pengingat harian.",
+              "error"
+            );
+          }
         }
       } else {
         await api.put('/user/setting-notif', { jamNotif: null });
@@ -128,7 +147,7 @@ export default function PengaturanNotifikasiScreen() {
           } catch {}
         }
         await cancelAllPlantReminders();
-        showNotification("Dinonaktifkan", "Pengingat harian telah dinonaktifkan.", "success");
+        showNotification("Pengingat Nonaktif", "Pengingat harian telah dinonaktifkan.", "info");
       }
     } catch (e) {
       console.error(e);
@@ -162,7 +181,7 @@ export default function PengaturanNotifikasiScreen() {
       
       if (isEnabled) {
         await scheduleDailyPlantReminder(timeOption.hour, timeOption.minute);
-        showNotification("Berhasil Diperbarui", `Pengingat diatur untuk pukul ${timeOption.label}`, "success");
+        showNotification("Jadwal Tersimpan", `Pengingat harian berhasil diatur untuk pukul ${timeOption.label}.`, "success");
       }
     } catch (e) {
       console.error(e);
@@ -234,6 +253,44 @@ export default function PengaturanNotifikasiScreen() {
         </View>
 
       </View>
+
+      {/* MODAL PANDUAN PENGATURAN IZIN NOTIFIKASI */}
+      <Modal
+        visible={showPermissionModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => setShowPermissionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.permissionModalCard}>
+            <View style={styles.modalIconContainer}>
+              <MaterialIcons name="notifications-off" size={32} color="#FF6B5C" />
+            </View>
+            <Text style={styles.modalAlertTitle}>Izin Notifikasi Dinonaktifkan</Text>
+            <Text style={styles.modalAlertSubtitle}>
+              Kamu sebelumnya menonaktifkan izin notifikasi untuk TaniSync. Agar pengingat perawatan tanaman dapat berbunyi tepat waktu, aktifkan izin notifikasi di Pengaturan HP kamu.
+            </Text>
+            <View style={styles.modalButtonCol}>
+              <Pressable
+                style={({ pressed }) => [styles.settingsPrimaryBtn, pressed && styles.btnPressed]}
+                onPress={() => {
+                  setShowPermissionModal(false);
+                  Linking.openSettings();
+                }}
+              >
+                <Text style={styles.settingsPrimaryBtnText}>Buka Pengaturan HP</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.settingsSecondaryBtn, pressed && styles.btnPressed]}
+                onPress={() => setShowPermissionModal(false)}
+              >
+                <Text style={styles.settingsSecondaryBtnText}>Nanti Saja</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -320,5 +377,83 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_500Medium',
     color: '#5C5A4F',
     marginTop: 8,
-    lineHeight: 18 }
+    lineHeight: 18,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(18, 57, 36, 0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  permissionModalCard: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#123924",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#FFECEB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  modalAlertTitle: {
+    fontFamily: "Nunito_800ExtraBold",
+    fontSize: 18,
+    color: "#123924",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  modalAlertSubtitle: {
+    fontFamily: "Nunito_500Medium",
+    fontSize: 14,
+    color: "#5C5A4F",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalButtonCol: {
+    width: "100%",
+    gap: 10,
+  },
+  settingsPrimaryBtn: {
+    width: "100%",
+    backgroundColor: "#3FA86B",
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  settingsPrimaryBtnText: {
+    fontFamily: "Nunito_800ExtraBold",
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  settingsSecondaryBtn: {
+    width: "100%",
+    backgroundColor: "#FBF8F0",
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E8E5DA",
+  },
+  settingsSecondaryBtnText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 15,
+    color: "#5C5A4F",
+  },
+  btnPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
 });

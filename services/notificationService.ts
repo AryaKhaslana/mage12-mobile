@@ -100,6 +100,15 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
     // Non-fatal, use default body
   }
 
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "Pengingat Kebun TaniSync",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#3FA86B",
+    }).catch(() => {});
+  }
+
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "Waktunya Merawat Tanaman!",

@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from "expo-secure-store";
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
-import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Linking, Modal, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
 import { getPlantImage } from '../constants/plantImages';
@@ -130,8 +130,15 @@ export default function DetailTanamanModal() {
   const [showCertificate, setShowCertificate] = useState(false);
   const [showHarvestConfirm, setShowHarvestConfirm] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [isSyncFailed, setIsSyncFailed] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [previewPhotoUri, setPreviewPhotoUri] = useState<string | null>(null);
+  const [showCameraPermissionModal, setShowCameraPermissionModal] = useState(false);
   const wateringLockRef = useRef(false);
   const photoLockRef = useRef(false);
+  const isDemoHarvestRef = useRef(false);
+  const harvestTapCountRef = useRef(0);
+  const harvestTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   
   const handleOpenEdit = () => {
@@ -188,38 +195,62 @@ export default function DetailTanamanModal() {
     try {
       // Tidak set isLoading(true) di sini karena state awal sudah true.
       // Jika refresh dari useFocusEffect, fetch berjalan silently di background (tanpa loading berulang).
-      const [tanamanData, logsData] = await Promise.all([
+      const [tanamanRes, logsRes] = await Promise.allSettled([
         getTanamanById(tanamanId),
         getLogsByTanaman(tanamanId)
       ]);
-      setTanaman(tanamanData);
-      setLogs(logsData);
-    } catch (e: any) {
-      console.warn("Gagal sinkronisasi data tanaman terbaru:", e);
-      try {
-        const cached = await AsyncStorage.getItem("dashboard_tanaman");
-        if (cached) {
-          const list: TanamanDetail[] = JSON.parse(cached);
-          const found = list.find((t) => t.id === tanamanId);
-          if (found) {
-            setTanaman(found);
-            setIsLoading(false);
-            return;
-          }
-        }
-      } catch {}
 
-      setTanaman((curr) => {
-        if (!curr) {
-          showNotification("Koneksi Terputus", "Gagal memuat data tanaman. Silakan periksa koneksi internet.", "error");
+      if (tanamanRes.status === 'fulfilled') {
+        setTanaman(tanamanRes.value);
+      }
+      if (logsRes.status === 'fulfilled') {
+        setLogs(logsRes.value);
+      }
+
+      const hasTanamanError = tanamanRes.status === 'rejected';
+      const hasLogsError = logsRes.status === 'rejected';
+
+      if (hasTanamanError || hasLogsError) {
+        let hasData = false;
+        try {
+          const cached = await AsyncStorage.getItem("dashboard_tanaman");
+          if (cached) {
+            const list: TanamanDetail[] = JSON.parse(cached);
+            const found = list.find((t) => t.id === tanamanId);
+            if (found) {
+              if (hasTanamanError) {
+                setTanaman(found);
+              }
+              hasData = true;
+            }
+          }
+        } catch {}
+
+        setTanaman((curr) => {
+          if (curr || hasData) {
+            setIsSyncFailed(true);
+            return curr;
+          }
+          showNotification("Koneksi Sedang Istirahat", "Belum bisa memuat data tanaman saat ini. Pastikan internetmu aktif lalu coba lagi ya!", "error");
           router.back();
-        }
-        return curr;
-      });
+          return curr;
+        });
+      } else {
+        setIsSyncFailed(false);
+      }
     } finally {
       setIsLoading(false);
     }
   }, [tanamanId, showNotification, router]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchData]);
 
   useFocusEffect(
     useCallback(() => {
@@ -318,8 +349,30 @@ export default function DetailTanamanModal() {
       setShowCertificate(true);
       setIsHarvesting(false);
     } catch (e: any) {
-      setIsHarvesting(false);
-      showNotification("Gagal", e.response?.data?.message || "Gagal memanen.", "error");
+      if (isDemoHarvestRef.current) {
+        // Fallback demo panen jika server backend menolak karena tanggal tanam asli di DB
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        showNotification("Berhasil", "Mode Demo: Panen berhasil! +50 EXP", "success");
+        try {
+          const cached = await SecureStore.getItemAsync("userData");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            parsed.exp = (parsed.exp || 0) + 50;
+            await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
+          }
+          const cachedTanaman = await AsyncStorage.getItem("dashboard_tanaman");
+          if (cachedTanaman) {
+            const list: TanamanDetail[] = JSON.parse(cachedTanaman);
+            const filtered = list.filter((t) => t.id !== tanamanId);
+            await AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(filtered));
+          }
+        } catch {}
+        setShowCertificate(true);
+        setIsHarvesting(false);
+      } else {
+        setIsHarvesting(false);
+        showNotification("Gagal", e.response?.data?.message || "Gagal memanen.", "error");
+      }
     }
   };
 
@@ -472,52 +525,23 @@ export default function DetailTanamanModal() {
     if (photoLockRef.current || isSubmitting || isUploadingPhoto) return;
     
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        showNotification("Izin Ditolak", "TaniSync membutuhkan izin kamera untuk memvalidasi foto tanaman kamu.", "error");
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (perm.status !== 'granted') {
+        if (perm.canAskAgain === false) {
+          setShowCameraPermissionModal(true);
+        } else {
+          showNotification("Izin Ditolak", "TaniSync membutuhkan izin kamera untuk memvalidasi foto tanaman kamu.", "error");
+        }
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.6 });
+        quality: 0.6,
+      });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        
-        Alert.alert("Validasi Foto", "Apakah kamu yakin ingin mengirim foto ini?", [
-          { text: "Batal", style: "cancel" },
-          { text: "Kirim", onPress: async () => {
-              if (photoLockRef.current || isSubmitting) return;
-              photoLockRef.current = true;
-              setIsSubmitting(true);
-              setIsUploadingPhoto(true);
-              try {
-                const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uri });
-                if (res.levelUp) {
-                  setToastMessage(`LEVEL UP! Level ${res.level}`);
-                } else {
-                  setToastMessage(`Mantap! +${res.expDidapat} EXP! Streak: ${res.streak} hari`);
-                }
-                const cached = await SecureStore.getItemAsync("userData");
-                if (cached) {
-                  const parsed = JSON.parse(cached);
-                  parsed.exp = res.expSekarang;
-                  parsed.level = res.level;
-                  parsed.streak = res.streak;
-                  await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
-                }
-                setTimeout(() => setToastMessage(null), 4000);
-                fetchData();
-              } catch (e: any) {
-                showNotification("Gagal", e.response?.data?.message || "Gagal upload foto", "error");
-              } finally {
-                setIsSubmitting(false);
-                setIsUploadingPhoto(false);
-                photoLockRef.current = false;
-              }
-          }}
-        ]);
+        setPreviewPhotoUri(result.assets[0].uri);
       }
     } catch (e: any) {
       setIsSubmitting(false);
@@ -525,6 +549,44 @@ export default function DetailTanamanModal() {
       photoLockRef.current = false;
       showNotification("Gagal", e?.message || "Gagal membuka kamera", "error");
     }
+  };
+
+  const handleConfirmPhotoJournal = async () => {
+    if (!previewPhotoUri || photoLockRef.current || isSubmitting || isUploadingPhoto) return;
+    photoLockRef.current = true;
+    setIsSubmitting(true);
+    setIsUploadingPhoto(true);
+    const uriToUpload = previewPhotoUri;
+    try {
+      const res = await createLog({ tanamanId, tipeValidasi: "photo", fotoUri: uriToUpload });
+      setPreviewPhotoUri(null);
+      if (res.levelUp) {
+        setToastMessage(`LEVEL UP! Level ${res.level}`);
+      } else {
+        setToastMessage(`Mantap! +${res.expDidapat} EXP! Streak: ${res.streak} hari`);
+      }
+      const cached = await SecureStore.getItemAsync("userData");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        parsed.exp = res.expSekarang;
+        parsed.level = res.level;
+        parsed.streak = res.streak;
+        await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
+      }
+      setTimeout(() => setToastMessage(null), 4000);
+      fetchData();
+    } catch (e: any) {
+      showNotification("Gagal", e.response?.data?.message || "Gagal upload foto", "error");
+    } finally {
+      setIsSubmitting(false);
+      setIsUploadingPhoto(false);
+      photoLockRef.current = false;
+    }
+  };
+
+  const handleCancelPhotoPreview = () => {
+    if (isUploadingPhoto || isSubmitting) return;
+    setPreviewPhotoUri(null);
   };
 
   const [currentTimestamp] = useState(() => Date.now());
@@ -557,6 +619,42 @@ export default function DetailTanamanModal() {
       </SafeAreaView>
     );
   }
+
+  const activateDemoHarvest = useCallback(async () => {
+    isDemoHarvestRef.current = true;
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
+    setTanaman((prev) => (prev ? { ...prev, sisaHariPanen: 0 } : prev));
+    try {
+      const cached = await AsyncStorage.getItem("dashboard_tanaman");
+      if (cached) {
+        const list: TanamanDetail[] = JSON.parse(cached);
+        const updated = list.map((t) => (t.id === tanamanId ? { ...t, sisaHariPanen: 0 } : t));
+        await AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(updated));
+      }
+    } catch {}
+    showNotification(
+      "Mode Demo Panen Aktif",
+      "Mode Demo Panen Aktif: Tanaman siap dipanen sekarang!",
+      "success"
+    );
+  }, [tanamanId, showNotification]);
+
+  const handleHarvestCardPress = useCallback(() => {
+    harvestTapCountRef.current += 1;
+    if (harvestTapTimerRef.current) {
+      clearTimeout(harvestTapTimerRef.current);
+    }
+    if (harvestTapCountRef.current >= 3) {
+      harvestTapCountRef.current = 0;
+      activateDemoHarvest();
+    } else {
+      harvestTapTimerRef.current = setTimeout(() => {
+        harvestTapCountRef.current = 0;
+      }, 600);
+    }
+  }, [activateDemoHarvest]);
 
   if (!tanaman) return null;
   const totalDays = tanaman.daysToHarvest || 30;
@@ -611,7 +709,17 @@ export default function DetailTanamanModal() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={['#3FA86B']}
+            tintColor="#3FA86B"
+          />
+        }
+      >
         {toastMessage && (
           <View style={styles.toast}>
             <Text style={styles.toastText}>{toastMessage}</Text>
@@ -758,7 +866,15 @@ export default function DetailTanamanModal() {
         </View>
 
         {/* HARVEST ESTIMATION CARD */}
-        <View style={styles.harvestCard}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.harvestCard,
+            pressed && { opacity: 0.95, transform: [{ scale: 0.99 }] }
+          ]}
+          onPress={handleHarvestCardPress}
+          onLongPress={activateDemoHarvest}
+          delayLongPress={500}
+        >
           <View style={styles.harvestTopRow}>
             <View style={styles.harvestLeft}>
               <View style={styles.harvestIconPill}>
@@ -781,10 +897,10 @@ export default function DetailTanamanModal() {
           <View style={styles.harvestProgressBarTrack}>
             <View style={[styles.harvestProgressBarFill, { width: `${progressPercent}%` }]} />
           </View>
-        </View>
+        </Pressable>
 
 
-        {tanaman.sisaHariPanen <= 0 && (
+        {(tanaman.sisaHariPanen ?? 999) <= 0 && (
           <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
             <TouchableOpacity 
               style={styles.harvestActionBtn} 
@@ -822,6 +938,16 @@ export default function DetailTanamanModal() {
               </View>
             )
           )
+        )}
+
+        {/* BANNER STATUS SINKRONISASI CACHE (JIKA FETCH GAGAL) */}
+        {isSyncFailed && (
+          <View style={styles.syncNoticeBanner}>
+            <MaterialIcons name="cloud-off" size={16} color="#B45309" style={{ marginRight: 8 }} />
+            <Text style={styles.syncNoticeText}>
+              Menampilkan data kebun tersimpan. Tarik atau buka kembali saat sinyal stabil untuk menyinkronkan riwayat terbaru.
+            </Text>
+          </View>
         )}
 
         {/* HISTORY SECTION */}
@@ -906,7 +1032,7 @@ export default function DetailTanamanModal() {
 
     
       {/* EDIT MODAL */}
-      <Modal visible={isEditModalVisible} transparent animationType="slide">
+      <Modal visible={isEditModalVisible} transparent animationType="slide" onRequestClose={() => setIsEditModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -975,7 +1101,7 @@ export default function DetailTanamanModal() {
       </Modal>
 
       
-      <Modal visible={showDeleteConfirm} animationType="fade" transparent>
+      <Modal visible={showDeleteConfirm} animationType="fade" transparent onRequestClose={() => setShowDeleteConfirm(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Image source={require("../assets/images/icontampilanawal/seedling-ngantuk.svg")} style={{ width: 120, height: 120, marginBottom: 16 }} contentFit="contain" />
@@ -995,7 +1121,7 @@ export default function DetailTanamanModal() {
         </View>
       </Modal>
 
-      <Modal visible={showHarvestConfirm} animationType="fade" transparent>
+      <Modal visible={showHarvestConfirm} animationType="fade" transparent onRequestClose={() => setShowHarvestConfirm(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.7)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, padding: 24, borderWidth: 0,  shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4, alignItems: 'center' }}>
             <Image source={require("../assets/images/icontampilanawal/seedling-lompat.svg")} style={{ width: 120, height: 120, marginBottom: 16 }} contentFit="contain" />
@@ -1015,7 +1141,10 @@ export default function DetailTanamanModal() {
         </View>
       </Modal>
 
-      <Modal visible={showCertificate} animationType="slide" transparent>
+      <Modal visible={showCertificate} animationType="slide" transparent onRequestClose={() => {
+        setShowCertificate(false);
+        router.back();
+      }}>
         <View style={{ flex: 1, backgroundColor: 'rgba(28, 28, 59, 0.95)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FBF8F0', borderRadius: 24, overflow: 'hidden', borderWidth: 0, borderColor: '#FFB627', paddingBottom: 24, shadowColor: '#FFB627', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 }}>
             
@@ -1074,6 +1203,110 @@ export default function DetailTanamanModal() {
               >
                 <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 16, color: '#5C5A4F' }}>Kembali ke Kebun</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL PREVIEW FOTO JURNAL (NEOCLAY) */}
+      <Modal
+        transparent
+        visible={!!previewPhotoUri}
+        animationType="fade"
+        onRequestClose={handleCancelPhotoPreview}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.previewCard}>
+            <Text style={styles.previewTitle}>Kirim Jurnal Foto Ini?</Text>
+            <Text style={styles.previewSubtitle}>
+              Foto tanaman kamu siap dicatat ke dalam jurnal harian kebun.
+            </Text>
+
+            {previewPhotoUri && (
+              <View style={styles.previewImageContainer}>
+                <Image
+                  source={{ uri: previewPhotoUri }}
+                  style={styles.previewImage}
+                  contentFit="cover"
+                />
+              </View>
+            )}
+
+            <View style={styles.previewBtnRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.previewCancelBtn,
+                  pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+                  (isUploadingPhoto || isSubmitting) && { opacity: 0.5 },
+                ]}
+                onPress={handleCancelPhotoPreview}
+                disabled={isUploadingPhoto || isSubmitting}
+              >
+                <Text style={styles.previewCancelText}>Batal / Foto Ulang</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.previewSubmitBtn,
+                  pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                  (isUploadingPhoto || isSubmitting) && { opacity: 0.7 },
+                ]}
+                onPress={handleConfirmPhotoJournal}
+                disabled={isUploadingPhoto || isSubmitting}
+              >
+                {isUploadingPhoto || isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.previewSubmitText}>Kirim Jurnal</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL IZIN KAMERA DIKUNCI / PERMANEN DITOLAK */}
+      <Modal
+        transparent
+        visible={showCameraPermissionModal}
+        animationType="fade"
+        onRequestClose={() => setShowCameraPermissionModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.previewCard}>
+            <View style={{ alignItems: 'center', marginBottom: 8 }}>
+              <View style={styles.permissionIconCircle}>
+                <MaterialIcons name="videocam-off" size={26} color="#FF6B5C" />
+              </View>
+              <Text style={styles.previewTitle}>Izin Kamera Diperlukan</Text>
+              <Text style={styles.permissionSubtitle}>
+                Akses kamera telah dibatasi oleh pengaturan perangkat. Silakan aktifkan izin kamera melalui Pengaturan HP agar kamu bisa memotret tanaman kebunmu.
+              </Text>
+            </View>
+
+            <View style={styles.previewBtnRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.previewCancelBtn,
+                  pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={() => setShowCameraPermissionModal(false)}
+              >
+                <Text style={styles.previewCancelText}>Nanti Saja</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.previewSubmitBtn,
+                  pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={() => {
+                  setShowCameraPermissionModal(false);
+                  Linking.openSettings().catch(() => {});
+                }}
+              >
+                <Text style={styles.previewSubmitText}>Buka Pengaturan HP</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -1438,5 +1671,120 @@ const styles = StyleSheet.create({
   toastText: { color: '#123924', fontWeight: '800', textAlign: 'center' },
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(18,57,36,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   emptyState: { alignItems: 'center', paddingVertical: 32, opacity: 0.7 },
-  emptyText: { fontSize: 14, color: '#5C5A4F', fontWeight: '600' }
+  emptyText: { fontSize: 14, color: '#5C5A4F', fontWeight: '600' },
+
+  syncNoticeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9E6',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginHorizontal: 20,
+    marginBottom: 16,
+  },
+  syncNoticeText: {
+    flex: 1,
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: '#92400E',
+    lineHeight: 17,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(28, 28, 59, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  previewCard: {
+    width: '100%',
+    backgroundColor: '#FBF8F0',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#123924',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  previewTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 20,
+    color: '#123924',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  previewSubtitle: {
+    fontFamily: 'Nunito_500Medium',
+    fontSize: 13,
+    color: '#5C5A4F',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  permissionSubtitle: {
+    fontFamily: 'Nunito_500Medium',
+    fontSize: 13,
+    color: '#5C5A4F',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  permissionIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FFECEB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  previewImageContainer: {
+    width: '100%',
+    height: 220,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#E8E5DA',
+    marginBottom: 18,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  previewBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+    width: '100%',
+  },
+  previewCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#EAE7DD',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewCancelText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 14,
+    color: '#5C5A4F',
+  },
+  previewSubmitBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#3FA86B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewSubmitText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
 });

@@ -1,11 +1,12 @@
+/* eslint-disable react-hooks/immutability */
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
-  withTiming } from 'react-native-reanimated';
+  withTiming,
+} from 'react-native-reanimated';
 
 export type CoachMarkStep = {
   rect: { x: number; y: number; width: number; height: number };
@@ -48,58 +49,50 @@ export default function CoachMarkOverlay({
   const stepsRef = React.useRef(steps);
   stepsRef.current = steps;
 
-  const wasVisibleRef = React.useRef(false);
-  const hasInitializedRef = React.useRef(false);
+  const prevVisibleRef = React.useRef(false);
 
-  // Initialize values only when overlay transitions from invisible to visible
+  // Initialize values and reset step to 0 whenever overlay becomes visible
   useEffect(() => {
     if (visible) {
-      if (!wasVisibleRef.current) {
-        wasVisibleRef.current = true;
-        hasInitializedRef.current = false;
+      if (!prevVisibleRef.current) {
+        prevVisibleRef.current = true;
         setCurrentStepIndex(0);
         setShowConfirmSkip(false);
         setIsTransitioning(false);
-      }
 
-      if (!hasInitializedRef.current && steps.length > 0) {
-        hasInitializedRef.current = true;
-        const step = steps[0];
-        currentX.value = step.rect.x - 8;
-        currentY.value = step.rect.y - 8;
-        currentW.value = step.rect.width + 16;
-        currentH.value = step.rect.height + 16;
-        currentR.value = step.borderRadius || 12;
-        opacity.value = withTiming(1, { duration: 300 });
+        if (steps.length > 0) {
+          const step = steps[0];
+          currentX.value = withTiming(step.rect.x - 8, { duration: 200 });
+          currentY.value = withTiming(step.rect.y - 8, { duration: 200 });
+          currentW.value = withTiming(step.rect.width + 16, { duration: 200 });
+          currentH.value = withTiming(step.rect.height + 16, { duration: 200 });
+          currentR.value = withTiming(step.borderRadius || 12, { duration: 200 });
+        }
       }
+      opacity.value = withTiming(1, { duration: 200 });
     } else {
-      if (wasVisibleRef.current) {
-        wasVisibleRef.current = false;
-        hasInitializedRef.current = false;
-        opacity.value = withTiming(0, { duration: 300 });
+      if (prevVisibleRef.current) {
+        prevVisibleRef.current = false;
+        setCurrentStepIndex(0);
+        setShowConfirmSkip(false);
+        setIsTransitioning(false);
+        opacity.value = withTiming(0, { duration: 200 });
       }
     }
   }, [visible, steps, currentX, currentY, currentW, currentH, currentR, opacity]);
 
   // Update target coordinates when step changes or when step rect is dynamically updated
   useEffect(() => {
-    if (visible && steps[currentStepIndex] && hasInitializedRef.current) {
+    if (visible && steps[currentStepIndex]) {
       const step = steps[currentStepIndex];
-      const config = { damping: 15, stiffness: 120 };
-      // Tambah padding 8px biar ujungnya (border-radius) nggak motong teks/konten
-      // eslint-disable-next-line react-hooks/immutability
-      currentX.value = withSpring(step.rect.x - 8, config);
-      // eslint-disable-next-line react-hooks/immutability
-      currentY.value = withSpring(step.rect.y - 8, config);
-      // eslint-disable-next-line react-hooks/immutability
-      currentW.value = withSpring(step.rect.width + 16, config);
-      // eslint-disable-next-line react-hooks/immutability
-      currentH.value = withSpring(step.rect.height + 16, config);
-      // eslint-disable-next-line react-hooks/immutability
-      currentR.value = withSpring(step.borderRadius || 12, config);
+      // Transisi halus 200ms tanpa pantulan berlebih
+      currentX.value = withTiming(step.rect.x - 8, { duration: 200 });
+      currentY.value = withTiming(step.rect.y - 8, { duration: 200 });
+      currentW.value = withTiming(step.rect.width + 16, { duration: 200 });
+      currentH.value = withTiming(step.rect.height + 16, { duration: 200 });
+      currentR.value = withTiming(step.borderRadius || 12, { duration: 200 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStepIndex, visible, steps]);
+  }, [currentStepIndex, visible, steps, currentX, currentY, currentW, currentH, currentR]);
 
   const B = 2000; // Huge border thickness
   const maskStyle = useAnimatedStyle(() => ({
@@ -142,7 +135,7 @@ export default function CoachMarkOverlay({
     return {
       position: 'absolute',
       left: bubbleX,
-      top: withSpring(safeY, { damping: 15, stiffness: 120 }),
+      top: withTiming(safeY, { duration: 200 }),
       width: BUBBLE_WIDTH,
       opacity: opacity.value };
   });
@@ -165,11 +158,15 @@ export default function CoachMarkOverlay({
       try {
         const nextIndex = currentStepIndex + 1;
         if (onBeforeStepChange) {
-          await Promise.resolve(onBeforeStepChange(currentStepIndex, nextIndex));
+          const changePromise = Promise.resolve(onBeforeStepChange(currentStepIndex, nextIndex));
+          const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 1500));
+          await Promise.race([changePromise, timeoutPromise]);
         }
         const latestStep = stepsRef.current[nextIndex] || steps[nextIndex];
         onStepChange?.(nextIndex, latestStep);
         setCurrentStepIndex(nextIndex);
+      } catch (err) {
+        console.warn("CoachMark transition error:", err);
       } finally {
         setIsTransitioning(false);
       }

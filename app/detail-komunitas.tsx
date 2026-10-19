@@ -227,9 +227,13 @@ export default function DetailKomunitasScreen() {
       // Ensure state matches backend truth
       setPost(prev => prev ? { ...prev, isLiked: res.liked, jumlahLike: res.jumlahLike } : null);
     } catch (e: any) {
-      // Revert
-      setPost(prev => prev ? { ...prev, isLiked: oldLiked, jumlahLike: oldJumlah } : null);
-      showNotification("Gagal", e.response?.data?.message || "Gagal menyukai postingan.", "error");
+      if (e?.response?.status === 409) {
+        // Silent handle: status 409 Conflict diabaikan dan jangan me-revert state optimistic UI
+      } else {
+        // Revert jika error selain 409
+        setPost(prev => prev ? { ...prev, isLiked: oldLiked, jumlahLike: oldJumlah } : null);
+        showNotification("Belum Berhasil", "Tanggapan suka belum tersimpan, silakan coba lagi.", "error");
+      }
     } finally {
       setIsLiking(false);
     }

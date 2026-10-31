@@ -1075,34 +1075,84 @@ export default function DashboardScreen() {
       >
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
           {/* HEADER */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, paddingTop: 16 + insets.top,  backgroundColor: '#FFB627' }}>
-            <View>
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#123924' }}>Peta Perjalanan Tani</Text>
-              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Lv.{userData?.level || 1} • {userData?.streak || 0} Streak</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 18, paddingTop: 16 + insets.top, backgroundColor: '#123924' }}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <MaterialIcons name="workspace-premium" size={16} color="#FFB627" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 11, color: '#FFB627', letterSpacing: 0.8 }}>
+                  PETA PERJALANAN TANI
+                </Text>
+              </View>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 22, color: '#FFFFFF' }}>
+                {(() => {
+                  const l = userData?.level || 1;
+                  if (l >= 10) return "Dewa Tani";
+                  if (l >= 8) return "Sultan Hidroponik";
+                  if (l >= 4) return "Juragan Panen";
+                  if (l >= 2) return "Tangan Dingin";
+                  return "Petani Balkon";
+                })()}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,182,39,0.2)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 100 }}>
+                  <MaterialIcons name="stars" size={13} color="#FFB627" />
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#FFB627' }}>Level {userData?.level || 1}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(63,168,107,0.25)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 100 }}>
+                  <MaterialIcons name="local-fire-department" size={13} color="#6EE7A0" />
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#6EE7A0' }}>{userData?.streak || 0} Hari Streak</Text>
+                </View>
+              </View>
             </View>
-            <TouchableOpacity onPress={() => setShowGamification(false)} style={{ backgroundColor: '#FFECEB', padding: 8, borderRadius: 100 }}>
-              <MaterialIcons name="close" size={24} color="#123924" />
+            <TouchableOpacity onPress={() => setShowGamification(false)} style={{ backgroundColor: 'rgba(255,255,255,0.14)', padding: 10, borderRadius: 100 }}>
+              <MaterialIcons name="close" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
           {/* ROADMAP SCROLL */}
-          <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
             
             {/* LEVEL PROGRESS */}
-            <View style={{ backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 24 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Level Progress</Text>
-                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#3FA86B' }}>
-                  {(userData?.exp || 0) % 100} / 100 EXP
-                </Text>
-              </View>
-              <View style={{ height: 16, backgroundColor: '#E8F5E9', borderRadius: 8, overflow: 'hidden' }}>
-                <View style={{ width: `${(userData?.exp || 0) % 100}%`, height: '100%', backgroundColor: '#3FA86B', }} />
-              </View>
-              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: '#5C5A4F', marginTop: 8, textAlign: 'center' }}>
-                Naikin level dengan rajin panen dan jaga streak harian!
-              </Text>
-            </View>
+            {(() => {
+              const currLvl = userData?.level || 1;
+              const expMod = (userData?.exp || 0) % 100;
+              const sisaExp = 100 - expMod;
+              return (
+                <View style={{ backgroundColor: '#FFFFFF', padding: 18, borderRadius: 20, marginBottom: 18, borderWidth: 1, borderColor: '#E8E5DA', shadowColor: '#123924', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 2 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#FFF8E6', alignItems: 'center', justifyContent: 'center' }}>
+                        <MaterialIcons name="trending-up" size={18} color="#D97706" />
+                      </View>
+                      <View>
+                        <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>
+                          Menuju Level {currLvl + 1}
+                        </Text>
+                        <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 11, color: '#5C5A4F' }}>
+                          Kurang {sisaExp} EXP lagi untuk naik level
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={{ backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 }}>
+                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#1F5C3D' }}>
+                        {expMod} / 100 EXP
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={{ height: 12, backgroundColor: '#F1EEE6', borderRadius: 100, overflow: 'hidden' }}>
+                    <View style={{ width: `${Math.max(6, expMod)}%`, height: '100%', backgroundColor: '#3FA86B', borderRadius: 100 }} />
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                    <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 11, color: '#5C5A4F' }}>
+                      Siram harian (+10–15 EXP) {"\u2022"} Panen (+50 EXP)
+                    </Text>
+                    <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 11, color: '#D97706' }}>
+                      Hadiah: +1 Pelindung
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
 
             {/* HEATMAP STREAK */}
             <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, marginBottom: 24 }}>
@@ -1186,53 +1236,192 @@ export default function DashboardScreen() {
               )}
             </View>
 
-            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 18, color: '#123924', marginBottom: 16 }}>
-              Peta Level Kamu
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <View>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 18, color: '#123924' }}>
+                  Peta Level Kamu
+                </Text>
+                <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 12, color: '#5C5A4F' }}>
+                  Buka gelar tertinggi dengan merawat kebunmu setiap hari
+                </Text>
+              </View>
+              <View style={{ backgroundColor: '#FFF8E6', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, borderWidth: 1, borderColor: 'rgba(255,182,39,0.4)' }}>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 11, color: '#8A5A00' }}>
+                  5 Tingkatan
+                </Text>
+              </View>
+            </View>
 
-            <View style={{ paddingLeft: 16 }}>
-              {/* VERTICAL LINE */}
-              <View style={{ position: 'absolute', left: 40, top: 20, bottom: 20, width: 4, backgroundColor: '#123924' }} />
-
-              {[
-                { lvl: 10, title: "Dewa Tani", desc: "Legenda kebun kota" },
-                { lvl: 8, title: "Sultan Hidroponik", desc: "Punya setup premium" },
-                { lvl: 4, title: "Juragan Panen", desc: "Sering berbagi hasil panen ke sesama" },
-                { lvl: 2, title: "Tangan Dingin", desc: "Mulai memahami ritme tanaman" },
-                { lvl: 1, title: "Petani Balkon", desc: "Baru mulai menyemai benih" }
-              ].map((item, idx) => {
+            <View style={{ paddingLeft: 4 }}>
+              {([
+                { lvl: 1, nextLvl: 2, title: "Petani Balkon", desc: "Langkah awal menyemai benih dan membangun kebiasaan merawat tanaman.", icon: "spa", reward: "Gelar Awal & 3 Pelindung Streak" },
+                { lvl: 2, nextLvl: 4, title: "Tangan Dingin", desc: "Mulai memahami ritme penyiraman dan cuaca mikro kebunmu.", icon: "water-drop", reward: "+1 Pelindung Streak & Lencana Tangan Dingin" },
+                { lvl: 4, nextLvl: 8, title: "Juragan Panen", desc: "Kebun makin subur dan rajin berbagi hasil panen ke komunitas.", icon: "agriculture", reward: "+1 Pelindung Streak & Lencana Juragan Panen" },
+                { lvl: 8, nextLvl: 10, title: "Sultan Hidroponik", desc: "Ahli perawatan tanaman perkotaan dengan skor kesehatan tinggi.", icon: "biotech", reward: "+1 Pelindung Streak & Lencana Sultan" },
+                { lvl: 10, nextLvl: null, title: "Dewa Tani", desc: "Legenda kebun kota panutan seluruh komunitas TaniSync.", icon: "workspace-premium", reward: "Gelar Tertinggi Dewa Tani & Crown Badge" }
+              ] as const).map((item, idx, arr) => {
                 const userLvl = userData?.level || 1;
                 const isPassed = userLvl >= item.lvl;
-                const isCurrent = userLvl >= item.lvl && (idx === 0 || userLvl < [10, 8, 4, 2, 1][idx - 1]);
-                
+                const isCurrent = userLvl >= item.lvl && (item.nextLvl === null || userLvl < item.nextLvl);
+                const isCompletedTier = isPassed && !isCurrent;
+                const isLast = idx === arr.length - 1;
+                const nextTierUnlocked = !isLast && userLvl >= arr[idx + 1].lvl;
+
                 return (
-                  <View key={item.lvl} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 32 }}>
-                    {/* NODE */}
-                    <View style={{ 
-                      width: 48, height: 48, borderRadius: 24, 
-                      backgroundColor: isPassed ? '#3FA86B' : '#FFFFFF', 
-                      borderWidth: 4, alignItems: 'center', justifyContent: 'center',
-                      zIndex: 2,
-                      boxShadow: isCurrent ? '4px 4px 0px #FFB627' : 'none'
-                    }}>
-                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: isPassed ? '#FFFFFF' : '#123924' }}>
-                        {item.lvl}
-                      </Text>
+                  <View key={item.lvl} style={{ flexDirection: 'row', alignItems: 'stretch' }}>
+                    {/* TIMELINE COLUMN */}
+                    <View style={{ width: 52, alignItems: 'center' }}>
+                      <View
+                        style={{
+                          width: 46,
+                          height: 46,
+                          borderRadius: 23,
+                          backgroundColor: isCurrent ? '#FFB627' : isCompletedTier ? '#3FA86B' : '#F1EEE6',
+                          borderWidth: isCurrent ? 3 : 2,
+                          borderColor: isCurrent ? '#123924' : isCompletedTier ? '#1F5C3D' : '#D8D4C8',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          zIndex: 2,
+                          shadowColor: isCurrent ? '#FFB627' : '#123924',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: isCurrent ? 0.35 : 0.08,
+                          shadowRadius: 8,
+                          elevation: isCurrent ? 4 : 1,
+                        }}
+                      >
+                        <MaterialIcons
+                          name={(isCompletedTier ? "check" : isPassed ? item.icon : "lock-outline") as any}
+                          size={22}
+                          color={isCurrent ? '#123924' : isCompletedTier ? '#FFFFFF' : '#8C897E'}
+                        />
+                      </View>
+                      {!isLast && (
+                        <View
+                          style={{
+                            width: 4,
+                            flex: 1,
+                            minHeight: 28,
+                            backgroundColor: nextTierUnlocked ? '#3FA86B' : '#E2DFD5',
+                            borderRadius: 2,
+                            marginVertical: 4,
+                          }}
+                        />
+                      )}
                     </View>
 
-                    {/* CARD */}
-                    <View style={{ 
-                      flex: 1, marginLeft: 16, padding: 16, 
-                      backgroundColor: isPassed ? '#E8F5E9' : '#F5F5F5', 
-                      borderRadius: 16, opacity: isPassed ? 1 : 0.6
-                    }}>
-                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#123924' }}>{item.title}</Text>
-                      <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5C5A4F', marginTop: 4 }}>{item.desc}</Text>
-                      {isCurrent && (
-                        <View style={{ marginTop: 12, backgroundColor: '#FFB627', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, alignSelf: 'flex-start' }}>
-                          <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#123924' }}>POSISI KAMU SEKARANG</Text>
+                    {/* TIER CARD */}
+                    <View
+                      style={{
+                        flex: 1,
+                        marginLeft: 12,
+                        marginBottom: isLast ? 8 : 16,
+                        padding: 16,
+                        backgroundColor: isCurrent ? '#FFFFFF' : isCompletedTier ? '#E8F7EE' : '#F4F1E8',
+                        borderRadius: 20,
+                        borderWidth: isCurrent ? 2 : 1,
+                        borderColor: isCurrent ? '#FFB627' : isCompletedTier ? 'rgba(63,168,107,0.35)' : '#E5E2DB',
+                        shadowColor: '#123924',
+                        shadowOffset: { width: 0, height: isCurrent ? 8 : 2 },
+                        shadowOpacity: isCurrent ? 0.1 : 0.03,
+                        shadowRadius: isCurrent ? 16 : 6,
+                        elevation: isCurrent ? 4 : 1,
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                          <View
+                            style={{
+                              backgroundColor: isCurrent ? '#123924' : isCompletedTier ? '#3FA86B' : '#E2DFD5',
+                              paddingHorizontal: 8,
+                              paddingVertical: 3,
+                              borderRadius: 8,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontFamily: 'Nunito_800ExtraBold',
+                                fontSize: 11,
+                                color: isCurrent || isCompletedTier ? '#FFFFFF' : '#5C5A4F',
+                              }}
+                            >
+                              Lv.{item.lvl}
+                            </Text>
+                          </View>
+                          <Text
+                            style={{
+                              fontFamily: 'Nunito_800ExtraBold',
+                              fontSize: 16,
+                              color: isPassed ? '#123924' : '#5C5A4F',
+                              flex: 1,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {item.title}
+                          </Text>
                         </View>
-                      )}
+
+                        {isCurrent ? (
+                          <View style={{ backgroundColor: '#FFF8E6', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 100, borderWidth: 1, borderColor: '#FFB627' }}>
+                            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#8A5A00' }}>
+                              AKTIF
+                            </Text>
+                          </View>
+                        ) : isCompletedTier ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 }}>
+                            <MaterialIcons name="check-circle" size={12} color="#3FA86B" />
+                            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#1F5C3D' }}>
+                              TERCAPAI
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#E8E5DA', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 }}>
+                            <MaterialIcons name="lock" size={11} color="#5C5A4F" />
+                            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: '#5C5A4F' }}>
+                              Kurang {item.lvl - userLvl} Lv
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <Text
+                        style={{
+                          fontFamily: 'Nunito_600SemiBold',
+                          fontSize: 12,
+                          color: isPassed ? '#4A483F' : '#7A776C',
+                          marginTop: 8,
+                          lineHeight: 18,
+                        }}
+                      >
+                        {item.desc}
+                      </Text>
+
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 6,
+                          marginTop: 10,
+                          paddingTop: 10,
+                          borderTopWidth: 1,
+                          borderTopColor: isCurrent ? '#F1EEE6' : isCompletedTier ? 'rgba(63,168,107,0.18)' : 'rgba(18,57,36,0.06)',
+                        }}
+                      >
+                        <MaterialIcons
+                          name="card-giftcard"
+                          size={14}
+                          color={isCurrent ? '#D97706' : isCompletedTier ? '#1F5C3D' : '#7A776C'}
+                        />
+                        <Text
+                          style={{
+                            fontFamily: 'Nunito_700Bold',
+                            fontSize: 11,
+                            color: isCurrent ? '#8A5A00' : isCompletedTier ? '#1F5C3D' : '#7A776C',
+                            flex: 1,
+                          }}
+                        >
+                          {item.reward}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 );

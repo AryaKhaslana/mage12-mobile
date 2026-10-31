@@ -136,7 +136,7 @@ export default function TabLayout() {
       tabBar={renderTabBar}
       screenOptions={{
         headerShown: false,
-        lazy: false,
+        lazy: true,
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Beranda' }} />

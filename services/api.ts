@@ -180,9 +180,12 @@ export const clearAppCache = async () => {
 };
 
 const inFlightRequests = new Map<string, Promise<any>>();
+const recentGetCache = new Map<string, { res: any; ts: number }>();
+const GET_FRESH_TTL_MS = 12000;
 
 export const clearInFlightRequests = () => {
   inFlightRequests.clear();
+  recentGetCache.clear();
 };
 
 const getDedupeKey = (url: string, config?: AxiosRequestConfig): string => {
@@ -213,15 +216,24 @@ api.get = (function (
   const dedupeKey = getDedupeKey(url, config);
 
   if (!config?.bypassDedupe) {
+    const fresh = recentGetCache.get(dedupeKey);
+    if (fresh && Date.now() - fresh.ts < GET_FRESH_TTL_MS) {
+      return Promise.resolve(fresh.res);
+    }
     const existing = inFlightRequests.get(dedupeKey);
     if (existing) {
       return existing;
     }
   }
 
-  const promise = (originalGet as any)(url, config).finally(() => {
-    inFlightRequests.delete(dedupeKey);
-  });
+  const promise = (originalGet as any)(url, config)
+    .then((res: any) => {
+      recentGetCache.set(dedupeKey, { res, ts: Date.now() });
+      return res;
+    })
+    .finally(() => {
+      inFlightRequests.delete(dedupeKey);
+    });
 
   inFlightRequests.set(dedupeKey, promise);
   return promise;
@@ -277,7 +289,10 @@ api.interceptors.request.use(
       const controller = new AbortController();
       config.signal = controller.signal;
       controller.abort("User sedang logout");
-      return config;
+      if (config.method && config.method.toLowerCase() !== "get") {
+      clearInFlightRequests();
+    }
+    return config;
     }
 
     // Penyesuaian timeout khusus untuk tanibot (AI) atau upload FormData
@@ -317,6 +332,9 @@ api.interceptors.request.use(
       }
     } catch (error) {
       console.error("Error fetching token for request:", error);
+    }
+    if (config.method && config.method.toLowerCase() !== "get") {
+      clearInFlightRequests();
     }
     return config;
   },

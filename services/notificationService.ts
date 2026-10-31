@@ -122,3 +122,31 @@ export async function scheduleDailyPlantReminder(hour: number, minute: number) {
     },
   });
 }
+
+export async function triggerTestPlantNotification(): Promise<boolean> {
+  const granted = await registerForPushNotificationsAsync();
+  if (!granted) return false;
+
+  let body = "Cuaca kebun mendukung hari ini. Yuk cek tanamanmu dan jaga streak harianmu!";
+  try {
+    const cached = await AsyncStorage.getItem("dashboard_tanaman");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const target = parsed.find((t) => t.statusPenyiraman === "PERLU_SIRAM") || parsed[0];
+        const plantName = target.nickname || target.jenisTanaman || "Tanamanmu";
+        body = `${plantName} membutuhkan perhatianmu hari ini — yuk siram dan tambah +15 EXP!`;
+      }
+    }
+  } catch {}
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Pengingat Kebun TaniSync",
+      body,
+      sound: true,
+    },
+    trigger: null,
+  });
+  return true;
+}

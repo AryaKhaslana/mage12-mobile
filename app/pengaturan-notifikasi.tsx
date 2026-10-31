@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, ActivityIndicator, Modal, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, ActivityIndicator, Modal, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import api, { registerOnLogout } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
-import { registerForPushNotificationsAsync, scheduleDailyPlantReminder, cancelAllPlantReminders } from '../services/notificationService';
+import { registerForPushNotificationsAsync, scheduleDailyPlantReminder, cancelAllPlantReminders, triggerTestPlantNotification } from '../services/notificationService';
 
 const TIME_OPTIONS = [
   { label: '06:00', hour: 6, minute: 0 },
@@ -209,10 +209,20 @@ export default function PengaturanNotifikasiScreen() {
         <Text style={styles.headerTitle}>Pengaturan Notifikasi</Text>
       </View>
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Reminder Harian</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 12 }}>
+              <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="notifications-active" size={22} color="#3FA86B" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Pengingat Siram Harian</Text>
+                <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F', marginTop: 2 }}>
+                  {isEnabled ? `Aktif setiap hari pukul ${selectedTime.label} WIB` : 'Aktifkan agar jadwal siram tidak terlewat'}
+                </Text>
+              </View>
+            </View>
             <Switch
               trackColor={{ false: "#E8E5DA", true: "#3FA86B" }}
               thumbColor={isEnabled ? "#FFFFFF" : "#f4f3f4"}
@@ -224,7 +234,7 @@ export default function PengaturanNotifikasiScreen() {
           
           {isEnabled && (
             <View style={styles.timeSelectionContainer}>
-              <Text style={styles.timeLabel}>Pilih Waktu</Text>
+              <Text style={styles.timeLabel}>Pilih Waktu Pengingat (WIB)</Text>
               <View style={styles.chipsContainer}>
                 {TIME_OPTIONS.map((time) => {
                   const isSelected = selectedTime.hour === time.hour && selectedTime.minute === time.minute;
@@ -237,6 +247,11 @@ export default function PengaturanNotifikasiScreen() {
                       ]}
                       onPress={() => handleTimeSelect(time)}
                     >
+                      <MaterialIcons
+                        name={time.hour < 12 ? "wb-sunny" : "wb-twilight"}
+                        size={14}
+                        color={isSelected ? "#FFFFFF" : "#5C5A4F"}
+                      />
                       <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
                         {time.label}
                       </Text>
@@ -248,11 +263,91 @@ export default function PengaturanNotifikasiScreen() {
           )}
 
           <Text style={styles.descriptionText}>
-            TaniSync akan mengingatkanmu setiap hari untuk merawat tanamanmu 
+            TaniSync menyesuaikan isi pengingat secara otomatis dengan nama tanaman yang belum disiram di kebunmu.
           </Text>
+
+          <Pressable
+            onPress={async () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              const ok = await triggerTestPlantNotification();
+              if (ok) {
+                showNotification("Notifikasi Terkirim", "Cek banner notifikasi di bagian atas layar HP kamu!", "success");
+              } else {
+                setShowPermissionModal(true);
+              }
+            }}
+            style={({ pressed }) => [
+              {
+                marginTop: 16,
+                backgroundColor: '#123924',
+                borderRadius: 14,
+                paddingVertical: 13,
+                paddingHorizontal: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              },
+              pressed && { opacity: 0.88, transform: [{ scale: 0.98 }] },
+            ]}
+          >
+            <MaterialIcons name="send" size={16} color="#FFFFFF" />
+            <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 13, color: '#FFFFFF' }}>
+              Kirim Notifikasi Uji Coba Sekarang
+            </Text>
+          </Pressable>
         </View>
 
-      </View>
+        <View style={[styles.card, { marginTop: 16 }]}>
+          <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: '#123924', marginBottom: 14 }}>
+            Cakupan Notifikasi Pintar
+          </Text>
+
+          {[
+            {
+              icon: 'water-drop',
+              bg: '#E8F5E9',
+              color: '#3FA86B',
+              title: 'Jadwal Penyiraman & Cuaca',
+              desc: 'Memberi tahu saat tanaman perlu disiram atau saat penyiraman otomatis ditunda karena potensi hujan tinggi.',
+            },
+            {
+              icon: 'emoji-events',
+              bg: '#FFF8E6',
+              color: '#D97706',
+              title: 'Piala Panen & Kenaikan Level',
+              desc: 'Mencatat pencapaian saat tanaman siap dipanen, naik level, atau mendapatkan Pelindung Streak baru.',
+            },
+            {
+              icon: 'forum',
+              bg: '#E6F6F4',
+              color: '#2E9E8C',
+              title: 'Interaksi Komunitas Petani',
+              desc: 'Kabar langsung saat petani lain menyukai, mengomentari postinganmu, atau mulai mengikutimu.',
+            },
+          ].map((item, idx) => (
+            <View
+              key={item.title}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                gap: 12,
+                paddingVertical: 10,
+                borderTopWidth: idx === 0 ? 0 : 1,
+                borderTopColor: '#F1EEE6',
+              }}
+            >
+              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: item.bg, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+                <MaterialIcons name={item.icon as any} size={18} color={item.color} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 13, color: '#123924' }}>{item.title}</Text>
+                <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 12, color: '#5C5A4F', marginTop: 2, lineHeight: 18 }}>{item.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
 
       {/* MODAL PANDUAN PENGATURAN IZIN NOTIFIKASI */}
       <Modal
@@ -342,8 +437,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8 },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     backgroundColor: '#FBF8F0',
     borderWidth: 1.5,
     borderColor: '#E8E5DA',

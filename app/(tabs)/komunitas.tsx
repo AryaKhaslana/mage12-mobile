@@ -27,7 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -604,6 +604,7 @@ export default function KomunitasScreen() {
   const [isError, setIsError] = useState(false);
   const [activeTab, setActiveTab] = useState<"terbaru" | "terdekat">("terbaru");
   const [isGpsFallback, setIsGpsFallback] = useState(false);
+  const [isRadiusExpanded, setIsRadiusExpanded] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalErrorText, setModalErrorText] = useState<string | null>(null);
   const likingPostIdsRef = useRef<Set<number>>(new Set());
@@ -770,6 +771,9 @@ export default function KomunitasScreen() {
       }
 
       const newPosts = response.data;
+      if (pageNum === 1) {
+        setIsRadiusExpanded(activeTab === "terdekat" && Boolean(response.meta?.radiusDiperluas));
+      }
       if (shouldRefresh || pageNum === 1) {
         postsRef.current = newPosts;
         setPosts(newPosts);
@@ -821,12 +825,14 @@ export default function KomunitasScreen() {
     }
   }, [activeTab, debouncedSearch, userFilter, showNotification]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchPosts(1, false);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [fetchPosts]);
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => {
+        fetchPosts(1, false);
+      }, 0);
+      return () => clearTimeout(timer);
+    }, [fetchPosts])
+  );
 
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
   const [isDeletingPost, setIsDeletingPost] = useState(false);
@@ -1116,6 +1122,15 @@ export default function KomunitasScreen() {
             <MaterialIcons name="location-off" size={18} color="#2D5A27" style={{ marginRight: 8 }} />
             <Text style={styles.gpsBannerText}>
               GPS perangkat sedang tidak aktif. Menampilkan komunitas di sekitar lokasi kebun tersimpanmu.
+            </Text>
+          </View>
+        )}
+
+        {activeTab === "terdekat" && isRadiusExpanded && (
+          <View style={styles.gpsBanner}>
+            <MaterialIcons name="travel-explore" size={18} color="#2D5A27" style={{ marginRight: 8 }} />
+            <Text style={styles.gpsBannerText}>
+              Belum ada postingan dalam 2 KM. Menampilkan postingan terdekat di luar radius.
             </Text>
           </View>
         )}

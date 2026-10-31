@@ -407,10 +407,16 @@ export default function TanibotScreen() {
         }
         const res = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          quality: 0.4,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.35,
           base64: true,
         });
         if (!res.canceled && res.assets?.[0]?.base64) {
+          if (res.assets[0].base64.length > 4_000_000) {
+            showNotification("Ukuran Foto Terlalu Besar", "Silakan potong atau pilih foto dengan ukuran lebih kecil.", "error");
+            return;
+          }
           setAttachedPhoto({
             uri: res.assets[0].uri,
             base64: res.assets[0].base64,
@@ -425,10 +431,16 @@ export default function TanibotScreen() {
         }
         const res = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          quality: 0.4,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.35,
           base64: true,
         });
         if (!res.canceled && res.assets?.[0]?.base64) {
+          if (res.assets[0].base64.length > 4_000_000) {
+            showNotification("Ukuran Foto Terlalu Besar", "Silakan potong atau pilih foto dengan ukuran lebih kecil.", "error");
+            return;
+          }
           setAttachedPhoto({
             uri: res.assets[0].uri,
             base64: res.assets[0].base64,

@@ -115,9 +115,11 @@ export const getEffectivePlantStatus = (
 };
 
 export const normalizePlantScore = (rawScore?: number | null): number => {
+  // Skor efektif dari backend memiliki batas bawah 45 (Math.max(45, ...)).
+  // Nilai < 45 hanya berasal dari cache/data lama sebelum migrasi (0-40).
   const s = typeof rawScore === "number" ? rawScore : 80;
-  if (s < 70) return Math.min(100, 80 + Math.max(0, s));
-  return Math.min(100, s);
+  if (s < 45) return Math.min(100, 80 + Math.max(0, Math.round(s)));
+  return Math.max(0, Math.min(100, Math.round(s)));
 };
 
 // State global Mode Demo Hujan agar sinkron lintas layar (Beranda, Kebun, Detail Tanaman, Cuaca)
@@ -766,6 +768,7 @@ export const createLog = async ({
 
 export const deleteCommunityPost = async (id: number): Promise<void> => {
   await api.delete(`/community/${id}`);
+  clearInFlightRequests();
 };
 
 export const updateCommunityPost = async (
@@ -773,6 +776,7 @@ export const updateCommunityPost = async (
   payload: { deskripsi: string; judul?: string | null; tipePost?: "progress_update" | "panen_surplus" | "pertanyaan" }
 ): Promise<any> => {
   const response = await api.put(`/community/${id}`, payload);
+  clearInFlightRequests();
   return response.data.data ?? response.data;
 };
 

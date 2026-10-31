@@ -271,10 +271,7 @@ export default function EditProfilScreen() {
 
   const handleChangePassword = async () => {
     if (isChangingPassword) return;
-    if (!passwordLama.trim()) {
-      showNotification("Validasi", "Kata sandi saat ini wajib diisi.", "error");
-      return;
-    }
+    // Akun Google belum punya sandi, jadi sandi lama boleh kosong; backend yang menolak jika akun sudah punya sandi.
     if (passwordBaru.trim().length < 8) {
       showNotification("Validasi", "Kata sandi baru minimal harus 8 karakter.", "error");
       return;
@@ -653,7 +650,7 @@ export default function EditProfilScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FBF8F0", borderWidth: 1, borderColor: "#E8E5DA", borderRadius: 12, paddingHorizontal: 14, height: 48, marginBottom: 12 }}>
                 <TextInput
                   style={{ flex: 1, fontFamily: "Nunito_500Medium", fontSize: 14, color: "#123924" }}
-                  placeholder="Masukkan sandi saat ini"
+                  placeholder="Kosongkan jika daftar via Google"
                   placeholderTextColor="#A09D91"
                   secureTextEntry={!showPassLama}
                   value={passwordLama}

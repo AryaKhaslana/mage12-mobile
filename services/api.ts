@@ -60,6 +60,97 @@ export const registerOnLogout = (cb: LogoutCallback) => {
   logoutCallbacks.push(cb);
 };
 
+// Helper tanggal kalender WIB (Asia/Jakarta) agar konsisten 100% antara mobile & backend
+export const getWibDateStr = (dateInput: string | number | Date = new Date()): string => {
+  try {
+    return new Date(dateInput).toLocaleDateString("en-CA", {
+      timeZone: "Asia/Jakarta",
+    });
+  } catch {
+    const d = new Date(dateInput);
+    const wib = new Date(d.getTime() + 7 * 3600 * 1000);
+    return wib.toISOString().slice(0, 10);
+  }
+};
+
+export const isSameWibDay = (
+  dateInput?: string | number | Date | null,
+  refDate: Date = new Date()
+): boolean => {
+  if (!dateInput) return false;
+  return getWibDateStr(dateInput) === getWibDateStr(refDate);
+};
+
+export const isPlantWateredToday = (
+  tanaman?: {
+    statusPenyiraman?: string | null;
+    logTerakhir?: { createdAt?: string | null } | null;
+  } | null
+): boolean => {
+  if (!tanaman) return false;
+  if (tanaman.logTerakhir?.createdAt) {
+    return isSameWibDay(tanaman.logTerakhir.createdAt);
+  }
+  return tanaman.statusPenyiraman === "SUDAH_DISIRAM";
+};
+
+export const getEffectivePlantStatus = (
+  tanaman?: {
+    statusPenyiraman?: string | null;
+    logTerakhir?: { createdAt?: string | null } | null;
+  } | null,
+  isSimulasiHujan = false,
+  alreadyWateredToday?: boolean
+): string => {
+  if (!tanaman) return "PERLU_SIRAM";
+  const watered =
+    alreadyWateredToday !== undefined
+      ? alreadyWateredToday
+      : isPlantWateredToday(tanaman);
+  if (watered) return "SUDAH_DISIRAM";
+  if (isSimulasiHujan || tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+    return "DITUNDA_HUJAN";
+  }
+  return "PERLU_SIRAM";
+};
+
+export const normalizePlantScore = (rawScore?: number | null): number => {
+  const s = typeof rawScore === "number" ? rawScore : 80;
+  if (s < 70) return Math.min(100, 80 + Math.max(0, s));
+  return Math.min(100, s);
+};
+
+// State global Mode Demo Hujan agar sinkron lintas layar (Beranda, Kebun, Detail Tanaman, Cuaca)
+let demoRainActive = false;
+const demoRainListeners = new Set<(val: boolean) => void>();
+
+export const getDemoRainMode = (): boolean => demoRainActive;
+
+export const setDemoRainMode = (
+  val: boolean | ((prev: boolean) => boolean)
+): void => {
+  const next = typeof val === "function" ? val(demoRainActive) : val;
+  if (demoRainActive !== next) {
+    demoRainActive = next;
+    demoRainListeners.forEach((cb) => {
+      try {
+        cb(demoRainActive);
+      } catch {}
+    });
+  }
+};
+
+export const subscribeDemoRainMode = (cb: (val: boolean) => void): (() => void) => {
+  demoRainListeners.add(cb);
+  return () => {
+    demoRainListeners.delete(cb);
+  };
+};
+
+registerOnLogout(() => {
+  setDemoRainMode(false);
+});
+
 export const clearAppCache = async () => {
   try {
     const keys = await AsyncStorage.getAllKeys();
@@ -548,6 +639,7 @@ export interface ChatMessage {
   role: "USER" | "BOT";
   message: string;
   createdAt: string;
+  imageUri?: string | null;
 }
 
 export interface CommunityComment {
@@ -715,9 +807,30 @@ export const toggleCommunityLike = async (id: number): Promise<{ liked: boolean;
   return response.data.data || response.data;
 };
 
-export const sendTanibotMessage = async (message: string, latitude?: number, longitude?: number): Promise<string> => {
-  const response = await api.post("/tanibot", { pertanyaan: message, latitude, longitude });
+export const sendTanibotMessage = async (
+  message: string,
+  latitude?: number,
+  longitude?: number,
+  imageBase64?: string | null,
+  imageMimeType?: string | null
+): Promise<string> => {
+  const response = await api.post("/tanibot", {
+    pertanyaan: message,
+    latitude,
+    longitude,
+    ...(imageBase64 ? { imageBase64, imageMimeType: imageMimeType || "image/jpeg" } : {}),
+  });
   return response.data.data.jawaban;
+};
+
+export const reportPestToHeatmap = async (payload: {
+  hama: string;
+  catatan?: string;
+  latitude?: number;
+  longitude?: number;
+}): Promise<any> => {
+  const response = await api.post("/heatmap/report", payload);
+  return response.data;
 };
 
 export const getTanibotHistory = async (page: number = 1, limit: number = 20): Promise<{ meta: any; data: ChatMessage[] }> => {

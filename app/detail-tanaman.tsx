@@ -10,7 +10,24 @@ import { ActivityIndicator, Animated, Linking, Modal, Pressable, RefreshControl,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNotification } from '../components/NotificationContext';
 import { getPlantImage } from '../constants/plantImages';
-import { LogAktivitas, TanamanDetail, createCommunityPost, createLog, deleteTanaman, getLogsByTanaman, getTanamanById, harvestTanaman, updateTanaman } from '../services/api';
+import {
+  LogAktivitas,
+  TanamanDetail,
+  createCommunityPost,
+  createLog,
+  deleteTanaman,
+  getLogsByTanaman,
+  getTanamanById,
+  harvestTanaman,
+  updateTanaman,
+  getWibDateStr,
+  isSameWibDay,
+  isPlantWateredToday,
+  getEffectivePlantStatus,
+  normalizePlantScore,
+  getDemoRainMode,
+  subscribeDemoRainMode,
+} from '../services/api';
 
 const JENIS_TANAMAN_ENUM = [
   "Tomat",
@@ -303,10 +320,21 @@ export default function DetailTanamanModal() {
     };
   }, [isPlayingMemory, photoLogsAsc]);
 
+  const [isSimulasiHujan, setIsSimulasiHujan] = useState<boolean>(() => getDemoRainMode());
+
+  useEffect(() => {
+    setIsSimulasiHujan(getDemoRainMode());
+    return subscribeDemoRainMode((val) => {
+      setIsSimulasiHujan(val);
+    });
+  }, []);
+
   const sudahValidasiHariIni = useMemo(() => {
-    const today = new Date().toDateString();
-    return logs.some(l => new Date(l.createdAt).toDateString() === today) || tanaman?.statusPenyiraman === 'SUDAH_DISIRAM';
-  }, [logs, tanaman?.statusPenyiraman]);
+    if (logs.length > 0) {
+      return logs.some((l) => isSameWibDay(l.createdAt));
+    }
+    return isPlantWateredToday(tanaman);
+  }, [logs, tanaman]);
 
 
   const handleHarvest = () => {
@@ -384,7 +412,7 @@ export default function DetailTanamanModal() {
       const localHariKe = tanaman ? Math.floor((Date.now() - new Date(tanaman.tanggalTanam || Date.now()).getTime()) / 86400000) + 1 : 0;
       const formData = new FormData();
       formData.append("tipe", "PANEN");
-      formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${tanaman?.predictiveScore}. Panen raya dari kebun TaniSync.`);
+      formData.append("deskripsi", `Tanaman ${tanaman?.nickname || tanaman?.jenisTanaman} resmi dipanen! Total dirawat ${localHariKe} hari dengan skor ${normalizePlantScore(tanaman?.predictiveScore)}/100. Panen raya dari kebun TaniSync.`);
 
       const cached = await SecureStore.getItemAsync("userData");
       if (cached) {
@@ -472,6 +500,7 @@ export default function DetailTanamanModal() {
     // Optimistic UI Update: Langsung ubah state lokal tanaman & logs biar instan 0ms
     setTanaman((prev: any) => prev ? {
       ...prev,
+      predictiveScore: Math.min(100, normalizePlantScore(prev.predictiveScore) + 2),
       statusPenyiraman: 'SUDAH_DISIRAM',
       logTerakhir: optimisticLogTerakhir
     } : prev);
@@ -485,6 +514,7 @@ export default function DetailTanamanModal() {
           const list: TanamanDetail[] = JSON.parse(cached);
           const idx = list.findIndex(t => t.id === tanamanId);
           if (idx !== -1) {
+            list[idx].predictiveScore = Math.min(100, normalizePlantScore(list[idx].predictiveScore) + 2);
             list[idx].statusPenyiraman = 'SUDAH_DISIRAM';
             list[idx].logTerakhir = optimisticLogTerakhir;
             AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(list)).catch(() => {});
@@ -506,6 +536,9 @@ export default function DetailTanamanModal() {
         parsed.exp = res.expSekarang;
         parsed.level = res.level;
         parsed.streak = res.streak;
+        const todayWib = getWibDateStr();
+        const prevDates = Array.isArray(parsed.activeDates) ? parsed.activeDates : [];
+        parsed.activeDates = prevDates.includes(todayWib) ? prevDates : [...prevDates, todayWib];
         await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
       }
       setTimeout(() => setToastMessage(null), 4000);
@@ -572,6 +605,9 @@ export default function DetailTanamanModal() {
         parsed.exp = res.expSekarang;
         parsed.level = res.level;
         parsed.streak = res.streak;
+        const todayWib = getWibDateStr();
+        const prevDates = Array.isArray(parsed.activeDates) ? parsed.activeDates : [];
+        parsed.activeDates = prevDates.includes(todayWib) ? prevDates : [...prevDates, todayWib];
         await SecureStore.setItemAsync("userData", JSON.stringify(parsed));
       }
       setTimeout(() => setToastMessage(null), 4000);
@@ -663,9 +699,16 @@ export default function DetailTanamanModal() {
   const elapsedDays = Math.max(0, totalDays - remainingDays);
   const progressPercent = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
 
+  const effectiveStatusPenyiraman = getEffectivePlantStatus(
+    tanaman,
+    isSimulasiHujan,
+    sudahValidasiHariIni
+  );
+  const displayScore = normalizePlantScore(tanaman.predictiveScore);
+
   const handleShare = async () => {
     try {
-      const shareMessage = `Progres Tanaman TaniSync\n\nSaya sedang merawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari.\nStatus kesehatan tanaman mencapai skor ${tanaman?.predictiveScore}/100.\n\nTersisa ${tanaman?.sisaHariPanen} hari lagi menuju panen. Mari mulai kebun kamu sendiri di TaniSync!`;
+      const shareMessage = `Progres Tanaman TaniSync\n\nSaya sedang merawat ${tanaman?.nickname || tanaman?.jenisTanaman} selama ${hariKe} hari.\nStatus kesehatan tanaman mencapai skor ${displayScore}/100.\n\nTersisa ${tanaman?.sisaHariPanen} hari lagi menuju panen. Mari mulai kebun kamu sendiri di TaniSync!`;
       await Share.share({
         message: shareMessage,
         title: "Bagikan Progres Tanaman TaniSync" });
@@ -680,19 +723,19 @@ export default function DetailTanamanModal() {
   let badgeText = "Aman";
   let badgeIcon: keyof typeof MaterialIcons.glyphMap = "check-circle";
 
-  if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+  if (effectiveStatusPenyiraman === "PERLU_SIRAM") {
     badgeBgColor = "#FFECEB";
     badgeBorderColor = "#FF6B5C";
     badgeTextColor = "#D32F2F";
     badgeText = "Perlu Disiram";
     badgeIcon = "water-drop";
-  } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+  } else if (effectiveStatusPenyiraman === "DITUNDA_HUJAN") {
     badgeBgColor = "#FFF9E6";
     badgeBorderColor = "#FFB627";
     badgeTextColor = "#B45309";
     badgeText = "Ditunda Hujan";
     badgeIcon = "cloud";
-  } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+  } else if (effectiveStatusPenyiraman === "SUDAH_DISIRAM") {
     badgeBgColor = "#E8F5E9";
     badgeBorderColor = "#3FA86B";
     badgeTextColor = "#1B5E20";
@@ -861,7 +904,7 @@ export default function DetailTanamanModal() {
             <Text style={styles.metaDot}>•</Text>
             <View style={styles.metaItem}>
               <MaterialIcons name="verified" size={13} color="#FFB627" style={{ marginRight: 4 }} />
-              <Text style={styles.metaText}>Skor {tanaman.predictiveScore ?? 0}</Text>
+              <Text style={styles.metaText}>Skor {displayScore}/100</Text>
             </View>
           </View>
         </View>
@@ -923,7 +966,7 @@ export default function DetailTanamanModal() {
             <Text style={{ fontSize: 12, color: '#5C5A4F', textAlign: 'center', marginBottom: 20 }}>
               Tanaman ini sudah divalidasi hari ini, balik lagi besok ya!
             </Text>
-          ) : tanaman.statusPenyiraman === "DITUNDA_HUJAN" ? (
+          ) : effectiveStatusPenyiraman === "DITUNDA_HUJAN" ? (
             <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924', textAlign: 'center', backgroundColor: '#E3F5EC', padding: 16, borderRadius: 16, borderWidth: 0, borderColor: '#3FA86B', marginHorizontal: 20, marginBottom: 20 }}>
               Penyiraman ditunda karena sistem mendeteksi cuaca hujan lebat hari ini! Streak kamu aman!
             </Text>
@@ -1164,8 +1207,8 @@ export default function DetailTanamanModal() {
                   <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924', marginTop: 4 }}>Hari Dirawat</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: '#FFE5E3', padding: 16, borderRadius: 16, borderWidth: 0, borderColor: '#FF6B5C', alignItems: 'center' }}>
-                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#FF6B5C' }}>{tanaman?.predictiveScore || 0}</Text>
-                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924', marginTop: 4 }}>Total Skor</Text>
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 24, color: '#FF6B5C' }}>{displayScore}/100</Text>
+                  <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#123924', marginTop: 4 }}>Skor Kesehatan</Text>
                 </View>
               </View>
 

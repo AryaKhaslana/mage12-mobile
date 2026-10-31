@@ -20,7 +20,16 @@ import { Image } from "expo-image";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
 import { getPlantImage } from "../../constants/plantImages";
-import api, { registerOnLogout, TanamanDetail, clearInFlightRequests } from "../../services/api";
+import api, {
+  registerOnLogout,
+  TanamanDetail,
+  clearInFlightRequests,
+  isPlantWateredToday,
+  getEffectivePlantStatus,
+  normalizePlantScore,
+  getDemoRainMode,
+  subscribeDemoRainMode,
+} from "../../services/api";
 
 let memoryTanamanCache: TanamanDetail[] | null = null;
 registerOnLogout(() => {
@@ -84,10 +93,20 @@ const PlantGridSkeleton = () => {
 const PlantCardItem = memo(function PlantCardItem({
   tanaman,
   onPress,
+  isSimulasiHujan,
 }: {
   tanaman: TanamanDetail;
   onPress: (id: number) => void;
+  isSimulasiHujan?: boolean;
 }) {
+  const sudahValidasiHariIni = isPlantWateredToday(tanaman);
+
+  const effectiveStatusPenyiraman = getEffectivePlantStatus(
+    tanaman,
+    Boolean(isSimulasiHujan),
+    sudahValidasiHariIni
+  );
+
   let bgColor = "#E8F5E9";
   let borderColor = "#3FA86B";
   let textColor = "#1B5E20";
@@ -100,19 +119,19 @@ const PlantCardItem = memo(function PlantCardItem({
     textColor = "#B45309";
     statusText = "Siap Panen";
     iconName = "event-available";
-  } else if (tanaman.statusPenyiraman === "PERLU_SIRAM") {
+  } else if (effectiveStatusPenyiraman === "PERLU_SIRAM") {
     bgColor = "#FFECEB";
     borderColor = "#FF6B5C";
     textColor = "#D32F2F";
     statusText = "Perlu Disiram";
     iconName = "water-drop";
-  } else if (tanaman.statusPenyiraman === "DITUNDA_HUJAN") {
+  } else if (effectiveStatusPenyiraman === "DITUNDA_HUJAN") {
     bgColor = "#FFF9E6";
     borderColor = "#FFB627";
     textColor = "#B45309";
     statusText = "Ditunda Hujan";
     iconName = "cloud";
-  } else if (tanaman.statusPenyiraman === "SUDAH_DISIRAM") {
+  } else if (effectiveStatusPenyiraman === "SUDAH_DISIRAM") {
     bgColor = "#E8F5E9";
     borderColor = "#3FA86B";
     textColor = "#1B5E20";
@@ -120,11 +139,6 @@ const PlantCardItem = memo(function PlantCardItem({
     iconName = "check-circle";
   }
 
-  const sudahValidasiHariIni =
-    (tanaman.logTerakhir &&
-      new Date(tanaman.logTerakhir.createdAt).toDateString() ===
-        new Date().toDateString()) ||
-    tanaman.statusPenyiraman === "SUDAH_DISIRAM";
   if (sudahValidasiHariIni && (tanaman.sisaHariPanen ?? 999) > 0) {
     bgColor = "#E8F5E9";
     borderColor = "#3FA86B";
@@ -166,7 +180,7 @@ const PlantCardItem = memo(function PlantCardItem({
           {tanaman.nickname || tanaman.jenisTanaman}
         </Text>
         <Text style={styles.cardSubtitle}>
-          Skor {tanaman.predictiveScore ?? 0} | Panen {tanaman.sisaHariPanen ?? 0} hari
+          Skor {normalizePlantScore(tanaman.predictiveScore)} | Panen {tanaman.sisaHariPanen ?? 0} hari
         </Text>
         <View style={styles.cardFooter}>
           <View
@@ -253,6 +267,14 @@ export default function TanamanScreen() {
   const [tanamanList, setTanamanList] = useState<TanamanDetail[]>(() => memoryTanamanCache || []);
   const tanamanListRef = useRef<TanamanDetail[]>(tanamanList);
   tanamanListRef.current = tanamanList;
+  const [isSimulasiHujan, setIsSimulasiHujan] = useState<boolean>(() => getDemoRainMode());
+
+  useEffect(() => {
+    setIsSimulasiHujan(getDemoRainMode());
+    return subscribeDemoRainMode((val) => {
+      setIsSimulasiHujan(val);
+    });
+  }, []);
 
   const [isLoading, setIsLoading] = useState(() => !memoryTanamanCache || memoryTanamanCache.length === 0);
   const [isError, setIsError] = useState(false);
@@ -406,10 +428,15 @@ export default function TanamanScreen() {
 
 
   const filteredList = tanamanList.filter((tanaman) => {
-    const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
+    const sudahValidasiHariIni = isPlantWateredToday(tanaman);
+    const effectiveStatusPenyiraman = getEffectivePlantStatus(
+      tanaman,
+      isSimulasiHujan,
+      sudahValidasiHariIni
+    );
     
     if (activeFilter === "Perlu Disiram")
-      return tanaman.statusPenyiraman !== "DITUNDA_HUJAN" && !sudahValidasiHariIni;
+      return effectiveStatusPenyiraman === "PERLU_SIRAM" && !sudahValidasiHariIni;
     if (activeFilter === "Sudah Disiram")
       return sudahValidasiHariIni;
     
@@ -458,9 +485,9 @@ export default function TanamanScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: TanamanDetail }) => (
-      <PlantCardItem tanaman={item} onPress={handlePressTanaman} />
+      <PlantCardItem tanaman={item} onPress={handlePressTanaman} isSimulasiHujan={isSimulasiHujan} />
     ),
-    [handlePressTanaman]
+    [handlePressTanaman, isSimulasiHujan]
   );
 
   const renderEmpty = () => {

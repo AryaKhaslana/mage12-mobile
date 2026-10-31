@@ -26,7 +26,17 @@ import ProfileOnboardingModal from "../../components/dashboard/ProfileOnboarding
 import CoachMarkOverlay, { CoachMarkStep } from "../../components/CoachMarkOverlay";
 import ErrorState from "../../components/ErrorState";
 import { useNotification } from "../../components/NotificationContext";
-import api, { registerOnLogout, clearInFlightRequests } from "../../services/api";
+import api, {
+  registerOnLogout,
+  clearInFlightRequests,
+  getWibDateStr,
+  isPlantWateredToday,
+  getEffectivePlantStatus,
+  normalizePlantScore,
+  getDemoRainMode,
+  setDemoRainMode,
+  subscribeDemoRainMode,
+} from "../../services/api";
 import { checkTutorialFinished, markTutorialFinished } from "../../utils/tutorial";
 
 let memoryHomeUser: any = null;
@@ -200,12 +210,14 @@ const HomeSkeleton = () => {
 
 const sortTanamanItems = (list: any[]) => {
   return [...list].sort((a, b) => {
-    const aSudahValidasi = (a.logTerakhir && new Date(a.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || a.statusPenyiraman === "SUDAH_DISIRAM";
-    const bSudahValidasi = (b.logTerakhir && new Date(b.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || b.statusPenyiraman === "SUDAH_DISIRAM";
+    const aSudahValidasi = isPlantWateredToday(a);
+    const bSudahValidasi = isPlantWateredToday(b);
+    const aEff = getEffectivePlantStatus(a, false, aSudahValidasi);
+    const bEff = getEffectivePlantStatus(b, false, bSudahValidasi);
     
     // Order: needs watering -> watered today -> harvest soon
-    if (a.statusPenyiraman === "PERLU_SIRAM" && b.statusPenyiraman !== "PERLU_SIRAM") return -1;
-    if (a.statusPenyiraman !== "PERLU_SIRAM" && b.statusPenyiraman === "PERLU_SIRAM") return 1;
+    if (aEff === "PERLU_SIRAM" && bEff !== "PERLU_SIRAM") return -1;
+    if (aEff !== "PERLU_SIRAM" && bEff === "PERLU_SIRAM") return 1;
     
     if (aSudahValidasi && !bSudahValidasi) return -1;
     if (!aSudahValidasi && bSudahValidasi) return 1;
@@ -244,7 +256,17 @@ export default function DashboardScreen() {
   
   const [tanamanList, setTanamanList] = useState<any[]>(() => memoryHomeTanaman || []);
   const [weather, setWeather] = useState<any>(() => memoryHomeWeather);
-  const [isSimulasiHujan, setIsSimulasiHujan] = useState(false);
+  const [isSimulasiHujan, setIsSimulasiHujanState] = useState<boolean>(() => getDemoRainMode());
+  const setIsSimulasiHujan = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    setDemoRainMode(val);
+  }, []);
+
+  useEffect(() => {
+    setIsSimulasiHujanState(getDemoRainMode());
+    return subscribeDemoRainMode((val) => {
+      setIsSimulasiHujanState(val);
+    });
+  }, []);
   const [isLoading, setIsLoading] = useState(() => !memoryHomeUser && !memoryHomeTanaman);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -576,7 +598,7 @@ export default function DashboardScreen() {
               weatherCond.includes("THUNDER");
             if (isHujan && weatherData.prediksiHujanHariIni) {
               try {
-                const todayStr = new Date().toDateString();
+                const todayStr = getWibDateStr();
                 const lastNotified = await AsyncStorage.getItem("last_rain_notified");
                 if (lastNotified !== todayStr) {
                   showNotification(
@@ -772,6 +794,7 @@ export default function DashboardScreen() {
           previousPlantState = { ...t };
           return {
             ...t,
+            predictiveScore: Math.min(100, normalizePlantScore(t.predictiveScore) + 2),
             statusPenyiraman: 'SUDAH_DISIRAM',
             logTerakhir: { createdAt: new Date().toISOString() }
           };
@@ -786,10 +809,13 @@ export default function DashboardScreen() {
     setUserData((prev: any) => {
       if (!prev) return prev;
       previousUserState = { ...prev };
+      const todayWib = getWibDateStr();
+      const prevDates = Array.isArray(prev.activeDates) ? prev.activeDates : [];
       const updated = { 
         ...prev, 
         exp: (prev.exp || 0) + 1, 
-        streak: (prev.streak || 0) > 0 ? prev.streak : 1 
+        streak: (prev.streak || 0) > 0 ? prev.streak : 1,
+        activeDates: prevDates.includes(todayWib) ? prevDates : [...prevDates, todayWib],
       };
       SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
       return updated;
@@ -813,11 +839,14 @@ export default function DashboardScreen() {
         // Rekonsiliasi data riil dari server jika ada perbedaan EXP/Level
         setUserData((prev: any) => {
           if (!prev) return prev;
+          const todayWib = getWibDateStr();
+          const prevDates = Array.isArray(prev.activeDates) ? prev.activeDates : [];
           const updated = { 
             ...prev, 
             exp: d.expSekarang !== undefined ? d.expSekarang : prev.exp, 
             level: d.level !== undefined ? d.level : prev.level, 
-            streak: d.streak !== undefined ? d.streak : prev.streak 
+            streak: d.streak !== undefined ? d.streak : prev.streak,
+            activeDates: prevDates.includes(todayWib) ? prevDates : [...prevDates, todayWib],
           };
           SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
           return updated;
@@ -833,8 +862,13 @@ export default function DashboardScreen() {
 
         // Rekonsiliasi cache lokal tanaman yang sudah disiram
         setTanamanList(currentList => {
-          AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(currentList)).catch(() => {});
-          return currentList;
+          const reconciled = currentList.map(t =>
+            t.id === tanamanId && d.skorSaatIni !== undefined
+              ? { ...t, predictiveScore: d.skorSaatIni }
+              : t
+          );
+          AsyncStorage.setItem("dashboard_tanaman", JSON.stringify(reconciled)).catch(() => {});
+          return reconciled;
         });
       }
     } catch (error: any) {
@@ -873,7 +907,7 @@ export default function DashboardScreen() {
   const reminders = [...tanamanList]
     .filter((t) => {
       // Keep watering task in the list if it needs watering or was watered today
-      const sudahValidasiHariIni = (t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || t.statusPenyiraman === "SUDAH_DISIRAM";
+      const sudahValidasiHariIni = isPlantWateredToday(t);
       // Selalu tampilkan plant sebagai task nyiram tiap hari KECUALI kalau statusnya DITUNDA_HUJAN (dan belum disiram hari ini)
       if (t.statusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni) return true;
       
@@ -886,8 +920,8 @@ export default function DashboardScreen() {
   const upcomingHarvests = [...tanamanList].sort((a, b) => (a.sisaHariPanen ?? 999) - (b.sisaHariPanen ?? 999));
   
   const hasWateringTask = reminders.some(t => {
-      const sudahValidasiHariIni = (t.logTerakhir && new Date(t.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || t.statusPenyiraman === "SUDAH_DISIRAM";
-      return (isSimulasiHujan ? false : t.statusPenyiraman !== "DITUNDA_HUJAN") && !sudahValidasiHariIni;
+      const sudahValidasiHariIni = isPlantWateredToday(t);
+      return getEffectivePlantStatus(t, isSimulasiHujan, sudahValidasiHariIni) === "PERLU_SIRAM";
   });
   const currentCond = (weather?.kondisi || '').toUpperCase();
   const isRaining = isSimulasiHujan || currentCond.includes('HUJAN') || currentCond.includes('RAIN') || currentCond.includes('GERIMIS') || currentCond.includes('DRIZZLE') || currentCond.includes('THUNDER') || weather?.prediksiHujanHariIni;
@@ -984,8 +1018,8 @@ export default function DashboardScreen() {
                 />
               ) : (
                 reminders.map((tanaman, index) => {
-                  const sudahValidasiHariIni = (tanaman.logTerakhir && new Date(tanaman.logTerakhir.createdAt).toDateString() === new Date().toDateString()) || tanaman.statusPenyiraman === "SUDAH_DISIRAM";
-                  const effectiveStatusPenyiraman = isSimulasiHujan && !sudahValidasiHariIni ? "DITUNDA_HUJAN" : tanaman.statusPenyiraman;
+                  const sudahValidasiHariIni = isPlantWateredToday(tanaman);
+                  const effectiveStatusPenyiraman = getEffectivePlantStatus(tanaman, isSimulasiHujan, sudahValidasiHariIni);
                   // Task penyiraman aktif tiap hari, kecuali kalau ditunda hujan
                   const isWateringTask = effectiveStatusPenyiraman !== "DITUNDA_HUJAN" || sudahValidasiHariIni;
 
@@ -1072,18 +1106,34 @@ export default function DashboardScreen() {
 
             {/* HEATMAP STREAK */}
             <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, marginBottom: 24 }}>
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924', marginBottom: 12 }}>Aktivitas 28 Hari Terakhir</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Aktivitas 28 Hari Terakhir</Text>
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 11, color: '#3FA86B' }}>Kalender WIB</Text>
+              </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                 {Array.from({ length: 28 }).map((_, i) => {
-                  const isStreak = (27 - i) < (userData?.streak || 0);
+                  const daysAgo = 27 - i;
+                  const cellDate = new Date(Date.now() - daysAgo * 86400000);
+                  const cellWibStr = getWibDateStr(cellDate);
+                  const dayNum = cellDate.getDate();
+                  const hasLogOnDate = Array.isArray(userData?.activeDates) && userData.activeDates.includes(cellWibStr);
+                  const isStreak = hasLogOnDate || daysAgo < (userData?.streak || 0);
+                  const isToday = daysAgo === 0;
                   return (
                     <View 
                       key={i} 
                       style={{ 
-                        width: 24, height: 24, borderRadius: 6, 
-                        backgroundColor: isStreak ? '#3FA86B' : 'rgba(28,57,36,0.1)',
-                        borderWidth: isStreak ? 2 : 0 }} 
-                    />
+                        width: 26, height: 26, borderRadius: 7, 
+                        alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: isStreak ? '#3FA86B' : 'rgba(28,57,36,0.08)',
+                        borderWidth: isToday ? 1.5 : 0,
+                        borderColor: isStreak ? '#123924' : '#3FA86B'
+                      }} 
+                    >
+                      <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: isStreak ? '#FFFFFF' : '#5C5A4F' }}>
+                        {dayNum}
+                      </Text>
+                    </View>
                   );
                 })}
               </View>

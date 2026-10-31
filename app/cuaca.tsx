@@ -5,7 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { registerOnLogout, clearInFlightRequests } from '../services/api';
+import api, {
+  registerOnLogout,
+  clearInFlightRequests,
+  getDemoRainMode,
+  setDemoRainMode,
+  subscribeDemoRainMode,
+} from '../services/api';
 import WeatherScene from '../components/WeatherScene';
 import ErrorState from '../components/ErrorState';
 
@@ -30,9 +36,17 @@ registerOnLogout(() => {
 
 export default function CuacaScreen() {
   const [weatherData, setWeatherData] = useState<any>(() => memoryWeatherCache);
+  const [isSimulasiHujan, setIsSimulasiHujan] = useState<boolean>(() => getDemoRainMode());
   const [isLoading, setIsLoading] = useState(() => !memoryWeatherCache);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    setIsSimulasiHujan(getDemoRainMode());
+    return subscribeDemoRainMode((val) => {
+      setIsSimulasiHujan(val);
+    });
+  }, []);
 
   const insets = useSafeAreaInsets();
   const isFetchingRef = useRef<boolean>(false);
@@ -187,8 +201,12 @@ export default function CuacaScreen() {
     );
   }
 
-  const popVal = Number(weatherData?.pop) || 0;
-  const isRainPredicted = Boolean(weatherData?.prediksiHujanHariIni) || popVal >= 60;
+  const popVal = isSimulasiHujan
+    ? Math.max(85, Number(weatherData?.pop) || 0)
+    : Number(weatherData?.pop) || 0;
+  const isRainPredicted =
+    isSimulasiHujan || Boolean(weatherData?.prediksiHujanHariIni) || popVal >= 60;
+  const effectiveCondition = isSimulasiHujan ? 'HUJAN' : (weatherData?.kondisi || 'Cerah');
 
   return (
     <View style={styles.container}>
@@ -209,7 +227,7 @@ export default function CuacaScreen() {
 
       {/* 1. WEATHER SCENE BACKGROUND */}
       <WeatherScene
-        weatherCondition={weatherData?.kondisi || 'Cerah'}
+        weatherCondition={effectiveCondition}
         isNight={isNight}
       />
 
@@ -236,11 +254,18 @@ export default function CuacaScreen() {
             <Text style={styles.temperature}>
               {Math.round(Number(weatherData?.suhu) || 0)}°
             </Text>
-            <View style={styles.conditionBadge}>
+            <Pressable
+              onLongPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                setDemoRainMode((prev) => !prev);
+              }}
+              delayLongPress={400}
+              style={styles.conditionBadge}
+            >
               <Text style={styles.conditionText}>
-                {weatherData?.kondisi || 'Cerah'}
+                {isSimulasiHujan ? 'Hujan (Mode Demo)' : (weatherData?.kondisi || 'Cerah')}
               </Text>
-            </View>
+            </Pressable>
           </View>
 
           {/* Action Card: Rekomendasi Bertani */}
@@ -293,7 +318,7 @@ export default function CuacaScreen() {
                 <Ionicons name="rainy" size={24} color="#1E88E5" />
               </View>
               <Text style={styles.metricValue}>
-                {Math.round(Number(weatherData?.pop) || 0)}%
+                {Math.round(popVal)}%
               </Text>
               <Text style={styles.metricLabel}>Peluang Hujan</Text>
             </View>

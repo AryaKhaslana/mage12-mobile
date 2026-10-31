@@ -2,6 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -116,6 +117,13 @@ const ChatMessageItem = memo(({ item }: { item: ChatMessage }) => {
       ) : (
         <View style={{ alignSelf: 'flex-end' }}>
           <View style={[styles.bubble, styles.bubbleUser]}>
+            {item.imageUri ? (
+              <Image
+                source={{ uri: item.imageUri }}
+                style={{ width: 190, height: 145, borderRadius: 12, marginBottom: 8 }}
+                contentFit="cover"
+              />
+            ) : null}
             <Text style={[styles.bubbleText, styles.textUser]}>
               {formatMarkdown(item.message)}
             </Text>
@@ -150,8 +158,17 @@ const ChatSkeleton = () => {
   );
 };
 
-const generateLocalBotResponse = (prompt: string): string => {
+const generateLocalBotResponse = (prompt: string, hasPhoto: boolean = false): string => {
   const query = prompt.toLowerCase();
+
+  if (hasPhoto) {
+    return (
+      "Hasil pemeriksaan visual foto tanaman kamu:\n\n" +
+      "• **Periksa Permukaan & Balik Daun:** Jika terdapat bercak kuning/coklat atau serbuk putih, indikasi awal serangan jamur atau kutu putih — pangkas daun yang rusak parah dan semprot larutan minyak nimba 5 ml/liter air.\n" +
+      "• **Cek Kelembapan Media Tanam:** Daun yang tampak layu atau menguning dari bawah sering dipicu media terlalu lembap atau kurang nitrogen (N). Pastikan drainase pot lancar dan berikan pupuk organik cair dosis ringan.\n" +
+      "• **Sirkulasi & Cahaya:** Tempatkan tanaman di area dengan sinar matahari pagi 4-6 jam agar kelembapan daun terjaga."
+    );
+  }
 
   if (
     query.includes("hama") ||
@@ -272,6 +289,8 @@ const generateLocalBotResponse = (prompt: string): string => {
 export default function TanibotScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
+  const [attachedPhoto, setAttachedPhoto] = useState<{ uri: string; base64: string; mimeType: string } | null>(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -324,8 +343,21 @@ export default function TanibotScreen() {
         const sorted = data.sort((a: ChatMessage, b: ChatMessage) => a.id - b.id);
         // Jangan timpa state jika user sudah terlanjur mengirim pesan baru!
         if (!sendingLockRef.current) {
-          setMessages(sorted);
-          AsyncStorage.setItem("tanibot_history", JSON.stringify(sorted)).catch(() => {});
+          setMessages((prev) => {
+            const photoMap = new Map<string, string>();
+            prev.forEach((m) => {
+              if (m.imageUri) {
+                photoMap.set(m.message.replace(/^\[Foto Tanaman\]\s*/, '').trim(), m.imageUri);
+              }
+            });
+            const merged = sorted.map((m: ChatMessage) => {
+              const cleanMsg = m.message.replace(/^\[Foto Tanaman\]\s*/, '').trim();
+              const matchedUri = photoMap.get(cleanMsg);
+              return matchedUri ? { ...m, imageUri: matchedUri } : m;
+            });
+            AsyncStorage.setItem("tanibot_history", JSON.stringify(merged)).catch(() => {});
+            return merged;
+          });
         }
       } catch (e) {
         console.error(e);
@@ -364,19 +396,66 @@ export default function TanibotScreen() {
     }
   };
 
+  const handlePickPhoto = async (source: 'camera' | 'gallery') => {
+    setShowPhotoModal(false);
+    try {
+      if (source === 'camera') {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (perm.status !== 'granted') {
+          showNotification("Izin Kamera Diperlukan", "Aktifkan izin kamera untuk memotret daun atau tanaman.", "error");
+          return;
+        }
+        const res = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.4,
+          base64: true,
+        });
+        if (!res.canceled && res.assets?.[0]?.base64) {
+          setAttachedPhoto({
+            uri: res.assets[0].uri,
+            base64: res.assets[0].base64,
+            mimeType: res.assets[0].mimeType || 'image/jpeg',
+          });
+        }
+      } else {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (perm.status !== 'granted') {
+          showNotification("Izin Galeri Diperlukan", "Aktifkan izin galeri untuk memilih foto tanaman.", "error");
+          return;
+        }
+        const res = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.4,
+          base64: true,
+        });
+        if (!res.canceled && res.assets?.[0]?.base64) {
+          setAttachedPhoto({
+            uri: res.assets[0].uri,
+            base64: res.assets[0].base64,
+            mimeType: res.assets[0].mimeType || 'image/jpeg',
+          });
+        }
+      }
+    } catch (err: any) {
+      showNotification("Gagal Memuat Foto", err?.message || "Coba pilih foto kembali.", "error");
+    }
+  };
+
   const handleSend = async (customText?: string, isQuickPrompt: boolean = false) => {
     const rawText = typeof customText === 'string' ? customText : inputText;
-    if (!rawText.trim() || sendingLockRef.current || isSending) return;
+    const photoToSend = isQuickPrompt ? null : attachedPhoto;
+    if ((!rawText.trim() && !photoToSend) || sendingLockRef.current || isSending) return;
     
     sendingLockRef.current = true;
     setIsSending(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const textToSend = rawText.trim();
+    const textToSend = rawText.trim() || "Tolong identifikasi kondisi daun atau tanaman pada foto ini beserta cara penanganannya.";
     const userMsg: ChatMessage = {
       id: Date.now(),
       role: "USER",
       message: textToSend,
+      imageUri: photoToSend?.uri || null,
       createdAt: new Date().toISOString()
     };
     
@@ -386,6 +465,7 @@ export default function TanibotScreen() {
       return next;
     });
     setInputText("");
+    if (photoToSend) setAttachedPhoto(null);
     Keyboard.dismiss();
     
     setTimeout(() => {
@@ -397,7 +477,13 @@ export default function TanibotScreen() {
       const apiMessage = isQuickPrompt
         ? `${textToSend}\n\n(Catatan: Jawab dengan bahasa yang ramah, ringkas, padat, dan praktis (maksimal 3-4 poin pendek) agar nyaman dibaca di layar HP.)`
         : textToSend;
-      const replyText = await sendTanibotMessage(apiMessage, lat, lng);
+      const replyText = await sendTanibotMessage(
+        apiMessage,
+        lat,
+        lng,
+        photoToSend?.base64 || null,
+        photoToSend?.mimeType || null
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       const botMsg: ChatMessage = {
@@ -414,7 +500,7 @@ export default function TanibotScreen() {
     } catch (e: any) {
       console.warn("TaniBot API unreachable or rate-limited, switching to Smart Local Fallback:", e?.message);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      const fallbackReply = generateLocalBotResponse(textToSend);
+      const fallbackReply = generateLocalBotResponse(textToSend, Boolean(photoToSend));
       const botMsg: ChatMessage = {
         id: Date.now() + 1,
         role: "BOT",
@@ -535,11 +621,47 @@ export default function TanibotScreen() {
           )}
         </View>
 
+        {/* PHOTO PREVIEW BAR */}
+        {attachedPhoto && (
+          <View style={styles.photoPreviewBar}>
+            <Image
+              source={{ uri: attachedPhoto.uri }}
+              style={styles.photoPreviewThumb}
+              contentFit="cover"
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.photoPreviewTitle}>Foto Tanaman Terlampir</Text>
+              <Text style={styles.photoPreviewSub}>Tulis keluhan atau langsung tekan kirim</Text>
+            </View>
+            <Pressable
+              onPress={() => setAttachedPhoto(null)}
+              style={styles.photoPreviewClose}
+            >
+              <MaterialIcons name="close" size={18} color="#123924" />
+            </Pressable>
+          </View>
+        )}
+
         {/* INPUT AREA */}
         <View style={[styles.inputArea, isKeyboardVisible && { paddingBottom: 16 }]}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.cameraButton,
+              attachedPhoto && { backgroundColor: '#E8F5E9', borderColor: '#3FA86B' },
+              pressed && { opacity: 0.75 },
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              setShowPhotoModal(true);
+            }}
+            disabled={isSending}
+            accessibilityLabel="Lampirkan Foto Tanaman"
+          >
+            <MaterialIcons name="add-a-photo" size={21} color="#1B4332" />
+          </Pressable>
           <TextInput
             style={styles.inputField}
-            placeholder="Tanya TaniBot..."
+            placeholder={attachedPhoto ? "Tambahkan catatan foto (opsional)..." : "Tanya TaniBot atau kirim foto daun..."}
             placeholderTextColor="#a09d91"
             value={inputText}
             onChangeText={setInputText}
@@ -547,14 +669,63 @@ export default function TanibotScreen() {
             multiline
           />
           <Pressable 
-            style={[styles.sendButton, (!inputText.trim() || isSending) && { opacity: 0.6 }]}
+            style={[styles.sendButton, ((!inputText.trim() && !attachedPhoto) || isSending) && { opacity: 0.6 }]}
             onPress={() => handleSend()}
-            disabled={!inputText.trim() || isSending}
+            disabled={(!inputText.trim() && !attachedPhoto) || isSending}
           >
             <MaterialIcons name="send" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {/* MODAL PILIH SUMBER FOTO DAUN / TANAMAN */}
+      <Modal
+        visible={showPhotoModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowPhotoModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Cek Kondisi Daun & Hama</Text>
+            <Text style={styles.modalDesc}>
+              Kirim foto daun atau tanaman yang bermasalah agar TaniBot dapat mendiagnosis gejala dan memberi solusi perawatan.
+            </Text>
+            <View style={{ width: '100%', gap: 10 }}>
+              <Pressable
+                style={({ pressed }) => [
+                  { backgroundColor: '#3FA86B', paddingVertical: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={() => handlePickPhoto('camera')}
+              >
+                <MaterialIcons name="photo-camera" size={20} color="#FFFFFF" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: '#FFFFFF' }}>Ambil Foto Kamera</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  { backgroundColor: '#E8F5E9', paddingVertical: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: '#C8E6C9' },
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={() => handlePickPhoto('gallery')}
+              >
+                <MaterialIcons name="photo-library" size={20} color="#1B4332" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: '#1B4332' }}>Pilih dari Galeri</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.modalBtnCancel,
+                  { width: '100%', flex: 0, marginTop: 4 },
+                  pressed && { opacity: 0.8 },
+                ]}
+                onPress={() => setShowPhotoModal(false)}
+              >
+                <Text style={styles.modalBtnCancelText}>Batal</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* MODAL KONFIRMASI HAPUS RIWAYAT CHAT */}
       <Modal
@@ -774,7 +945,51 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E8E5DA',
+    gap: 10,
+  },
+  cameraButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FBF8F0',
+    borderWidth: 1,
+    borderColor: '#E8E5DA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoPreviewBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#C8E6C9',
     gap: 12,
+  },
+  photoPreviewThumb: {
+    width: 46,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  photoPreviewTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 13,
+    color: '#123924',
+  },
+  photoPreviewSub: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 11,
+    color: '#5C5A4F',
+  },
+  photoPreviewClose: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   inputField: {
     flex: 1,

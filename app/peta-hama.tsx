@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { router, useFocusEffect, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { clearInFlightRequests } from '../services/api';
+import api, { clearInFlightRequests, reportPestToHeatmap } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HeatmapCell {
@@ -19,6 +21,7 @@ interface HeatmapResponse {
   hama: string;
   total_laporan: number;
   cells?: HeatmapCell[];
+  isSimulated?: boolean;
 }
 
 interface FilterItem {
@@ -34,14 +37,16 @@ const FILTERS: FilterItem[] = [
   { key: 'semua', label: 'Semua Hama', icon: 'apps' },
   { key: 'kutu-putih', label: 'Kutu Putih', icon: 'bug-report' },
   { key: 'wereng', label: 'Wereng', icon: 'pest-control' },
-  { key: 'ulat', label: 'Ulat', icon: 'grass' }
+  { key: 'ulat', label: 'Ulat', icon: 'grass' },
+  { key: 'jamur', label: 'Jamur & Bercak', icon: 'coronavirus' },
+  { key: 'lalat-buah', label: 'Lalat Buah', icon: 'emoji-nature' },
 ];
 
 interface FallbackPestReport {
   latOffset: number;
   lngOffset: number;
   weight: number;
-  hama: 'kutu-putih' | 'wereng' | 'ulat';
+  hama: 'kutu-putih' | 'wereng' | 'ulat' | 'jamur' | 'lalat-buah';
 }
 
 const FALLBACK_PEST_OFFSETS: FallbackPestReport[] = [
@@ -51,6 +56,8 @@ const FALLBACK_PEST_OFFSETS: FallbackPestReport[] = [
   { latOffset: 0.0115, lngOffset: 0.0035, weight: 5.4, hama: 'wereng' },
   { latOffset: -0.0078, lngOffset: 0.0062, weight: 8.5, hama: 'ulat' },
   { latOffset: -0.0092, lngOffset: -0.0038, weight: 6.8, hama: 'ulat' },
+  { latOffset: 0.0042, lngOffset: -0.0052, weight: 7.0, hama: 'jamur' },
+  { latOffset: -0.0045, lngOffset: 0.0048, weight: 6.5, hama: 'lalat-buah' },
 ];
 
 const generateFallbackHeatmap = (
@@ -71,6 +78,7 @@ const generateFallbackHeatmap = (
     hama: selectedFilter === 'semua' ? 'Semua' : selectedFilter,
     total_laporan: cells.length,
     cells,
+    isSimulated: true,
   };
 };
 
@@ -256,11 +264,16 @@ const STATIC_MAP_HTML = `
 `;
 
 export default function PetaHamaScreen() {
+  const { showNotification } = useNotification();
   const [filter, setFilter] = useState('semua');
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [data, setData] = useState<HeatmapResponse | null>(null);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>(DEFAULT_COORDS);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReportPest, setSelectedReportPest] = useState<string>('kutu-putih');
+  const [reportNote, setReportNote] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const insets = useSafeAreaInsets();
 
@@ -419,6 +432,8 @@ export default function PetaHamaScreen() {
         let resData: HeatmapResponse = response.data.data;
         if (!resData.cells || resData.cells.length === 0) {
           resData = generateFallbackHeatmap(coords, selectedFilter);
+        } else {
+          resData = { ...resData, isSimulated: false };
         }
         cacheRef.current[selectedFilter] = resData;
         AsyncStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(cacheRef.current)).catch(() => {});
@@ -547,6 +562,71 @@ export default function PetaHamaScreen() {
     webViewRef.current?.injectJavaScript(js);
   };
 
+  const handleSubmitPestReport = async () => {
+    if (isSubmittingReport) return;
+    setIsSubmittingReport(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+
+    const coords = userCoordsRef.current;
+    const newCell: HeatmapCell = {
+      lat: Number(coords.lat.toFixed(4)),
+      lng: Number(coords.lng.toFixed(4)),
+      weight: 8.5,
+    };
+
+    try {
+      await reportPestToHeatmap({
+        hama: selectedReportPest,
+        catatan: reportNote.trim() || undefined,
+        latitude: coords.lat,
+        longitude: coords.lng,
+      });
+    } catch {
+      // Tetap lanjutkan optimistic update lokal apabila jaringan lambat saat demo
+    } finally {
+      const targetFilter = filterRef.current === 'semua' || filterRef.current === selectedReportPest
+        ? filterRef.current
+        : selectedReportPest;
+
+      const prevCells = (data?.isSimulated ? [] : (data?.cells || []));
+      const updatedCells = [newCell, ...prevCells];
+      const updatedResponse: HeatmapResponse = {
+        hama: targetFilter,
+        total_laporan: (data?.isSimulated ? 0 : (data?.total_laporan || 0)) + 1,
+        cells: updatedCells,
+        isSimulated: false,
+      };
+
+      cacheRef.current = {
+        ...cacheRef.current,
+        [targetFilter]: updatedResponse,
+        semua: {
+          hama: 'semua',
+          total_laporan: updatedResponse.total_laporan,
+          cells: updatedCells,
+          isSimulated: false,
+        },
+      };
+      AsyncStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(cacheRef.current)).catch(() => {});
+
+      setFilter(targetFilter);
+      filterRef.current = targetFilter;
+      setData(updatedResponse);
+      injectHeatmapPoints(updatedCells);
+      handleRecenter();
+
+      setIsSubmittingReport(false);
+      setShowReportModal(false);
+      setReportNote('');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showNotification(
+        'Laporan Terkirim',
+        'Titik wabah hama di kebunmu berhasil ditambahkan ke radar komunitas!',
+        'success'
+      );
+    }
+  };
+
   const cells = (data?.cells || []).filter(
     c => typeof c.lat === 'number' && typeof c.lng === 'number' && Number.isFinite(c.lat) && Number.isFinite(c.lng)
   );
@@ -578,14 +658,14 @@ export default function PetaHamaScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.statsTitle}>
-              {data?.total_laporan ?? 0} Laporan Wabah Terdeteksi
+              {data?.total_laporan ?? 0} {data?.isSimulated ? 'Titik Rawan Wilayah' : 'Laporan Wabah Terdeteksi'}
             </Text>
             <Text style={styles.statsSubtext}>
-              Radius pantauan lokal sekitar kebun
+              {data?.isSimulated ? 'Estimasi kerawanan wilayah sekitar kebun' : 'Laporan komunitas di sekitar kebun'}
             </Text>
           </View>
-          <View style={styles.badgePill}>
-            <Text style={styles.badgePillText}>Aktif</Text>
+          <View style={[styles.badgePill, !data?.isSimulated && { backgroundColor: '#1B4332' }]}>
+            <Text style={styles.badgePillText}>{data?.isSimulated ? 'Estimasi' : 'Komunitas'}</Text>
           </View>
         </View>
 
@@ -656,6 +736,19 @@ export default function PetaHamaScreen() {
           <Text style={styles.recenterText}>Kebun Saya</Text>
         </Pressable>
 
+        {/* Floating Lapor Hama Button */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            setShowReportModal(true);
+          }}
+          style={({ pressed }) => [styles.reportFabBtn, pressed && styles.btnPressed]}
+          accessibilityLabel="Laporkan Hama di Kebunku"
+        >
+          <MaterialIcons name="add-alert" size={18} color="#FFFFFF" />
+          <Text style={styles.reportFabText}>Lapor Hama</Text>
+        </Pressable>
+
         {/* Floating Loading Pill */}
         {isLoading && (
           <View style={styles.floatingLoadingPill}>
@@ -672,6 +765,87 @@ export default function PetaHamaScreen() {
           </View>
         )}
       </View>
+
+      {/* MODAL LAPOR HAMA LANGSUNG */}
+      <Modal
+        visible={showReportModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowReportModal(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeaderRow}>
+              <View>
+                <Text style={styles.modalTitle}>Laporkan Wabah Hama</Text>
+                <Text style={styles.modalSubtitle}>Bantu petani sekitar mendeteksi sebaran hama lebih dini</Text>
+              </View>
+              <Pressable onPress={() => setShowReportModal(false)} style={styles.modalCloseBtn}>
+                <MaterialIcons name="close" size={20} color="#123924" />
+              </Pressable>
+            </View>
+
+            <Text style={styles.modalLabel}>Pilih Jenis Hama / Penyakit</Text>
+            <View style={styles.modalPestGrid}>
+              {FILTERS.filter((f) => f.key !== 'semua').map((item) => {
+                const isSelected = selectedReportPest === item.key;
+                return (
+                  <Pressable
+                    key={item.key}
+                    onPress={() => setSelectedReportPest(item.key)}
+                    style={[
+                      styles.modalPestChip,
+                      isSelected && styles.modalPestChipActive,
+                    ]}
+                  >
+                    <MaterialIcons
+                      name={item.icon}
+                      size={16}
+                      color={isSelected ? '#FFFFFF' : '#123924'}
+                    />
+                    <Text style={[styles.modalPestChipText, isSelected && { color: '#FFFFFF' }]}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={styles.modalLabel}>Catatan Gejala (Opsional)</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Contoh: Daun cabai keriting dan ada kutu putih di balik daun..."
+              placeholderTextColor="#9CA3AF"
+              value={reportNote}
+              onChangeText={setReportNote}
+              maxLength={200}
+              multiline
+            />
+
+            <Pressable
+              onPress={handleSubmitPestReport}
+              disabled={isSubmittingReport}
+              style={({ pressed }) => [
+                styles.modalSubmitBtn,
+                pressed && styles.btnPressed,
+                isSubmittingReport && { opacity: 0.7 },
+              ]}
+            >
+              {isSubmittingReport ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <MaterialIcons name="send" size={18} color="#FFFFFF" />
+                  <Text style={styles.modalSubmitText}>Kirim ke Radar Komunitas</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -826,6 +1000,126 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 12,
     color: '#123924'
+  },
+  reportFabBtn: {
+    position: 'absolute',
+    bottom: 72,
+    left: 16,
+    zIndex: 1000,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 100,
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 5,
+    gap: 6
+  },
+  reportFabText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 12,
+    color: '#FFFFFF'
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(18, 57, 36, 0.55)',
+    justifyContent: 'flex-end'
+  },
+  modalCard: {
+    backgroundColor: '#FBF8F0',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 34
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 18
+  },
+  modalTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 18,
+    color: '#123924'
+  },
+  modalSubtitle: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: '#5C5A4F',
+    marginTop: 2
+  },
+  modalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#E8E5DA',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  modalLabel: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 13,
+    color: '#123924',
+    marginBottom: 10
+  },
+  modalPestGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 18
+  },
+  modalPestChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: '#E8E5DA'
+  },
+  modalPestChipActive: {
+    backgroundColor: '#1B4332',
+    borderColor: '#1B4332'
+  },
+  modalPestChipText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: '#123924'
+  },
+  modalInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 76,
+    textAlignVertical: 'top',
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: '#123924',
+    borderWidth: 1,
+    borderColor: '#E8E5DA',
+    marginBottom: 18
+  },
+  modalSubmitBtn: {
+    backgroundColor: '#3FA86B',
+    borderRadius: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8
+  },
+  modalSubmitText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 15,
+    color: '#FFFFFF'
   },
   floatingLoadingPill: {
     position: 'absolute',

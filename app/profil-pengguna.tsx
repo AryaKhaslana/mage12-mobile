@@ -110,9 +110,9 @@ const formatCount = (n: number) => {
 };
 
 const POST_BADGE: Record<string, { label: string; bg: string; fg: string; border: string }> = {
-  progress_update: { label: "Update Kebun", bg: C.tealLight, fg: C.teal, border: "rgba(46,158,140,0.3)" },
-  panen_surplus: { label: "Galeri Panen", bg: C.amberLight, fg: C.amberText, border: "rgba(255,182,39,0.6)" },
-  pertanyaan: { label: "Pertanyaan", bg: C.coralLight, fg: C.coral, border: "rgba(255,107,92,0.35)" },
+  progress_update: { label: "Progress", bg: "#E8F5E9", fg: "#3FA86B", border: "rgba(63,168,107,0.3)" },
+  panen_surplus: { label: "Panen Surplus", bg: "#FFF9E6", fg: "#B8860B", border: "rgba(255,182,39,0.5)" },
+  pertanyaan: { label: "Pertanyaan", bg: "#FFECEB", fg: "#FF6B5C", border: "rgba(255,107,92,0.35)" },
 };
 
 const getPlantStatus = (t: TanamanDetail) => {

@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState, useEffect, useRef } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, RefreshControl, FlatList, StyleSheet, Text, View, Animated } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, RefreshControl, FlatList, StyleSheet, Text, View, Animated, Share } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from "expo-image";
 import { router, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from "react-native-svg";
-import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser, registerOnLogout, clearInFlightRequests } from '../../services/api';
+import api, { Achievement, AchievementResponse, getAchievements, getUserCommunityPosts, CommunityPost, toggleCommunityLike, logoutUser, registerOnLogout, clearInFlightRequests, normalizePlantScore } from '../../services/api';
 import { getRelativeTime } from "../../utils/format";
 import { useNotification } from '../../components/NotificationContext';
 import { getPlantImage } from '../../constants/plantImages';
@@ -127,9 +127,9 @@ const SkeletonBlock = ({ style }: { style: any }) => {
 };
 
 const POST_BADGE: Record<string, { label: string; bg: string; fg: string; border: string }> = {
-  pertanyaan: { label: "Diskusi", bg: C.primaryLight, fg: C.primaryDark, border: C.primary },
-  progress_update: { label: "Tips & Trik", bg: C.amberLight, fg: C.amberText, border: "rgba(255,182,39,0.5)" },
-  panen_surplus: { label: "Pamer Kebun", bg: C.tealLight, fg: C.teal, border: "rgba(46,158,140,0.3)" },
+  pertanyaan: { label: "Pertanyaan", bg: "#FFECEB", fg: "#FF6B5C", border: "rgba(255,107,92,0.35)" },
+  progress_update: { label: "Progress", bg: "#E8F5E9", fg: "#3FA86B", border: "rgba(63,168,107,0.3)" },
+  panen_surplus: { label: "Panen Surplus", bg: "#FFF9E6", fg: "#B8860B", border: "rgba(255,182,39,0.5)" },
 };
 
 const EmptyState = ({ icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
@@ -963,18 +963,77 @@ export default function ProfilScreen() {
                   <Text style={{ fontFamily: F.medium, fontSize: 14, color: "#a09d91", textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }}>Rawat tanamanmu sampai waktunya panen buat nambah piala di sini!</Text>
                 </View>
               }
-              renderItem={({ item }) => (
-                <View style={{ flexDirection: 'row', backgroundColor: C.surface, borderRadius: 20, padding: 16, marginBottom: 16, ...shadowSubtle, alignItems: 'center' }}>
-                  <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                    <MaterialIcons name="workspace-premium" size={32} color={C.primary} />
+              renderItem={({ item }) => {
+                const tglTanam = item.tanggalTanam ? new Date(item.tanggalTanam) : null;
+                const tglPanen = item.tanggalPanen ? new Date(item.tanggalPanen) : new Date();
+                const diffHari = tglTanam
+                  ? Math.max(1, Math.round((tglPanen.getTime() - tglTanam.getTime()) / 86400000))
+                  : (item.daysToHarvest || 30);
+                const skorAkhir = normalizePlantScore(item.predictiveScore ?? 95);
+                const namaTampil = item.nickname || item.jenisTanaman || "Tanaman";
+                const jenisTampil = item.jenisTanaman || "Tanaman Kebun";
+
+                return (
+                  <View style={{ backgroundColor: C.surface, borderRadius: 24, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: C.outline, ...shadowSubtle }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: C.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 16, position: 'relative' }}>
+                        <Image
+                          source={getPlantImage(jenisTampil)}
+                          style={{ width: 54, height: 54 }}
+                          contentFit="contain"
+                          cachePolicy="memory-disk"
+                        />
+                        <View style={{ position: 'absolute', bottom: -4, right: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.surface }}>
+                          <MaterialIcons name="workspace-premium" size={15} color={C.ink} />
+                        </View>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <Text style={{ fontFamily: F.extra, fontSize: 18, color: C.ink, flex: 1 }} numberOfLines={1}>
+                            {namaTampil}
+                          </Text>
+                          <View style={{ backgroundColor: C.amberLight, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 100 }}>
+                            <Text style={{ fontFamily: F.extra, fontSize: 11, color: C.amberText }}>LULUS PANEN</Text>
+                          </View>
+                        </View>
+                        <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.primary, marginTop: 2 }}>{jenisTampil}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.primaryLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                            <MaterialIcons name="schedule" size={12} color={C.primaryDark} />
+                            <Text style={{ fontFamily: F.bold, fontSize: 11, color: C.primaryDark }}>{diffHari} Hari Rawat</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.tealLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                            <MaterialIcons name="favorite" size={12} color={C.teal} />
+                            <Text style={{ fontFamily: F.bold, fontSize: 11, color: C.teal }}>Kesehatan {skorAkhir}/100</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={{ height: 1, backgroundColor: C.outline, marginVertical: 12 }} />
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={{ fontFamily: F.medium, fontSize: 12, color: C.muted, flex: 1 }}>
+                        Tanam: {tglTanam ? tglTanam.toLocaleDateString('id-ID') : '-'} {"\u2022"} Panen: {tglPanen.toLocaleDateString('id-ID')}
+                      </Text>
+                      <Pressable
+                        onPress={() => {
+                          Share.share({
+                            message: `Piala Panen TaniSync: Saya berhasil memanen ${namaTampil} (${jenisTampil}) setelah ${diffHari} hari perawatan dengan skor kesehatan ${skorAkhir}/100!`,
+                          }).catch(() => {});
+                        }}
+                        style={({ pressed }) => [
+                          { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.ink, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 100 },
+                          pressed && { opacity: 0.8 },
+                        ]}
+                      >
+                        <MaterialIcons name="share" size={13} color="#FFFFFF" />
+                        <Text style={{ fontFamily: F.bold, fontSize: 11, color: "#FFFFFF" }}>Bagikan</Text>
+                      </Pressable>
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: F.extra, fontSize: 18, color: C.ink }}>{item.nickname || item.jenisTanaman}</Text>
-                    <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.primary }}>{item.jenisTanaman}</Text>
-                    <Text style={{ fontFamily: F.medium, fontSize: 12, color: C.muted, marginTop: 4 }}>Ditanam: {new Date(item.tanggalTanam).toLocaleDateString('id-ID')} • Dipanen: {item.tanggalPanen ? new Date(item.tanggalPanen).toLocaleDateString('id-ID') : 'Hari ini'}</Text>
-                  </View>
-                </View>
-              )}
+                );
+              }}
             />
           )}
         </View>

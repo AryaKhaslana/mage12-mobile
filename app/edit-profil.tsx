@@ -9,7 +9,8 @@ import {
   ScrollView,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -17,7 +18,7 @@ import { router, Stack, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import api, { updateProfile } from '../services/api';
+import api, { updateProfile, changeUserPassword } from '../services/api';
 import { useNotification } from '../components/NotificationContext';
 
 export default function EditProfilScreen() {
@@ -35,6 +36,14 @@ export default function EditProfilScreen() {
   const [bannerBaru, setBannerBaru] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordLama, setPasswordLama] = useState('');
+  const [passwordBaru, setPasswordBaru] = useState('');
+  const [konfirmasiPassword, setKonfirmasiPassword] = useState('');
+  const [showPassLama, setShowPassLama] = useState(false);
+  const [showPassBaru, setShowPassBaru] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const isDirtyRef = useRef(false);
   const savingLockRef = useRef(false);
@@ -257,6 +266,43 @@ export default function EditProfilScreen() {
     } finally {
       setIsSaving(false);
       savingLockRef.current = false;
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (isChangingPassword) return;
+    if (!passwordLama.trim()) {
+      showNotification("Validasi", "Kata sandi saat ini wajib diisi.", "error");
+      return;
+    }
+    if (passwordBaru.trim().length < 8) {
+      showNotification("Validasi", "Kata sandi baru minimal harus 8 karakter.", "error");
+      return;
+    }
+    if (passwordBaru.trim() !== konfirmasiPassword.trim()) {
+      showNotification("Validasi", "Konfirmasi kata sandi baru tidak cocok.", "error");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await changeUserPassword({
+        passwordLama: passwordLama.trim(),
+        passwordBaru: passwordBaru.trim(),
+      });
+      setShowPasswordModal(false);
+      setPasswordLama('');
+      setPasswordBaru('');
+      setKonfirmasiPassword('');
+      showNotification("Berhasil", "Kata sandi akun berhasil diperbarui!", "success");
+    } catch (error: any) {
+      showNotification(
+        "Gagal",
+        error.response?.data?.message || "Gagal memperbarui kata sandi.",
+        "error"
+      );
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -486,6 +532,88 @@ export default function EditProfilScreen() {
                 </Pressable>
               </View>
             </View>
+
+            {/* KEAMANAN AKUN (UBAH KATA SANDI) */}
+            <View style={[styles.inputGroup, { marginBottom: 4 }]}>
+              <Text style={styles.inputLabel}>Keamanan Akun</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "#F4F1E8",
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: "#E8E5DA",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1, marginRight: 12 }}>
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: "#E8F5E9",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <MaterialIcons name="lock-outline" size={20} color="#3FA86B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: "Nunito_800ExtraBold",
+                        fontSize: 14,
+                        color: "#123924",
+                      }}
+                    >
+                      Kata Sandi Akun
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "Nunito_500Medium",
+                        fontSize: 12,
+                        color: "#5C5A4F",
+                      }}
+                    >
+                      Perbarui kata sandi masuk secara berkala
+                    </Text>
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setPasswordLama('');
+                    setPasswordBaru('');
+                    setKonfirmasiPassword('');
+                    setShowPasswordModal(true);
+                  }}
+                  style={({ pressed }) => [
+                    {
+                      backgroundColor: "#123924",
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 10,
+                    },
+                    pressed && { opacity: 0.8 },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "Nunito_700Bold",
+                      fontSize: 12,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    Ganti Sandi
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
         </ScrollView>
 
@@ -510,6 +638,83 @@ export default function EditProfilScreen() {
             )}
           </Pressable>
         </View>
+
+        <Modal visible={showPasswordModal} transparent animationType="fade" onRequestClose={() => setShowPasswordModal(false)}>
+          <View style={{ flex: 1, backgroundColor: "rgba(18, 57, 36, 0.55)", justifyContent: "center", padding: 20 }}>
+            <View style={{ backgroundColor: "#FFFFFF", borderRadius: 24, padding: 22, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 6 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <Text style={{ fontFamily: "Nunito_800ExtraBold", fontSize: 20, color: "#123924" }}>Ubah Kata Sandi</Text>
+                <Pressable onPress={() => setShowPasswordModal(false)} hitSlop={10}>
+                  <MaterialIcons name="close" size={22} color="#5C5A4F" />
+                </Pressable>
+              </View>
+
+              <Text style={{ fontFamily: "Nunito_700Bold", fontSize: 13, color: "#123924", marginBottom: 6 }}>Kata Sandi Saat Ini</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FBF8F0", borderWidth: 1, borderColor: "#E8E5DA", borderRadius: 12, paddingHorizontal: 14, height: 48, marginBottom: 12 }}>
+                <TextInput
+                  style={{ flex: 1, fontFamily: "Nunito_500Medium", fontSize: 14, color: "#123924" }}
+                  placeholder="Masukkan sandi saat ini"
+                  placeholderTextColor="#A09D91"
+                  secureTextEntry={!showPassLama}
+                  value={passwordLama}
+                  onChangeText={setPasswordLama}
+                  autoCapitalize="none"
+                />
+                <Pressable onPress={() => setShowPassLama(prev => !prev)} hitSlop={8}>
+                  <MaterialIcons name={showPassLama ? "visibility" : "visibility-off"} size={20} color="#5C5A4F" />
+                </Pressable>
+              </View>
+
+              <Text style={{ fontFamily: "Nunito_700Bold", fontSize: 13, color: "#123924", marginBottom: 6 }}>Kata Sandi Baru (Min. 8 Karakter)</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FBF8F0", borderWidth: 1, borderColor: "#E8E5DA", borderRadius: 12, paddingHorizontal: 14, height: 48, marginBottom: 12 }}>
+                <TextInput
+                  style={{ flex: 1, fontFamily: "Nunito_500Medium", fontSize: 14, color: "#123924" }}
+                  placeholder="Minimal 8 karakter"
+                  placeholderTextColor="#A09D91"
+                  secureTextEntry={!showPassBaru}
+                  value={passwordBaru}
+                  onChangeText={setPasswordBaru}
+                  autoCapitalize="none"
+                />
+                <Pressable onPress={() => setShowPassBaru(prev => !prev)} hitSlop={8}>
+                  <MaterialIcons name={showPassBaru ? "visibility" : "visibility-off"} size={20} color="#5C5A4F" />
+                </Pressable>
+              </View>
+
+              <Text style={{ fontFamily: "Nunito_700Bold", fontSize: 13, color: "#123924", marginBottom: 6 }}>Konfirmasi Kata Sandi Baru</Text>
+              <TextInput
+                style={{ backgroundColor: "#FBF8F0", borderWidth: 1, borderColor: "#E8E5DA", borderRadius: 12, paddingHorizontal: 14, height: 48, fontFamily: "Nunito_500Medium", fontSize: 14, color: "#123924", marginBottom: 20 }}
+                placeholder="Ulangi kata sandi baru"
+                placeholderTextColor="#A09D91"
+                secureTextEntry={!showPassBaru}
+                value={konfirmasiPassword}
+                onChangeText={setKonfirmasiPassword}
+                autoCapitalize="none"
+              />
+
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <Pressable
+                  style={{ flex: 1, paddingVertical: 13, borderRadius: 100, backgroundColor: "#F4F1E8", alignItems: "center" }}
+                  onPress={() => setShowPasswordModal(false)}
+                  disabled={isChangingPassword}
+                >
+                  <Text style={{ fontFamily: "Nunito_700Bold", fontSize: 14, color: "#123924" }}>Batal</Text>
+                </Pressable>
+                <Pressable
+                  style={{ flex: 1, paddingVertical: 13, borderRadius: 100, backgroundColor: "#3FA86B", alignItems: "center", justifyContent: "center" }}
+                  onPress={handleChangePassword}
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={{ fontFamily: "Nunito_800ExtraBold", fontSize: 14, color: "#FFFFFF" }}>Simpan Sandi</Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
       </KeyboardAvoidingView>
     </SafeAreaView>

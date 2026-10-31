@@ -768,6 +768,22 @@ export const deleteCommunityPost = async (id: number): Promise<void> => {
   await api.delete(`/community/${id}`);
 };
 
+export const updateCommunityPost = async (
+  id: number,
+  payload: { deskripsi: string; judul?: string | null; tipePost?: "progress_update" | "panen_surplus" | "pertanyaan" }
+): Promise<any> => {
+  const response = await api.put(`/community/${id}`, payload);
+  return response.data.data ?? response.data;
+};
+
+export const changeUserPassword = async (payload: {
+  passwordLama?: string;
+  passwordBaru: string;
+}): Promise<any> => {
+  const response = await api.put("/user/password", payload);
+  return response.data;
+};
+
 export const harvestTanaman = async (id: number): Promise<any> => {
   const response = await api.post(`/tanaman/${id}/panen`);
   return response.data;

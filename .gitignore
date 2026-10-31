@@ -25,6 +25,12 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+
+# AI Assistants & Memory Banks
+.claude/
+.memory-bank/
+.gemini/
 
 # macOS
 .DS_Store

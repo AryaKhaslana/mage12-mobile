@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import api, { getCommunityPostDetail, getCommunityComments, addCommunityComment, deleteCommunityComment, toggleCommunityLike, deleteCommunityPost, CommunityPostDetail, CommunityComment } from '../services/api';
+import api, { getCommunityPostDetail, getCommunityComments, addCommunityComment, deleteCommunityComment, toggleCommunityLike, deleteCommunityPost, updateCommunityPost, CommunityPostDetail, CommunityComment } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
 import { useNotification } from '../components/NotificationContext';
@@ -122,6 +122,12 @@ export default function DetailKomunitasScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
+
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editJudul, setEditJudul] = useState("");
+  const [editDeskripsi, setEditDeskripsi] = useState("");
+  const [editTipePost, setEditTipePost] = useState<"progress_update" | "panen_surplus" | "pertanyaan">("progress_update");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const inputRef = useRef<TextInput>(null);
 
@@ -283,6 +289,50 @@ export default function DetailKomunitasScreen() {
     setPostToDelete(post.id);
   };
 
+  const handleOpenEditPost = () => {
+    if (!post) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditJudul(post.judul || "");
+    setEditDeskripsi(post.deskripsi || "");
+    setEditTipePost((post.tipePost as any) || "progress_update");
+    setIsEditModalVisible(true);
+  };
+
+  const handleSaveEditPost = async () => {
+    if (!post || isSavingEdit) return;
+    const trimmedDesc = editDeskripsi.trim();
+    const trimmedJudul = editJudul.trim();
+    if (!trimmedDesc) {
+      showNotification("Validasi", "Isi postingan tidak boleh kosong.", "error");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const updated = await updateCommunityPost(post.id, {
+        deskripsi: trimmedDesc,
+        judul: trimmedJudul || null,
+        tipePost: editTipePost,
+      });
+      setPost(prev =>
+        prev
+          ? {
+              ...prev,
+              deskripsi: updated?.deskripsi ?? trimmedDesc,
+              judul: updated?.judul !== undefined ? updated.judul : (trimmedJudul || undefined),
+              tipePost: updated?.tipePost ?? editTipePost,
+            }
+          : null
+      );
+      setIsEditModalVisible(false);
+      showNotification("Berhasil", "Postingan berhasil diperbarui!", "success");
+    } catch (e: any) {
+      showNotification("Gagal", e.response?.data?.message || "Gagal memperbarui postingan.", "error");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   const confirmDeletePost = async () => {
     if (!postToDelete) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -404,10 +454,15 @@ export default function DetailKomunitasScreen() {
                 <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
               </View>
             ) : null}
-            {post.isOwner && (
-              <TouchableOpacity hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} style={{ padding: 8, marginLeft: 8, zIndex: 10, elevation: 10 }} onPress={handleDeletePost}>
-                <MaterialIcons name="delete" size={20} color="#FF4C4C" />
-              </TouchableOpacity>
+            {(post.isOwner || Boolean(currentUserId && post.userId === currentUserId)) && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 4 }}>
+                <TouchableOpacity hitSlop={{top: 12, bottom: 12, left: 10, right: 10}} style={{ padding: 6, zIndex: 10, elevation: 10 }} onPress={handleOpenEditPost}>
+                  <MaterialIcons name="edit" size={20} color="#123924" />
+                </TouchableOpacity>
+                <TouchableOpacity hitSlop={{top: 12, bottom: 12, left: 10, right: 10}} style={{ padding: 6, zIndex: 10, elevation: 10 }} onPress={handleDeletePost}>
+                  <MaterialIcons name="delete" size={20} color="#FF4C4C" />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -606,6 +661,90 @@ export default function DetailKomunitasScreen() {
               </Pressable>
               <Pressable style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#FF4C4C', borderWidth: 0,  alignItems: 'center' }} onPress={confirmDeleteComment} disabled={isDeletingId !== null}>
                 {isDeletingId !== null ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: '#FFFFFF' }}>Hapus</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={isEditModalVisible} animationType="fade" transparent onRequestClose={() => setIsEditModalVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(18, 57, 36, 0.55)', justifyContent: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 22, shadowColor: "#123924", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 6 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#123924' }}>Edit Postingan</Text>
+              <Pressable onPress={() => setIsEditModalVisible(false)} hitSlop={10}>
+                <MaterialIcons name="close" size={22} color="#5C5A4F" />
+              </Pressable>
+            </View>
+
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 13, color: '#123924', marginBottom: 8 }}>Kategori</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+              {([
+                { key: "progress_update", label: "Progress" },
+                { key: "pertanyaan", label: "Pertanyaan" },
+                { key: "panen_surplus", label: "Panen Surplus" },
+              ] as const).map((opt) => {
+                const active = editTipePost === opt.key;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    onPress={() => setEditTipePost(opt.key)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 8,
+                      paddingHorizontal: 8,
+                      borderRadius: 12,
+                      backgroundColor: active ? '#123924' : '#F4F1E8',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 12, color: active ? '#FFFFFF' : '#5C5A4F' }} numberOfLines={1}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 13, color: '#123924', marginBottom: 6 }}>Judul (Opsional)</Text>
+            <TextInput
+              style={{ backgroundColor: '#FBF8F0', borderWidth: 1, borderColor: '#E8E5DA', borderRadius: 12, paddingHorizontal: 14, height: 44, fontFamily: 'Nunito_600SemiBold', fontSize: 14, color: '#123924', marginBottom: 12 }}
+              placeholder="Judul singkat postingan..."
+              placeholderTextColor="#A09D91"
+              value={editJudul}
+              onChangeText={setEditJudul}
+              maxLength={80}
+            />
+
+            <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 13, color: '#123924', marginBottom: 6 }}>Isi Cerita / Pertanyaan *</Text>
+            <TextInput
+              style={{ backgroundColor: '#FBF8F0', borderWidth: 1, borderColor: '#E8E5DA', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 110, maxHeight: 180, fontFamily: 'Nunito_500Medium', fontSize: 14, color: '#123924', textAlignVertical: 'top', marginBottom: 18 }}
+              placeholder="Tulis pembaruan postinganmu..."
+              placeholderTextColor="#A09D91"
+              value={editDeskripsi}
+              onChangeText={setEditDeskripsi}
+              multiline
+              maxLength={1000}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable
+                style={{ flex: 1, paddingVertical: 13, borderRadius: 100, backgroundColor: '#F4F1E8', alignItems: 'center' }}
+                onPress={() => setIsEditModalVisible(false)}
+                disabled={isSavingEdit}
+              >
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 14, color: '#123924' }}>Batal</Text>
+              </Pressable>
+              <Pressable
+                style={{ flex: 1, paddingVertical: 13, borderRadius: 100, backgroundColor: '#3FA86B', alignItems: 'center', justifyContent: 'center' }}
+                onPress={handleSaveEditPost}
+                disabled={isSavingEdit}
+              >
+                {isSavingEdit ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#FFFFFF' }}>Simpan</Text>
+                )}
               </Pressable>
             </View>
           </View>

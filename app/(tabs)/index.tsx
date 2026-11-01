@@ -236,6 +236,7 @@ export default function DashboardScreen() {
   };
   const [userData, setUserData] = useState<any>(() => memoryHomeUser);
   const [showGamification, setShowGamification] = useState(false);
+  const [selectedStreakDate, setSelectedStreakDate] = useState<string>(() => getWibDateStr());
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialSteps, setTutorialSteps] = useState<CoachMarkStep[]>([]);
   const [needsTutorial, setNeedsTutorial] = useState(false);
@@ -811,11 +812,22 @@ export default function DashboardScreen() {
       previousUserState = { ...prev };
       const todayWib = getWibDateStr();
       const prevDates = Array.isArray(prev.activeDates) ? prev.activeDates : [];
+      const prevMap = prev.activityByDate && typeof prev.activityByDate === 'object' ? { ...prev.activityByDate } : {};
+      const todayEntry = prevMap[todayWib] || { count: 0, items: [] };
+      const nowTimeWib = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16);
+      prevMap[todayWib] = {
+        count: (todayEntry.count || 0) + 1,
+        items: [
+          { plant: plantName || 'Tanaman', tipe: 'button_only', time: nowTimeWib },
+          ...(Array.isArray(todayEntry.items) ? todayEntry.items : []).slice(0, 7),
+        ],
+      };
       const updated = { 
         ...prev, 
         exp: (prev.exp || 0) + 1, 
         streak: (prev.streak || 0) > 0 ? prev.streak : 1,
         activeDates: prevDates.includes(todayWib) ? prevDates : [...prevDates, todayWib],
+        activityByDate: prevMap,
       };
       SecureStore.setItemAsync("userData", JSON.stringify(updated)).catch(console.error);
       return updated;
@@ -1154,39 +1166,195 @@ export default function DashboardScreen() {
               );
             })()}
 
-            {/* HEATMAP STREAK */}
-            <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 16, marginBottom: 24 }}>
+            {/* HEATMAP STREAK ALA GITHUB */}
+            <View style={{ backgroundColor: '#E8F5E9', padding: 16, borderRadius: 20, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(63,168,107,0.22)' }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Aktivitas 28 Hari Terakhir</Text>
-                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 11, color: '#3FA86B' }}>Kalender WIB</Text>
+                <View>
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: '#123924' }}>Aktivitas 28 Hari Terakhir</Text>
+                  <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 11, color: '#5C5A4F' }}>Ketuk tanggal untuk melihat rincian perawatan</Text>
+                </View>
+                <View style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 100 }}>
+                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 10, color: '#1F5C3D' }}>Kalender WIB</Text>
+                </View>
               </View>
+
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                 {Array.from({ length: 28 }).map((_, i) => {
                   const daysAgo = 27 - i;
                   const cellDate = new Date(Date.now() - daysAgo * 86400000);
                   const cellWibStr = getWibDateStr(cellDate);
-                  const dayNum = cellDate.getDate();
-                  const hasLogOnDate = Array.isArray(userData?.activeDates) && userData.activeDates.includes(cellWibStr);
+                  const dayNum = Number(cellWibStr.split('-')[2] || cellDate.getDate());
+                  const dateDetail = userData?.activityByDate?.[cellWibStr];
+                  const logCount = dateDetail?.count || 0;
+                  const hasLogOnDate = logCount > 0 || (Array.isArray(userData?.activeDates) && userData.activeDates.includes(cellWibStr));
                   const isStreak = hasLogOnDate || daysAgo < (userData?.streak || 0);
+                  const effectiveCount = logCount > 0 ? logCount : (isStreak ? 1 : 0);
+                  const isSelected = selectedStreakDate === cellWibStr;
                   const isToday = daysAgo === 0;
+
+                  let cellBg = 'rgba(18,57,36,0.08)';
+                  let textColor = '#5C5A4F';
+                  if (effectiveCount >= 3) {
+                    cellBg = '#164E33';
+                    textColor = '#FFFFFF';
+                  } else if (effectiveCount === 2) {
+                    cellBg = '#2E8B57';
+                    textColor = '#FFFFFF';
+                  } else if (effectiveCount === 1) {
+                    cellBg = '#5AC886';
+                    textColor = '#123924';
+                  }
+
                   return (
-                    <View 
-                      key={i} 
-                      style={{ 
-                        width: 26, height: 26, borderRadius: 7, 
-                        alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: isStreak ? '#3FA86B' : 'rgba(28,57,36,0.08)',
-                        borderWidth: isToday ? 1.5 : 0,
-                        borderColor: isStreak ? '#123924' : '#3FA86B'
-                      }} 
+                    <Pressable
+                      key={cellWibStr}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        setSelectedStreakDate(cellWibStr);
+                      }}
+                      style={({ pressed }) => [
+                        {
+                          width: 34,
+                          height: 34,
+                          borderRadius: 9,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: cellBg,
+                          borderWidth: isSelected ? 2.5 : isToday ? 1.5 : 0,
+                          borderColor: isSelected ? '#123924' : '#3FA86B',
+                          transform: [{ scale: isSelected ? 1.06 : pressed ? 0.94 : 1 }],
+                        },
+                      ]}
                     >
-                      <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 10, color: isStreak ? '#FFFFFF' : '#5C5A4F' }}>
+                      <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 11, color: textColor }}>
                         {dayNum}
                       </Text>
-                    </View>
+                      {isToday && (
+                        <View
+                          style={{
+                            position: 'absolute',
+                            bottom: 3,
+                            width: 4,
+                            height: 4,
+                            borderRadius: 2,
+                            backgroundColor: effectiveCount >= 2 ? '#FFB627' : '#123924',
+                          }}
+                        />
+                      )}
+                    </Pressable>
                   );
                 })}
               </View>
+
+              {/* LEGEND ALA GITHUB */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, paddingHorizontal: 4 }}>
+                <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 10, color: '#5C5A4F' }}>
+                  Intensitas Siram Harian
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 10, color: '#5C5A4F' }}>0</Text>
+                  <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: 'rgba(18,57,36,0.08)' }} />
+                  <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: '#5AC886' }} />
+                  <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: '#2E8B57' }} />
+                  <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: '#164E33' }} />
+                  <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 10, color: '#5C5A4F' }}>3+</Text>
+                </View>
+              </View>
+
+              {/* DETAIL HARI YANG DIPILIH */}
+              {(() => {
+                const todayStr = getWibDateStr();
+                const activeStr = selectedStreakDate || todayStr;
+                const parsedDate = new Date(`${activeStr}T00:00:00+07:00`);
+                const formattedDate = parsedDate.toLocaleDateString('id-ID', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                });
+                const detail = userData?.activityByDate?.[activeStr];
+                const items: { plant: string; tipe: string; time: string }[] = Array.isArray(detail?.items) ? detail.items : [];
+                const diffFromToday = Math.round((Date.parse(`${todayStr}T00:00:00Z`) - Date.parse(`${activeStr}T00:00:00Z`)) / 86400000);
+                const hasLog = (detail?.count || 0) > 0 || (Array.isArray(userData?.activeDates) && userData.activeDates.includes(activeStr));
+                const isStreakDay = hasLog || (diffFromToday >= 0 && diffFromToday < (userData?.streak || 0));
+                const countDisplay = detail?.count || (isStreakDay ? 1 : 0);
+
+                return (
+                  <View style={{ marginTop: 12, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(18,57,36,0.08)' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                        <MaterialIcons
+                          name={countDisplay > 0 ? "local-fire-department" : "event-note"}
+                          size={16}
+                          color={countDisplay > 0 ? "#3FA86B" : "#8C897E"}
+                        />
+                        <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#123924', flex: 1 }} numberOfLines={1}>
+                          {formattedDate}
+                        </Text>
+                      </View>
+                      <View
+                        style={{
+                          backgroundColor: countDisplay > 0 ? '#E8F7EE' : '#F4F1E8',
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 100,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: 'Nunito_800ExtraBold',
+                            fontSize: 10,
+                            color: countDisplay > 0 ? '#1F5C3D' : '#5C5A4F',
+                          }}
+                        >
+                          {countDisplay > 0 ? `${countDisplay} Aktivitas` : '0 Aktivitas'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {items.length > 0 ? (
+                      <View style={{ marginTop: 8, gap: 6 }}>
+                        {items.map((act, idx) => (
+                          <View
+                            key={`${act.plant}-${act.time}-${idx}`}
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              backgroundColor: '#FBF8F0',
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                              borderRadius: 10,
+                            }}
+                          >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                              <MaterialIcons
+                                name={act.tipe === 'photo' ? "photo-camera" : "water-drop"}
+                                size={13}
+                                color="#3FA86B"
+                              />
+                              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 11, color: '#123924', flex: 1 }} numberOfLines={1}>
+                                Menyiram {act.plant}
+                              </Text>
+                            </View>
+                            <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 10, color: '#5C5A4F' }}>
+                              {act.tipe === 'photo' ? 'Foto (+15 EXP)' : 'Cepat (+10 EXP)'} {"\u2022"} {act.time} WIB
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : isStreakDay ? (
+                      <Text style={{ fontFamily: 'Nunito_600SemiBold', fontSize: 11, color: '#1F5C3D', marginTop: 6 }}>
+                        Streak perawatan harian terjaga pada tanggal ini.
+                      </Text>
+                    ) : (
+                      <Text style={{ fontFamily: 'Nunito_500Medium', fontSize: 11, color: '#7A776C', marginTop: 6 }}>
+                        Tidak ada aktivitas penyiraman yang tercatat pada tanggal ini.
+                      </Text>
+                    )}
+                  </View>
+                );
+              })()}
             </View>
 
             {/* PELINDUNG STREAK */}

@@ -1,4 +1,5 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { router, useFocusEffect } from "expo-router";
@@ -954,7 +955,14 @@ export default function DashboardScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[isLoading && { paddingHorizontal: 0, paddingTop: 0 }, { paddingBottom: 140 }]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsSimulasiHujan(false); fetchDashboardData(true); }} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => { setIsSimulasiHujan(false); fetchDashboardData(true); }}
+            colors={["#3FA86B"]}
+            tintColor="#3FA86B"
+          />
+        }
       >
         {isLoading ? (
           <View style={{ padding: 24 }}><HomeSkeleton /></View>
@@ -1086,39 +1094,55 @@ export default function DashboardScreen() {
         onRequestClose={() => setShowGamification(false)}
       >
         <View style={{ flex: 1, backgroundColor: '#FBF8F0' }}>
+          <StatusBar style="light" />
           {/* HEADER */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 18, paddingTop: 16 + insets.top, backgroundColor: '#123924' }}>
-            <View style={{ flex: 1, marginRight: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <MaterialIcons name="workspace-premium" size={16} color="#FFB627" />
-                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 11, color: '#FFB627', letterSpacing: 0.8 }}>
-                  PETA PERJALANAN TANI
+          <View style={{ paddingHorizontal: 24, paddingBottom: 18, paddingTop: 16 + insets.top, backgroundColor: '#123924' }}>
+            {/* Top Row: Title + Close Button */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,182,39,0.16)', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="workspace-premium" size={20} color="#FFB627" />
+                </View>
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 20, color: '#FFFFFF' }}>
+                  Peta Perjalanan Tani
                 </Text>
               </View>
-              <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 22, color: '#FFFFFF' }}>
-                {(() => {
-                  const l = userData?.level || 1;
-                  if (l >= 10) return "Dewa Tani";
-                  if (l >= 8) return "Sultan Hidroponik";
-                  if (l >= 4) return "Juragan Panen";
-                  if (l >= 2) return "Tangan Dingin";
-                  return "Petani Balkon";
-                })()}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,182,39,0.2)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 100 }}>
-                  <MaterialIcons name="stars" size={13} color="#FFB627" />
-                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#FFB627' }}>Level {userData?.level || 1}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(63,168,107,0.25)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 100 }}>
-                  <MaterialIcons name="local-fire-department" size={13} color="#6EE7A0" />
-                  <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#6EE7A0' }}>{userData?.streak || 0} Hari Streak</Text>
-                </View>
+              <TouchableOpacity
+                onPress={() => setShowGamification(false)}
+                style={{ backgroundColor: 'rgba(255,255,255,0.14)', padding: 8, borderRadius: 100 }}
+                hitSlop={8}
+                accessibilityLabel="Tutup Peta Perjalanan"
+              >
+                <MaterialIcons name="close" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom Row: Badges Sejajar */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,182,39,0.18)', borderWidth: 1, borderColor: 'rgba(255,182,39,0.3)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100 }}>
+                <MaterialIcons name="verified" size={13} color="#FFB627" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#FFD666' }}>
+                  {(() => {
+                    const l = userData?.level || 1;
+                    if (l >= 10) return "Dewa Tani";
+                    if (l >= 8) return "Sultan Hidroponik";
+                    if (l >= 4) return "Juragan Panen";
+                    if (l >= 2) return "Tangan Dingin";
+                    return "Petani Balkon";
+                  })()}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100 }}>
+                <MaterialIcons name="stars" size={13} color="#FFFFFF" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#FFFFFF' }}>Level {userData?.level || 1}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(63,168,107,0.22)', borderWidth: 1, borderColor: 'rgba(63,168,107,0.35)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100 }}>
+                <MaterialIcons name="local-fire-department" size={13} color="#6EE7A0" />
+                <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#6EE7A0' }}>{userData?.streak || 0} Hari Streak</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={() => setShowGamification(false)} style={{ backgroundColor: 'rgba(255,255,255,0.14)', padding: 10, borderRadius: 100 }}>
-              <MaterialIcons name="close" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
           </View>
 
           {/* ROADMAP SCROLL */}

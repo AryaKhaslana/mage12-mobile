@@ -160,6 +160,12 @@ const BotanicBanner = () => (
       <Rect width="100%" height="100%" fill="url(#glow)" />
       <Circle cx="20" cy="120" r="70" fill="url(#blob)" />
     </Svg>
+    <MaterialIcons
+      name="spa"
+      size={110}
+      color="rgba(255, 255, 255, 0.12)"
+      style={styles.bannerWatermark}
+    />
   </View>
 );
 
@@ -797,6 +803,12 @@ const styles = StyleSheet.create({
 
   // Banner + avatar
   banner: { width: "100%", height: 128, borderRadius: 20, overflow: "hidden", backgroundColor: C.primaryDark },
+  bannerWatermark: {
+    position: "absolute",
+    right: -10,
+    top: -18,
+    transform: [{ rotate: "22deg" }],
+  },
   smallStreakBadge: { position: "absolute", bottom: 12, right: 12, flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 4 },
   smallStreakText: { fontSize: 12, fontFamily: F.bold, color: C.ink },
   avatarRow: { marginTop: -48, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", paddingHorizontal: 8 },

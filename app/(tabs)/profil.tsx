@@ -108,6 +108,12 @@ const BotanicBanner = () => (
       <Rect width="100%" height="100%" fill="url(#glow)" />
       <Circle cx="20" cy="120" r="70" fill="url(#blob)" />
     </Svg>
+    <MaterialIcons
+      name="spa"
+      size={110}
+      color="rgba(255, 255, 255, 0.12)"
+      style={styles.bannerWatermark}
+    />
   </View>
 );
 
@@ -605,7 +611,13 @@ export default function ProfilScreen() {
         {/* STREAK CARD */}
         <View style={[styles.streakCard, shadowCard, { backgroundColor: streak > 0 ? C.coral : "#9CA3AF" }]}>
           <View style={styles.streakBlob} />
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14, flex: 1 }}>
+          <MaterialIcons
+            name="whatshot"
+            size={96}
+            color="rgba(255, 255, 255, 0.15)"
+            style={styles.streakWatermark}
+          />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14, flex: 1, zIndex: 1 }}>
             <View style={styles.streakIcon}>
               <MaterialIcons name="local-fire-department" size={24} color="#FFFFFF" />
             </View>
@@ -616,7 +628,7 @@ export default function ProfilScreen() {
               </Text>
             </View>
           </View>
-          <View style={styles.streakPill}>
+          <View style={[styles.streakPill, { zIndex: 1 }]}>
             <Text style={styles.streakPillText}>{streak > 0 ? "Aktif" : "Istirahat"}</Text>
           </View>
         </View>
@@ -709,7 +721,13 @@ export default function ProfilScreen() {
                 fetchRiwayatPanen();
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <MaterialIcons
+                name="emoji-events"
+                size={88}
+                color="rgba(255, 255, 255, 0.15)"
+                style={styles.riwayatWatermark}
+              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 1 }}>
                 <View style={styles.riwayatIconBg}>
                   <MaterialIcons name="emoji-events" size={24} color={C.primary} />
                 </View>
@@ -718,7 +736,7 @@ export default function ProfilScreen() {
                   <Text style={styles.riwayatSub}>Lihat pencapaian kebunmu</Text>
                 </View>
               </View>
-              <MaterialIcons name="chevron-right" size={28} color="#FFFFFF" />
+              <MaterialIcons name="chevron-right" size={28} color="#FFFFFF" style={{ zIndex: 1 }} />
             </Pressable>
 
             {/* TANAMAN KAMU */}
@@ -1180,6 +1198,12 @@ const styles = StyleSheet.create({
 
   // Banner + avatar
   banner: { width: "100%", height: 128, borderRadius: 20, overflow: "hidden", backgroundColor: C.primaryDark },
+  bannerWatermark: {
+    position: "absolute",
+    right: -10,
+    top: -18,
+    transform: [{ rotate: "22deg" }],
+  },
   avatarRow: { marginTop: -48, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", paddingHorizontal: 8 },
   avatarFrame: {
     width: 96,
@@ -1278,6 +1302,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.3)",
   },
   streakPillText: { fontSize: 11, fontFamily: F.bold, color: "#FFFFFF" },
+  streakWatermark: {
+    position: "absolute",
+    right: -10,
+    bottom: -18,
+    transform: [{ rotate: "-15deg" }],
+  },
 
   // Tabs
   tabs: {
@@ -1348,6 +1378,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 20,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  riwayatWatermark: {
+    position: "absolute",
+    right: 22,
+    bottom: -18,
+    transform: [{ rotate: "-15deg" }],
   },
   riwayatIconBg: {
     width: 48,
